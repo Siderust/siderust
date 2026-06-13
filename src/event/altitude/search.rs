@@ -6,7 +6,7 @@
 //! ## Scientific scope
 //!
 //! Numerical controls for altitude crossing discovery and culmination
-//! searches. The default refinement tolerance (~1 µs in time) is sized for
+//! searches. The default refinement tolerance (~86 µs in time) is sized for
 //! fast diurnal motion of solar-system bodies.
 //!
 //! ## Technical scope
@@ -24,7 +24,7 @@ use crate::qtty::*;
 #[derive(Debug, Clone, Copy)]
 pub struct SearchOpts {
     /// Time tolerance for root/extremum refinement (days).
-    /// Default: ~1 µs (1e-9 days).
+    /// Default: ~86 µs (1e-9 days).
     pub time_tolerance: Days,
 }
 
@@ -178,7 +178,7 @@ pub(crate) fn resolve_scan_step(
 /// One mean solar day.
 pub(crate) const ONE_DAY: Days = Days::new(1.0);
 
-/// Default root/extremum refinement tolerance (~1 µs).
+/// Default root/extremum refinement tolerance (~86 µs).
 pub(crate) const DEFAULT_TIME_TOLERANCE: Days = Days::new(1e-9);
 
 /// Minimum bracket width before treating endpoints as the root.

@@ -251,58 +251,6 @@ impl AltitudeProvider for Star<'_> {
     ) -> Radians {
         direction::ICRS::from(self).altitude_at_with_policy(observer, mjd, policy)
     }
-
-    fn event_above_threshold(
-        &self,
-        observer: &Geodetic<ECEF>,
-        window: Interval<ModifiedJulianDate>,
-        threshold: Degrees,
-        _opts: SearchOpts,
-    ) -> Vec<Interval<ModifiedJulianDate>> {
-        let dir = direction::ICRS::from(self);
-        crate::event::stellar::find_star_above_periods(
-            dir.ra(),
-            dir.dec(),
-            *observer,
-            window,
-            threshold,
-        )
-    }
-
-    fn event_below_threshold(
-        &self,
-        observer: &Geodetic<ECEF>,
-        window: Interval<ModifiedJulianDate>,
-        threshold: Degrees,
-        _opts: SearchOpts,
-    ) -> Vec<Interval<ModifiedJulianDate>> {
-        let dir = direction::ICRS::from(self);
-        crate::event::stellar::find_star_below_periods(
-            dir.ra(),
-            dir.dec(),
-            *observer,
-            window,
-            threshold,
-        )
-    }
-
-    fn event_altitude_ranges(
-        &self,
-        observer: &Geodetic<ECEF>,
-        window: Interval<ModifiedJulianDate>,
-        h_min: Degrees,
-        h_max: Degrees,
-        _opts: SearchOpts,
-    ) -> Vec<Interval<ModifiedJulianDate>> {
-        let dir = direction::ICRS::from(self);
-        crate::event::stellar::find_star_range_periods(
-            dir.ra(),
-            dir.dec(),
-            *observer,
-            window,
-            (h_min, h_max),
-        )
-    }
 }
 
 impl AltitudeProvider for direction::ICRS {
@@ -322,55 +270,6 @@ impl AltitudeProvider for direction::ICRS {
             self.ra(),
             self.dec(),
             policy,
-        )
-    }
-
-    fn event_above_threshold(
-        &self,
-        observer: &Geodetic<ECEF>,
-        window: Interval<ModifiedJulianDate>,
-        threshold: Degrees,
-        _opts: SearchOpts,
-    ) -> Vec<Interval<ModifiedJulianDate>> {
-        crate::event::stellar::find_star_above_periods(
-            self.ra(),
-            self.dec(),
-            *observer,
-            window,
-            threshold,
-        )
-    }
-
-    fn event_below_threshold(
-        &self,
-        observer: &Geodetic<ECEF>,
-        window: Interval<ModifiedJulianDate>,
-        threshold: Degrees,
-        _opts: SearchOpts,
-    ) -> Vec<Interval<ModifiedJulianDate>> {
-        crate::event::stellar::find_star_below_periods(
-            self.ra(),
-            self.dec(),
-            *observer,
-            window,
-            threshold,
-        )
-    }
-
-    fn event_altitude_ranges(
-        &self,
-        observer: &Geodetic<ECEF>,
-        window: Interval<ModifiedJulianDate>,
-        h_min: Degrees,
-        h_max: Degrees,
-        _opts: SearchOpts,
-    ) -> Vec<Interval<ModifiedJulianDate>> {
-        crate::event::stellar::find_star_range_periods(
-            self.ra(),
-            self.dec(),
-            *observer,
-            window,
-            (h_min, h_max),
         )
     }
 }

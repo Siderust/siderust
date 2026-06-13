@@ -292,6 +292,31 @@ fn subject_vector_queries_allocate_and_free() {
 }
 
 #[test]
+fn event_queries_reject_invalid_search_opts() {
+    for time_tolerance_days in [f64::NAN, f64::INFINITY, 0.0, -1.0] {
+        let opts = SiderustSearchOpts {
+            time_tolerance_days,
+        };
+        let mut periods: *mut TempochPeriodMjd = ptr::null_mut();
+        let mut count: usize = 0;
+        let status = unsafe {
+            siderust_above_threshold(
+                sun_subject(),
+                paris_observer(),
+                one_day_window(),
+                0.0,
+                opts,
+                &mut periods,
+                &mut count,
+            )
+        };
+        assert_eq!(status, SiderustStatus::InvalidArgument);
+        assert!(periods.is_null());
+        assert_eq!(count, 0);
+    }
+}
+
+#[test]
 fn altitude_ranges_works_for_generic_target() {
     let mut out: *mut TempochPeriodMjd = ptr::null_mut();
     let mut count = 0usize;

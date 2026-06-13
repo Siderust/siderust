@@ -817,7 +817,7 @@ typedef struct siderust_moon_phase_geometry_t {
 
 // Search options for altitude computations.
 typedef struct siderust_search_opts_t {
-  // Time tolerance in days (default: ~1 µs = 1e-9 days).
+  // Time tolerance in days (default: ~86 µs = 1e-9 days).
   double time_tolerance_days;
 } siderust_search_opts_t;
 

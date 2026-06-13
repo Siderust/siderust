@@ -1,24 +1,18 @@
 //! Build script for `siderust-ffi`, generating the exported C header.
 
 use std::env;
-use std::path::PathBuf;
-use std::process::Command;
+use std::path::{Path, PathBuf};
 
-fn nightly_rustc_path() -> Option<String> {
-    let output = Command::new("rustup")
-        .args(["which", "--toolchain", "nightly", "rustc"])
-        .output()
-        .ok()?;
-    if !output.status.success() {
-        return None;
+fn copy_checked_in_header(include_dir: &Path, out_dir: &Path) -> bool {
+    let checked_in_header = include_dir.join("siderust_ffi.h");
+    if !checked_in_header.exists() {
+        return false;
     }
-    let path = String::from_utf8(output.stdout).ok()?;
-    let path = path.trim();
-    if path.is_empty() {
-        None
-    } else {
-        Some(path.to_owned())
-    }
+
+    std::fs::create_dir_all(include_dir).expect("Unable to create include directory");
+    std::fs::copy(&checked_in_header, out_dir.join("siderust_ffi.h"))
+        .expect("Unable to copy checked-in header to OUT_DIR");
+    true
 }
 
 fn main() {
@@ -29,42 +23,18 @@ fn main() {
     let config =
         cbindgen::Config::from_file("cbindgen.toml").expect("Unable to read cbindgen.toml");
 
-    let previous_rustc = env::var_os("RUSTC");
-    let previous_target_dir = env::var_os("CARGO_TARGET_DIR");
-    if let Some(nightly_rustc) = nightly_rustc_path() {
-        env::set_var("RUSTC", nightly_rustc);
-        env::set_var("CARGO_TARGET_DIR", out_dir.join("expanded"));
-    } else {
-        println!(
-            "cargo:warning=nightly rustc not found; falling back to the checked-in siderust_ffi.h if cbindgen macro expansion fails"
-        );
-    }
-
     let bindings_result = cbindgen::Builder::new()
         .with_crate(&crate_dir)
         .with_config(config)
         .generate();
 
-    match previous_rustc {
-        Some(value) => env::set_var("RUSTC", value),
-        None => env::remove_var("RUSTC"),
-    }
-    match previous_target_dir {
-        Some(value) => env::set_var("CARGO_TARGET_DIR", value),
-        None => env::remove_var("CARGO_TARGET_DIR"),
-    }
-
     let bindings: cbindgen::Bindings = match bindings_result {
         Ok(bindings) => bindings,
         Err(err) => {
-            let checked_in_header = include_dir.join("siderust_ffi.h");
-            if checked_in_header.exists() {
+            if copy_checked_in_header(&include_dir, &out_dir) {
                 println!(
                     "cargo:warning=unable to regenerate siderust_ffi.h ({err}); copying the checked-in header instead"
                 );
-                std::fs::create_dir_all(&include_dir).expect("Unable to create include directory");
-                std::fs::copy(&checked_in_header, out_dir.join("siderust_ffi.h"))
-                    .expect("Unable to copy checked-in header to OUT_DIR");
                 return;
             }
             panic!("Unable to generate C bindings: {err}");

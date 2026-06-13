@@ -43,6 +43,14 @@ where
     let mut prev = eval_signal(signal, t, diagnostics) - threshold_sin;
 
     while t < t_end {
+        if prev.abs() <= residual_tol {
+            if let Some(direction) =
+                endpoint_direction(signal, t, period, step_days, threshold_sin, diagnostics)
+            {
+                labeled.push(LabeledCrossing { t, direction });
+            }
+        }
+
         let next_t = {
             let proposed = mjd_from_days(mjd_days(t) + step_days);
             if proposed <= t_end {
@@ -52,6 +60,22 @@ where
             }
         };
         let next_v = eval_signal(signal, next_t, diagnostics) - threshold_sin;
+
+        if next_v.abs() <= residual_tol {
+            if let Some(direction) = endpoint_direction(
+                signal,
+                next_t,
+                period,
+                step_days,
+                threshold_sin,
+                diagnostics,
+            ) {
+                labeled.push(LabeledCrossing {
+                    t: next_t,
+                    direction,
+                });
+            }
+        }
 
         if prev.signum() * next_v.signum() < 0.0 {
             let direction = if prev < 0.0 { 1 } else { -1 };
@@ -77,6 +101,56 @@ where
 
     sort_dedup_crossings(&mut labeled);
     labeled
+}
+
+fn endpoint_direction<F>(
+    signal: &F,
+    t: Mjd,
+    period: Interval<Mjd>,
+    step_days: f64,
+    threshold_sin: f64,
+    diagnostics: &mut SearchDiagnostics,
+) -> Option<i32>
+where
+    F: Fn(Mjd) -> f64,
+{
+    let probe = (step_days * 0.25).clamp(1e-7, 1e-3);
+    let t_days = mjd_days(t);
+    let start_days = mjd_days(period.start);
+    let end_days = mjd_days(period.end);
+    let left_t = mjd_from_days((t_days - probe).max(start_days));
+    let right_t = mjd_from_days((t_days + probe).min(end_days));
+
+    if right_t <= left_t {
+        return None;
+    }
+
+    let left = eval_signal(signal, left_t, diagnostics) - threshold_sin;
+    let right = eval_signal(signal, right_t, diagnostics) - threshold_sin;
+
+    if (t_days - start_days).abs() <= f64::EPSILON {
+        if right > 0.0 {
+            Some(1)
+        } else if right < 0.0 {
+            Some(-1)
+        } else {
+            None
+        }
+    } else if (t_days - end_days).abs() <= f64::EPSILON {
+        if left < 0.0 {
+            Some(1)
+        } else if left > 0.0 {
+            Some(-1)
+        } else {
+            None
+        }
+    } else if left <= 0.0 && right > 0.0 {
+        Some(1)
+    } else if left > 0.0 && right <= 0.0 {
+        Some(-1)
+    } else {
+        None
+    }
 }
 
 pub(crate) fn brent_f64<F>(
@@ -232,5 +306,89 @@ mod tests {
         let root = brent_f64(0.0, 1.0, -0.5, 0.5, |x| x - 0.25, 1e-12, 1e-12);
         assert!(root.is_some());
         assert!((root.unwrap() - 0.25).abs() < 1e-9);
+    }
+
+    #[test]
+    fn scan_detects_root_at_window_start() {
+        let period = Interval::new(Mjd::new(0.0), Mjd::new(1.0));
+        let signal = |t: Mjd| t.raw().value();
+
+        let mut diag = SearchDiagnostics::default();
+        let roots = scan_labelled_crossings(
+            period,
+            Days::new(0.1),
+            &signal,
+            0.0,
+            Days::new(1e-12),
+            1e-12,
+            &mut diag,
+        );
+
+        assert_eq!(roots.len(), 1);
+        assert!((roots[0].t.raw().value() - 0.0).abs() < 1e-12);
+        assert_eq!(roots[0].direction, 1);
+    }
+
+    #[test]
+    fn scan_detects_root_at_window_end() {
+        let period = Interval::new(Mjd::new(0.0), Mjd::new(1.0));
+        let signal = |t: Mjd| t.raw().value() - 1.0;
+
+        let mut diag = SearchDiagnostics::default();
+        let roots = scan_labelled_crossings(
+            period,
+            Days::new(0.1),
+            &signal,
+            0.0,
+            Days::new(1e-12),
+            1e-12,
+            &mut diag,
+        );
+
+        assert_eq!(roots.len(), 1);
+        assert!((roots[0].t.raw().value() - 1.0).abs() < 1e-12);
+        assert_eq!(roots[0].direction, 1);
+    }
+
+    #[test]
+    fn scan_detects_root_on_scan_node() {
+        let period = Interval::new(Mjd::new(0.0), Mjd::new(1.0));
+        let signal = |t: Mjd| t.raw().value() - 0.5;
+
+        let mut diag = SearchDiagnostics::default();
+        let roots = scan_labelled_crossings(
+            period,
+            Days::new(0.5),
+            &signal,
+            0.0,
+            Days::new(1e-12),
+            1e-12,
+            &mut diag,
+        );
+
+        assert_eq!(roots.len(), 1);
+        assert!((roots[0].t.raw().value() - 0.5).abs() < 1e-12);
+        assert_eq!(roots[0].direction, 1);
+    }
+
+    #[test]
+    fn scan_deduplicates_root_on_shared_scan_node() {
+        let period = Interval::new(Mjd::new(0.0), Mjd::new(1.0));
+        let signal = |t: Mjd| t.raw().value() - 0.5;
+
+        let mut diag = SearchDiagnostics::default();
+        let roots = scan_labelled_crossings(
+            period,
+            Days::new(0.25),
+            &signal,
+            0.0,
+            Days::new(1e-12),
+            1e-12,
+            &mut diag,
+        );
+
+        assert_eq!(roots.len(), 1);
+        assert!((roots[0].t.raw().value() - 0.5).abs() < 1e-12);
+        assert_eq!(roots[0].direction, 1);
     }
 }

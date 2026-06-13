@@ -725,18 +725,26 @@ impl SiderustBodycentricParams {
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct SiderustSearchOpts {
-    /// Time tolerance in days (default: ~1 µs = 1e-9 days).
+    /// Time tolerance in days (default: ~86 µs = 1e-9 days).
     pub time_tolerance_days: f64,
 }
 
 impl SiderustSearchOpts {
+    /// Convert to the Rust domain type, rejecting non-finite or non-positive values.
+    pub fn try_to_rust(&self) -> Result<siderust::SearchOpts, SiderustStatus> {
+        if !self.time_tolerance_days.is_finite() || self.time_tolerance_days <= 0.0 {
+            return Err(SiderustStatus::InvalidArgument);
+        }
+
+        Ok(siderust::SearchOpts {
+            time_tolerance: Days::new(self.time_tolerance_days),
+        })
+    }
+
     /// Convert to the Rust domain type.
     pub fn to_rust(&self) -> siderust::SearchOpts {
-        let mut opts = siderust::SearchOpts::default();
-        if self.time_tolerance_days > 0.0 {
-            opts.time_tolerance = Days::new(self.time_tolerance_days);
-        }
-        opts
+        self.try_to_rust()
+            .expect("SiderustSearchOpts::time_tolerance_days must be finite and positive")
     }
 }
 
@@ -1176,16 +1184,16 @@ mod tests {
     }
 
     #[test]
-    fn search_opts_zero_tolerance_uses_default() {
-        let opts = SiderustSearchOpts {
-            time_tolerance_days: 0.0,
-        };
-        let rust = opts.to_rust();
-        let default_rust = SiderustSearchOpts::default().to_rust();
-        assert_eq!(
-            rust.time_tolerance.value(),
-            default_rust.time_tolerance.value()
-        );
+    fn search_opts_reject_invalid_tolerance() {
+        for time_tolerance_days in [f64::NAN, f64::INFINITY, 0.0, -1.0] {
+            let opts = SiderustSearchOpts {
+                time_tolerance_days,
+            };
+            assert_eq!(
+                opts.try_to_rust().unwrap_err(),
+                SiderustStatus::InvalidArgument
+            );
+        }
     }
 
     // ── SiderustPlanet ───────────────────────────────────────────────────

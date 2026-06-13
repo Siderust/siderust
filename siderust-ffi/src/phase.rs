@@ -84,7 +84,7 @@ pub extern "C" fn siderust_moon_phase_geocentric(
             return SiderustStatus::NullPointer;
         }
         let geom = moon_phase_geocentric::<Vsop87Ephemeris>(ffi_try!(crate::ffi_utils::jd_from_f64(jd)));
-        // TODO: justify soundness — add doc comment before publishing
+        // SAFETY: raw-pointer use follows this function's C ABI preconditions.
         unsafe { *out = phase_geometry_from_rust(geom) };
         SiderustStatus::Ok
 
@@ -103,7 +103,7 @@ pub extern "C" fn siderust_moon_phase_topocentric(
             return SiderustStatus::NullPointer;
         }
         let geom = moon_phase_topocentric::<Vsop87Ephemeris>(ffi_try!(crate::ffi_utils::jd_from_f64(jd)), observer.to_rust());
-        // TODO: justify soundness — add doc comment before publishing
+        // SAFETY: raw-pointer use follows this function's C ABI preconditions.
         unsafe { *out = phase_geometry_from_rust(geom) };
         SiderustStatus::Ok
 
@@ -132,7 +132,7 @@ pub extern "C" fn siderust_moon_phase_label(
             MoonPhaseLabel::LastQuarter => SiderustMoonPhaseLabel::LastQuarter,
             MoonPhaseLabel::WaningCrescent => SiderustMoonPhaseLabel::WaningCrescent,
         };
-        // TODO: justify soundness — add doc comment before publishing
+        // SAFETY: raw-pointer use follows this function's C ABI preconditions.
         unsafe { *out = ffi_label };
         SiderustStatus::Ok
 

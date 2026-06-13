@@ -429,21 +429,19 @@ fn predict_day_crossings(
             }
         }
         DayThresholdCase::Crossings(h0) => {
-            let mut expected_candidates = 0usize;
             let mut refined = Vec::new();
             let mut failed = false;
 
             for candidate in predict_solar_threshold_candidates(state, h0, cos_lat) {
-                if !candidate_in_query_window(candidate, query_window) {
+                if !candidate_near_query_window(candidate, query_window) {
                     continue;
                 }
 
-                expected_candidates += 1;
                 diagnostics.candidate_crossings += 1;
 
                 match refine_candidate_root(
                     site,
-                    query_window,
+                    fallback_window,
                     candidate.predicted,
                     thr_sin,
                     candidate.analytic_slope_per_day,
@@ -452,10 +450,12 @@ fn predict_day_crossings(
                     diagnostics,
                 ) {
                     Some(root) => {
-                        refined.push(LabeledCrossing {
-                            t: root,
-                            direction: candidate.direction,
-                        });
+                        if root >= query_window.start && root <= query_window.end {
+                            refined.push(LabeledCrossing {
+                                t: root,
+                                direction: candidate.direction,
+                            });
+                        }
                     }
                     None => {
                         failed = true;
@@ -464,7 +464,7 @@ fn predict_day_crossings(
                 }
             }
 
-            if failed || refined.len() != expected_candidates {
+            if failed {
                 return fallback_solar_crossings_for_window(
                     site,
                     fallback_window,
@@ -503,11 +503,15 @@ fn predict_solar_threshold_candidates(
     ]
 }
 
-fn candidate_in_query_window(
+fn candidate_near_query_window(
     candidate: SolarThresholdCandidate,
     query_window: Interval<ModifiedJulianDate>,
 ) -> bool {
-    candidate.predicted >= query_window.start && candidate.predicted <= query_window.end
+    let guard = *BRACKET_RADII
+        .last()
+        .unwrap_or(&Hours::new(4.0).to_const::<Day>());
+    candidate.predicted >= add_days(query_window.start, -guard)
+        && candidate.predicted <= add_days(query_window.end, guard)
 }
 
 fn fallback_solar_crossings_for_window(
@@ -1181,6 +1185,74 @@ mod tests {
             diag.newton_accepted <= diag.refined_crossings,
             "newton_accepted > refined_crossings: {diag:?}"
         );
+    }
+
+    fn assert_narrow_window_keeps_crossing(
+        site: Geodetic<ECEF>,
+        wide_window: Interval<ModifiedJulianDate>,
+        threshold: Degrees,
+        direction: CrossingDirection,
+    ) {
+        let baseline = crate::event::solar::solar_crossings_impl(
+            site,
+            wide_window,
+            threshold,
+            InternalSearchConfig::scan_brent_baseline_config(
+                crate::event::altitude::SearchOpts::default(),
+            ),
+        );
+        let root = baseline
+            .iter()
+            .find(|event| event.direction == direction)
+            .unwrap_or_else(|| panic!("missing {direction:?} crossing for {threshold:?}"))
+            .mjd;
+
+        for half_width in [
+            Seconds::new(5.0).to::<Day>(),
+            Seconds::new(30.0).to::<Day>(),
+            Minutes::new(2.0).to::<Day>(),
+        ] {
+            let narrow = Interval::new(add_days(root, -half_width), add_days(root, half_width));
+            let events = crate::event::solar::solar_crossings_impl(
+                site,
+                narrow,
+                threshold,
+                InternalSearchConfig::default(),
+            );
+            assert_eq!(
+                events.len(),
+                1,
+                "expected one crossing for {threshold:?} {direction:?} in {narrow:?}, got {events:?}"
+            );
+            assert_eq!(events[0].direction, direction);
+            assert!(
+                events[0].mjd >= narrow.start && events[0].mjd <= narrow.end,
+                "root outside narrow window: {:?} not in {:?}",
+                events[0],
+                narrow
+            );
+            assert!(
+                (events[0].mjd.raw() - root.raw()).abs() < Seconds::new(1.0).to::<Day>(),
+                "narrow-window root drifted: {:?} vs {:?}",
+                events[0].mjd,
+                root
+            );
+        }
+    }
+
+    #[test]
+    fn solar_predictor_refines_near_window_candidates_before_filtering() {
+        let sites = [greenwich(), cta_s(), roque()];
+        let thresholds = [Degrees::new(0.0), Degrees::new(-18.0)];
+        let wide_window = utc_window(7);
+
+        for site in sites {
+            for threshold in thresholds {
+                for direction in [CrossingDirection::Rising, CrossingDirection::Setting] {
+                    assert_narrow_window_keeps_crossing(site, wide_window, threshold, direction);
+                }
+            }
+        }
     }
 
     // -----------------------------------------------------------------------

@@ -46,7 +46,7 @@ Night, day, and twilight windows use the unified altitude period functions in
 
 [`SearchOpts`] exposes a single public field:
 
-- `time_tolerance` — root-refinement tolerance in days (default ~1 µs).
+- `time_tolerance` — root-refinement tolerance in days (default ~86 µs).
 
 ---
 

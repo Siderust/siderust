@@ -29,8 +29,8 @@
 //!
 //! ## See Also
 //!
-//! - [`crate::event::altitude`], unified API (dispatches here for
-//!   [`direction::ICRS`](crate::coordinates::spherical::direction::ICRS) and [`Star`](crate::bodies::Star))
+//! - [`crate::event::altitude`], unified API for
+//!   [`direction::ICRS`](crate::coordinates::spherical::direction::ICRS) and [`Star`](crate::bodies::Star)
 //! - [`crate::event::solar`], analogous module for the Sun
 //! - [`crate::event::lunar`], analogous module for the Moon
 

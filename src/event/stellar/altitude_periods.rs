@@ -34,6 +34,8 @@
 //! (default ≈ 86 µs).  Precession at the midpoint introduces < 25″ of RA
 //! error over a full year, well within the ±15‑minute Brent bracket.
 
+#![allow(dead_code)]
+
 use crate::astro::apparent::CorrectionPolicy;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;

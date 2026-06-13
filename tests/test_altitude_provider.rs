@@ -9,7 +9,7 @@ use siderust::coordinates::centers::Geodetic;
 use siderust::coordinates::frames::ECEF;
 use siderust::coordinates::spherical::direction;
 use siderust::event::altitude::{
-    above_threshold, altitude_ranges, below_threshold, AltitudeProvider, SearchOpts,
+    above_threshold, altitude_ranges, below_threshold, crossings, AltitudeProvider, SearchOpts,
 };
 use siderust::time::{Interval, ModifiedJulianDate};
 
@@ -222,6 +222,64 @@ fn empty_window_returns_empty() {
         SearchOpts::default()
     )
     .is_empty());
+}
+
+struct BorrowedAltitudeProvider<'a> {
+    alt: &'a Radians,
+}
+
+impl<'a> AltitudeProvider for BorrowedAltitudeProvider<'a> {
+    fn altitude_at(&self, _observer: &Geodetic<ECEF>, _mjd: ModifiedJulianDate) -> Radians {
+        *self.alt
+    }
+}
+
+#[test]
+fn borrowed_altitude_provider_works_with_public_event_api() {
+    let alt = Degrees::new(45.0).to::<Radian>();
+    let target = BorrowedAltitudeProvider { alt: &alt };
+
+    let site = greenwich();
+    let window = one_day();
+
+    let above = above_threshold(
+        &target,
+        &site,
+        window,
+        Degrees::new(0.0),
+        SearchOpts::default(),
+    );
+    assert_eq!(above.len(), 1);
+    assert_eq!(above[0], window);
+
+    let below = below_threshold(
+        &target,
+        &site,
+        window,
+        Degrees::new(0.0),
+        SearchOpts::default(),
+    );
+    assert!(below.is_empty());
+
+    let ranges = altitude_ranges(
+        &target,
+        &site,
+        window,
+        Degrees::new(0.0),
+        Degrees::new(90.0),
+        SearchOpts::default(),
+    );
+    assert_eq!(ranges.len(), 1);
+    assert_eq!(ranges[0], window);
+
+    let crossings = crossings(
+        &target,
+        &site,
+        window,
+        Degrees::new(0.0),
+        SearchOpts::default(),
+    );
+    assert!(crossings.is_empty());
 }
 
 #[test]

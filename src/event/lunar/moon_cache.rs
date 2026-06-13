@@ -181,12 +181,15 @@ impl MoonPositionCache {
     #[inline]
     pub fn get_position_km(&self, mjd: ModifiedJulianDate) -> (Kilometers, Kilometers, Kilometers) {
         let offset = mjd.raw() - self.mjd_start.raw();
+
+        if offset < Days::zero() {
+            return direct_position(mjd);
+        }
+
         let seg_idx = (offset / SEGMENT_DAYS) as usize;
 
         if seg_idx >= self.num_segments {
-            // Fallback: outside cache range
-            let pos = DefaultEphemeris::moon_geocentric(mjd.to::<crate::JD>());
-            return (pos.x(), pos.y(), pos.z());
+            return direct_position(mjd);
         }
 
         // Map jd into [-1, 1] within the segment
@@ -201,6 +204,12 @@ impl MoonPositionCache {
         let pz = Kilometers::new(cheby::evaluate(&self.cz[seg_idx], x));
         (px, py, pz)
     }
+}
+
+#[inline]
+fn direct_position(mjd: ModifiedJulianDate) -> (Kilometers, Kilometers, Kilometers) {
+    let pos = DefaultEphemeris::moon_geocentric(mjd.to::<crate::JD>());
+    (pos.x(), pos.y(), pos.z())
 }
 
 // =============================================================================
@@ -265,13 +274,16 @@ impl NutationCache {
     #[inline]
     pub fn get_nutation_rad(&self, mjd: ModifiedJulianDate) -> (Radians, Radians, Radians) {
         let offset = mjd.raw() - self.mjd_start.raw();
+
+        if offset < Days::zero() {
+            return direct_nutation(mjd);
+        }
+
         let frac = offset / NUT_STEP_DAYS;
         let idx = frac as usize;
 
         if idx + 1 >= self.num_entries {
-            // Fallback: outside cache range, compute directly
-            let nut = nutation_iau2000b(mjd.to::<crate::JD>());
-            return (nut.dpsi, nut.deps, nut.mean_obliquity);
+            return direct_nutation(mjd);
         }
 
         let t = frac - idx as f64; // interpolation parameter [0, 1)
@@ -305,6 +317,12 @@ impl NutationCache {
         // R1(ε0+Δε) · R3(Δψ) · R1(−ε0)
         affn::Rotation3::rx(eps0 + deps) * affn::Rotation3::rz(dpsi) * affn::Rotation3::rx(-eps0)
     }
+}
+
+#[inline]
+fn direct_nutation(mjd: ModifiedJulianDate) -> (Radians, Radians, Radians) {
+    let nut = nutation_iau2000b(mjd.to::<crate::JD>());
+    (nut.dpsi, nut.deps, nut.mean_obliquity)
 }
 
 // =============================================================================
@@ -601,6 +619,21 @@ mod tests {
     }
 
     #[test]
+    fn moon_position_cache_falls_back_before_start() {
+        let start = ModifiedJulianDate::new(60000.0);
+        let end = ModifiedJulianDate::new(60010.0);
+        let cache = MoonPositionCache::new(start, end);
+
+        let t = ModifiedJulianDate::new(59998.0);
+        let cached = cache.get_position_km(t);
+        let direct = DefaultEphemeris::moon_geocentric(t.to::<crate::JD>());
+
+        assert!((cached.0.value() - direct.x().value()).abs() < 1e-12);
+        assert!((cached.1.value() - direct.y().value()).abs() < 1e-12);
+        assert!((cached.2.value() - direct.z().value()).abs() < 1e-12);
+    }
+
+    #[test]
     fn nutation_cache_accuracy() {
         let mjd_start: ModifiedJulianDate = crate::J2000.to::<crate::MJD>();
         let mjd_end: ModifiedJulianDate =
@@ -635,6 +668,21 @@ mod tests {
                 "Nutation eps0 error at MJD {mjd}: {err_eps0}"
             );
         }
+    }
+
+    #[test]
+    fn nutation_cache_falls_back_before_start() {
+        let start = ModifiedJulianDate::new(60000.0);
+        let end = ModifiedJulianDate::new(60010.0);
+        let cache = NutationCache::new(start, end);
+
+        let t = ModifiedJulianDate::new(59998.0);
+        let cached = cache.get_nutation_rad(t);
+        let direct = nutation_iau2000b(t.to::<crate::JD>());
+
+        assert!((cached.0.value() - direct.dpsi.value()).abs() < 1e-15);
+        assert!((cached.1.value() - direct.deps.value()).abs() < 1e-15);
+        assert!((cached.2.value() - direct.mean_obliquity.value()).abs() < 1e-15);
     }
 
     #[test]
