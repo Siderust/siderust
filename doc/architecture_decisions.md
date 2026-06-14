@@ -75,7 +75,7 @@ The resolution introduces two separate abstractions:
 
 - **`Trackable`**: a trait representing anything that can produce coordinates at a given Julian Date. It is implemented for solar-system unit types (via VSOP87/ELP2000), `Star` (via catalog coordinates), `direction::ICRS` (identity, fixed directions are time-invariant), and `CoordinateWithPM<T>` itself (returns the stored position).
 
-This separation enables generic programming over trackable objects. A function constrained by `T: Trackable` can accept a planet, a star, a fixed sky direction, or a precomputed coordinate sample without knowing the concrete type. The `AltitudePeriodsProvider` and `AzimuthProvider` traits remain independent dispatch layers for observation-specific calculations.
+This separation enables generic programming over trackable objects. A function constrained by `T: Trackable` can accept a planet, a star, a fixed sky direction, or a precomputed coordinate sample without knowing the concrete type. The `AltitudeProvider` and `AzimuthProvider` traits remain independent dispatch layers for observation-specific calculations.
 
 The design consequence is that adding new trackable object types (e.g., comets, satellites, asteroids with orbital propagation) requires only implementing `Trackable`, without modifying existing infrastructure.
 

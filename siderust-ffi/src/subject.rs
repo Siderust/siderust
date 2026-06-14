@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! **Unified subject dispatch**, the **preferred FFI entry point** for altitude
@@ -25,7 +25,7 @@ use qtty::*;
 use siderust::event::azimuth::{
     azimuth_crossings, azimuth_extrema, in_azimuth_range, outside_azimuth_range,
 };
-use siderust::AltitudePeriodsProvider;
+use siderust::AltitudeProvider;
 use siderust::AzimuthProvider;
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -45,7 +45,8 @@ pub extern "C" fn siderust_altitude_at(
             return SiderustStatus::NullPointer;
         }
         dispatch_subject!(subject, |p| {
-            // TODO: justify soundness — add doc comment before publishing
+            // SAFETY: `out_rad` was checked for null above. We write exactly
+            // one valid f64 result before returning, inside `ffi_guard!`.
             unsafe {
                 *out_rad = p
                     .altitude_at(&observer.to_rust(), ffi_try!(crate::ffi_utils::mjd_from_f64(mjd)))
@@ -76,6 +77,7 @@ pub extern "C" fn siderust_above_threshold(
             Ok(w) => w,
             Err(e) => return e,
         };
+        let opts = ffi_try!(opts.try_to_rust());
         dispatch_subject!(subject, |p| {
             periods_to_c(
                 siderust::above_threshold(
@@ -83,7 +85,7 @@ pub extern "C" fn siderust_above_threshold(
                     &observer.to_rust(),
                     window,
                     Degrees::new(threshold_deg),
-                    opts.to_rust(),
+                    opts,
                 ),
                 out,
                 count,
@@ -108,6 +110,7 @@ pub extern "C" fn siderust_below_threshold(
             Ok(w) => w,
             Err(e) => return e,
         };
+        let opts = ffi_try!(opts.try_to_rust());
         dispatch_subject!(subject, |p| {
             periods_to_c(
                 siderust::below_threshold(
@@ -115,7 +118,7 @@ pub extern "C" fn siderust_below_threshold(
                     &observer.to_rust(),
                     window,
                     Degrees::new(threshold_deg),
-                    opts.to_rust(),
+                    opts,
                 ),
                 out,
                 count,
@@ -144,6 +147,7 @@ pub extern "C" fn siderust_crossings(
             Ok(w) => w,
             Err(e) => return e,
         };
+        let opts = ffi_try!(opts.try_to_rust());
         dispatch_subject!(subject, |p| {
             crossings_to_c(
                 siderust::crossings(
@@ -151,7 +155,7 @@ pub extern "C" fn siderust_crossings(
                     &observer.to_rust(),
                     window,
                     Degrees::new(threshold_deg),
-                    opts.to_rust(),
+                    opts,
                 ),
                 out,
                 count,
@@ -175,9 +179,10 @@ pub extern "C" fn siderust_culminations(
             Ok(w) => w,
             Err(e) => return e,
         };
+        let opts = ffi_try!(opts.try_to_rust());
         dispatch_subject!(subject, |p| {
             culminations_to_c(
-                siderust::culminations(p, &observer.to_rust(), window, opts.to_rust()),
+                siderust::culminations(p, &observer.to_rust(), window, opts),
                 out,
                 count,
             )
@@ -186,30 +191,41 @@ pub extern "C" fn siderust_culminations(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Altitude periods (body-only)
+// Altitude, range periods
 // ═══════════════════════════════════════════════════════════════════════════
 
-/// Periods when a body's altitude is within [min, max].
-///
-/// Only `Body` subjects support this operation. For `Star`, `Icrs`, and
-/// `GenericTarget`, `SIDERUST_STATUS_T_INVALID_ARGUMENT` is returned.
+/// Periods when a subject's altitude is within `[h_min, h_max]`.
 #[no_mangle]
-pub extern "C" fn siderust_altitude_periods(
+pub extern "C" fn siderust_altitude_ranges(
     subject: SiderustSubject,
-    query: SiderustAltitudeQuery,
+    observer: SiderustGeodetict,
+    window: TempochPeriodMjd,
+    h_min_deg: f64,
+    h_max_deg: f64,
+    opts: SiderustSearchOpts,
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
     ffi_guard! {{
-        match subject.kind {
-            SiderustSubjectKind::Body => {
-                let q = ffi_try!(query.try_to_rust());
-                dispatch_body!(subject.body, |b| {
-                    periods_to_c(b.altitude_periods(&q), out, count)
-                })
-            }
-            _ => SiderustStatus::InvalidArgument,
-        }
+        let window = match window_from_c(window) {
+            Ok(w) => w,
+            Err(e) => return e,
+        };
+        let opts = ffi_try!(opts.try_to_rust());
+        dispatch_subject!(subject, |p| {
+            periods_to_c(
+                siderust::altitude_ranges(
+                    p,
+                    &observer.to_rust(),
+                    window,
+                    Degrees::new(h_min_deg),
+                    Degrees::new(h_max_deg),
+                    opts,
+                ),
+                out,
+                count,
+            )
+        })
     }}
 }
 
@@ -230,7 +246,8 @@ pub extern "C" fn siderust_azimuth_at(
             return SiderustStatus::NullPointer;
         }
         dispatch_subject!(subject, |p| {
-            // TODO: justify soundness — add doc comment before publishing
+            // SAFETY: `out_deg` was checked for null above. We write exactly
+            // one valid f64 result before returning, inside `ffi_guard!`.
             unsafe {
                 *out_deg = p
                     .azimuth_at(&observer.to_rust(), ffi_try!(crate::ffi_utils::mjd_from_f64(mjd)))
@@ -261,6 +278,7 @@ pub extern "C" fn siderust_azimuth_crossings(
             Ok(w) => w,
             Err(e) => return e,
         };
+        let opts = ffi_try!(opts.try_to_rust());
         dispatch_subject!(subject, |p| {
             vec_az_crossings_to_c(
                 azimuth_crossings(
@@ -268,7 +286,7 @@ pub extern "C" fn siderust_azimuth_crossings(
                     &observer.to_rust(),
                     window,
                     Degrees::new(bearing_deg),
-                    opts.to_rust(),
+                    opts,
                 ),
                 out,
                 count,
@@ -292,9 +310,10 @@ pub extern "C" fn siderust_azimuth_extrema(
             Ok(w) => w,
             Err(e) => return e,
         };
+        let opts = ffi_try!(opts.try_to_rust());
         dispatch_subject!(subject, |p| {
             vec_az_extrema_to_c(
-                azimuth_extrema(p, &observer.to_rust(), window, opts.to_rust()),
+                azimuth_extrema(p, &observer.to_rust(), window, opts),
                 out,
                 count,
             )
@@ -319,6 +338,7 @@ pub extern "C" fn siderust_in_azimuth_range(
             Ok(w) => w,
             Err(e) => return e,
         };
+        let opts = ffi_try!(opts.try_to_rust());
         dispatch_subject!(subject, |p| {
             periods_to_c(
                 in_azimuth_range(
@@ -327,7 +347,7 @@ pub extern "C" fn siderust_in_azimuth_range(
                     window,
                     Degrees::new(min_deg),
                     Degrees::new(max_deg),
-                    opts.to_rust(),
+                    opts,
                 ),
                 out,
                 count,
@@ -353,6 +373,7 @@ pub extern "C" fn siderust_outside_azimuth_range(
             Ok(w) => w,
             Err(e) => return e,
         };
+        let opts = ffi_try!(opts.try_to_rust());
         dispatch_subject!(subject, |p| {
             periods_to_c(
                 outside_azimuth_range(
@@ -361,7 +382,7 @@ pub extern "C" fn siderust_outside_azimuth_range(
                     window,
                     Degrees::new(min_deg),
                     Degrees::new(max_deg),
-                    opts.to_rust(),
+                    opts,
                 ),
                 out,
                 count,
@@ -558,33 +579,38 @@ mod tests {
     }
 
     #[test]
-    fn altitude_periods_body_only() {
-        let query = SiderustAltitudeQuery {
-            observer: paris(),
-            start_mjd: mjd(60000.0),
-            end_mjd: mjd(60001.0),
-            min_altitude_deg: -90.0,
-            max_altitude_deg: 90.0,
-        };
+    fn altitude_ranges_works_for_all_subjects() {
         let mut out: *mut TempochPeriodMjd = ptr::null_mut();
         let mut count = 0usize;
-        let st = siderust_altitude_periods(
+        let st = siderust_altitude_ranges(
             SiderustSubject::body(SiderustBody::Sun),
-            query,
+            paris(),
+            one_day_window(),
+            -90.0,
+            90.0,
+            default_opts(),
             &mut out,
             &mut count,
         );
         assert_eq!(st, SiderustStatus::Ok);
         unsafe { crate::altitude::siderust_periods_free(out, count) };
-        let (star_handle, star_subj) = star_subject("VEGA");
-        let st = siderust_altitude_periods(star_subj, query, &mut out, &mut count);
-        assert_eq!(st, SiderustStatus::InvalidArgument);
-        unsafe { crate::bodies::siderust_star_free(star_handle) };
 
-        let (target_handle, target_subj) = generic_target_subject();
-        let st = siderust_altitude_periods(target_subj, query, &mut out, &mut count);
-        assert_eq!(st, SiderustStatus::InvalidArgument);
-        unsafe { siderust_generic_target_free(target_handle) };
+        let (star_handle, star_subj) = star_subject("VEGA");
+        let st = siderust_altitude_ranges(
+            star_subj,
+            paris(),
+            one_day_window(),
+            0.0,
+            90.0,
+            default_opts(),
+            &mut out,
+            &mut count,
+        );
+        assert_eq!(st, SiderustStatus::Ok);
+        unsafe {
+            crate::altitude::siderust_periods_free(out, count);
+            crate::bodies::siderust_star_free(star_handle);
+        }
     }
 
     #[test]

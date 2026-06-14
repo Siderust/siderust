@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! C-compatible struct definitions for siderust-ffi.
@@ -725,25 +725,26 @@ impl SiderustBodycentricParams {
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct SiderustSearchOpts {
-    /// Time tolerance in days (default: ~1 µs = 1e-9 days).
+    /// Time tolerance in days (default: ~86 µs = 1e-9 days).
     pub time_tolerance_days: f64,
-    /// Scan step in days. Set to 0 or negative to use the body's default.
-    pub scan_step_days: f64,
-    /// Whether `scan_step_days` is valid (non-zero).
-    pub has_scan_step: bool,
 }
 
 impl SiderustSearchOpts {
+    /// Convert to the Rust domain type, rejecting non-finite or non-positive values.
+    pub fn try_to_rust(&self) -> Result<siderust::SearchOpts, SiderustStatus> {
+        if !self.time_tolerance_days.is_finite() || self.time_tolerance_days <= 0.0 {
+            return Err(SiderustStatus::InvalidArgument);
+        }
+
+        Ok(siderust::SearchOpts {
+            time_tolerance: Days::new(self.time_tolerance_days),
+        })
+    }
+
     /// Convert to the Rust domain type.
     pub fn to_rust(&self) -> siderust::SearchOpts {
-        let mut opts = siderust::SearchOpts::default();
-        if self.time_tolerance_days > 0.0 {
-            opts.time_tolerance = Days::new(self.time_tolerance_days);
-        }
-        if self.has_scan_step && self.scan_step_days > 0.0 {
-            opts.scan_step_days = Some(Days::new(self.scan_step_days));
-        }
-        opts
+        self.try_to_rust()
+            .expect("SiderustSearchOpts::time_tolerance_days must be finite and positive")
     }
 }
 
@@ -751,8 +752,6 @@ impl Default for SiderustSearchOpts {
     fn default() -> Self {
         Self {
             time_tolerance_days: 1e-9,
-            scan_step_days: 0.0,
-            has_scan_step: false,
         }
     }
 }
@@ -803,44 +802,6 @@ impl SiderustCulminationEvent {
                 siderust::CulminationKind::Min => SiderustCulminationKind::Min,
             },
         }
-    }
-}
-
-/// Altitude computation query parameters.
-#[repr(C)]
-#[derive(Debug, Clone, Copy)]
-pub struct SiderustAltitudeQuery {
-    /// Observer location.
-    pub observer: SiderustGeodetict,
-    /// Start of the search window (Modified Julian Date).
-    pub start_mjd: f64,
-    /// End of the search window (Modified Julian Date).
-    pub end_mjd: f64,
-    /// Minimum altitude threshold in degrees.
-    pub min_altitude_deg: f64,
-    /// Maximum altitude threshold in degrees.
-    pub max_altitude_deg: f64,
-}
-
-impl SiderustAltitudeQuery {
-    /// Convert to the Rust domain type.
-    pub fn to_rust(&self) -> siderust::AltitudeQuery {
-        self.try_to_rust()
-            .expect("SiderustAltitudeQuery MJD bounds must be finite")
-    }
-
-    /// Convert to the Rust domain type with MJD validation.
-    pub fn try_to_rust(&self) -> Result<siderust::AltitudeQuery, SiderustStatus> {
-        Ok(siderust::AltitudeQuery {
-            observer: self.observer.to_rust(),
-            window: Interval::new(
-                crate::ffi_utils::mjd_from_f64(self.start_mjd)?,
-                crate::ffi_utils::mjd_from_f64(self.end_mjd)?,
-            ),
-            min_altitude: Degrees::new(self.min_altitude_deg),
-            max_altitude: Degrees::new(self.max_altitude_deg),
-            correction_policy: siderust::astro::apparent::CorrectionPolicy::APPARENT,
-        })
     }
 }
 
@@ -1211,67 +1172,28 @@ mod tests {
     fn search_opts_default() {
         let d = SiderustSearchOpts::default();
         assert!((d.time_tolerance_days - 1e-9).abs() < 1e-15);
-        assert!(!d.has_scan_step);
     }
 
     #[test]
-    fn search_opts_to_rust_without_scan_step() {
+    fn search_opts_to_rust() {
         let opts = SiderustSearchOpts {
             time_tolerance_days: 1e-6,
-            scan_step_days: 0.0,
-            has_scan_step: false,
         };
         let rust = opts.to_rust();
         assert!((rust.time_tolerance.value() - 1e-6).abs() < 1e-12);
-        assert!(rust.scan_step_days.is_none());
     }
 
     #[test]
-    fn search_opts_to_rust_with_scan_step() {
-        let opts = SiderustSearchOpts {
-            time_tolerance_days: 1e-9,
-            scan_step_days: 0.1,
-            has_scan_step: true,
-        };
-        let rust = opts.to_rust();
-        assert!(rust.scan_step_days.is_some());
-        assert!((rust.scan_step_days.unwrap().value() - 0.1).abs() < 1e-12);
-    }
-
-    #[test]
-    fn search_opts_zero_tolerance_uses_default() {
-        let opts = SiderustSearchOpts {
-            time_tolerance_days: 0.0, // ≤ 0 → keep default
-            scan_step_days: 0.0,
-            has_scan_step: false,
-        };
-        let rust = opts.to_rust();
-        // With 0 tolerance the default is kept
-        let default_rust = SiderustSearchOpts::default().to_rust();
-        assert_eq!(
-            rust.time_tolerance.value(),
-            default_rust.time_tolerance.value()
-        );
-    }
-
-    // ── SiderustAltitudeQuery ────────────────────────────────────────────
-
-    #[test]
-    fn altitude_query_to_rust() {
-        let q = SiderustAltitudeQuery {
-            observer: SiderustGeodetict {
-                lon_deg: 0.0,
-                lat_deg: 51.5,
-                height_m: 10.0,
-            },
-            start_mjd: 60000.0,
-            end_mjd: 60001.0,
-            min_altitude_deg: 10.0,
-            max_altitude_deg: 90.0,
-        };
-        let rust = q.to_rust();
-        assert!((rust.min_altitude.value() - 10.0).abs() < 1e-10);
-        assert!((rust.max_altitude.value() - 90.0).abs() < 1e-10);
+    fn search_opts_reject_invalid_tolerance() {
+        for time_tolerance_days in [f64::NAN, f64::INFINITY, 0.0, -1.0] {
+            let opts = SiderustSearchOpts {
+                time_tolerance_days,
+            };
+            assert_eq!(
+                opts.try_to_rust().unwrap_err(),
+                SiderustStatus::InvalidArgument
+            );
+        }
     }
 
     // ── SiderustPlanet ───────────────────────────────────────────────────
@@ -1506,8 +1428,7 @@ mod tests {
 
     #[test]
     fn layout_search_opts() {
-        // 2 × f64 + bool + padding = 24
-        assert_eq!(std::mem::size_of::<SiderustSearchOpts>(), 24);
+        assert_eq!(std::mem::size_of::<SiderustSearchOpts>(), 8);
     }
 
     #[test]

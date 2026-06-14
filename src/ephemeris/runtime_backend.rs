@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! Runtime-loaded ephemeris backend.
@@ -42,7 +42,7 @@ struct RuntimeEphemerisInner {
 /// - Implements [`DynEphemeris`] (instance methods with `&self`)
 /// - Is cloneable and shareable via internal `Arc`
 /// - Retains **all** matching SPK segments per body chain and selects by epoch
-///   (later kernels win when coverage overlaps), matching [`SpkKernelSet`] semantics
+///   (later kernels win when coverage overlaps), matching [`crate::formats::spice::SpkKernelSet`] semantics
 ///
 /// # Example
 ///

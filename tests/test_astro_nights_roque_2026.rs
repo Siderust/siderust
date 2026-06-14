@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 #![allow(missing_docs)]
@@ -12,7 +12,7 @@ use siderust::bodies::Sun;
 use siderust::catalogs::observatories::ROQUE_DE_LOS_MUCHACHOS;
 use siderust::coordinates::centers::Geodetic;
 use siderust::coordinates::frames::ECEF;
-use siderust::event::altitude::AltitudePeriodsProvider;
+use siderust::event::altitude::{above_threshold, below_threshold, SearchOpts};
 use siderust::event::solar::twilight;
 use siderust::time::{Interval, ModifiedJulianDate};
 
@@ -158,7 +158,13 @@ fn test_astronomical_nights_roque_2026() {
     let reference = load_reference_data();
     let site = roque_site();
 
-    let computed = Sun.below_threshold(site, reference.window_tt, twilight::ASTRONOMICAL);
+    let computed = below_threshold(
+        &Sun,
+        &site,
+        reference.window_tt,
+        twilight::ASTRONOMICAL,
+        SearchOpts::default(),
+    );
     assert!(
         !computed.is_empty(),
         "siderust did not find any astronomical nights"
@@ -175,7 +181,13 @@ fn test_astronomical_nights_roque_2026_culminations() {
     let site = roque_site();
 
     // above_threshold finds "above" periods; complement gives us the nights.
-    let day_periods = Sun.above_threshold(site, reference.window_tt, twilight::ASTRONOMICAL);
+    let day_periods = above_threshold(
+        &Sun,
+        &site,
+        reference.window_tt,
+        twilight::ASTRONOMICAL,
+        SearchOpts::default(),
+    );
     let computed = siderust::time::complement_within(reference.window_tt, &day_periods);
     assert!(
         !computed.is_empty(),

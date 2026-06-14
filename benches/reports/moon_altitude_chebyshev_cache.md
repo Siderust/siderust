@@ -6,7 +6,7 @@
 This document explains the method implemented in:
 
 - `../../src/calculus/lunar/moon_cache.rs`
-- `../../src/calculus/lunar/altitude_periods.rs`
+- `../../src/event/lunar/` (`lunar_*_impl`)
 
 The goal is to keep long-horizon Moon altitude window finding fast by replacing
 “recompute a heavy ephemeris at every sample time” with “precompute and
@@ -15,7 +15,7 @@ meaning of “topocentric Moon altitude”.
 
 ---
 
-## 1) Problem: why `find_moon_above_horizon_365day` was slow
+## 1) Problem: why the 365-day `above_threshold` benchmark was slow
 
 The “Moon above horizon for 365 days” workflow is an **interval finding** problem:
 
@@ -274,7 +274,7 @@ Chebyshev caching composes well with SIMD: the precompute stage still benefits f
 
 ## 10) Notes / limitations
 
-Today the cache is built per `find_moon_*` call. If an application issues many
+Today the cache is built per `above_threshold` / `below_threshold` search. If an application issues many
 queries over the same span/site, exposing a reusable context would avoid
 rebuilding. The cache interpolates *geocentric* position (not topocentric),
 which keeps it site-agnostic and preserves correctness; observer-dependent
@@ -294,7 +294,7 @@ a 2-hour grid this is conservative for the smooth IAU 2000B corrections.
 - Fast altitude evaluator:
   - `MoonAltitudeContext::altitude_rad()` in `../../src/calculus/lunar/moon_cache.rs`
 - Wiring into API:
-  - `find_moon_above_horizon()` in `../../src/calculus/lunar/altitude_periods.rs`
+  - `above_threshold(&Moon, …)` wired through `../../src/event/lunar/` (`lunar_*_impl`)
 
 ---
 

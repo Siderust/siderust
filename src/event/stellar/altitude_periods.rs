@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! # Stellar Altitude Window Periods
@@ -33,6 +33,8 @@
 //! Crossing times are refined to the same tolerance as the generic engine
 //! (default ≈ 86 µs).  Precession at the midpoint introduces < 25″ of RA
 //! error over a full year, well within the ±15‑minute Brent bracket.
+
+#![allow(dead_code)]
 
 use crate::astro::apparent::CorrectionPolicy;
 use crate::coordinates::centers::Geodetic;

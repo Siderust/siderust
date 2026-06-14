@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! # Site-level atmospheric profiles (Rayleigh + Mie)
@@ -70,7 +70,7 @@ pub struct AtmosphereProfile {
 impl AtmosphereProfile {
     /// VLT — Cerro Paranal, Chile (≈ 2635 m).
     ///
-    /// See [`crate::observatories::EL_PARANAL`].
+    /// See [`crate::catalogs::observatories::EL_PARANAL`].
     pub const EL_PARANAL: AtmosphereProfile = AtmosphereProfile {
         surface_pressure: Hectopascals::new(744.0),
         observer_altitude: Kilometers::new(2.635),
@@ -80,7 +80,7 @@ impl AtmosphereProfile {
 
     /// Roque de los Muchachos — La Palma, Spain (≈ 2396 m).
     ///
-    /// See [`crate::observatories::ROQUE_DE_LOS_MUCHACHOS`].
+    /// See [`crate::catalogs::observatories::ROQUE_DE_LOS_MUCHACHOS`].
     pub const ROQUE_DE_LOS_MUCHACHOS: AtmosphereProfile = AtmosphereProfile {
         surface_pressure: Hectopascals::new(770.0),
         observer_altitude: Kilometers::new(2.396),
@@ -90,7 +90,7 @@ impl AtmosphereProfile {
 
     /// Mauna Kea, Hawaiʻi, USA (≈ 4205 m).
     ///
-    /// See [`crate::observatories::MAUNA_KEA`].
+    /// See [`crate::catalogs::observatories::MAUNA_KEA`].
     pub const MAUNA_KEA: AtmosphereProfile = AtmosphereProfile {
         surface_pressure: Hectopascals::new(615.0),
         observer_altitude: Kilometers::new(4.205),
@@ -100,7 +100,7 @@ impl AtmosphereProfile {
 
     /// La Silla, Chile (≈ 2400 m).
     ///
-    /// See [`crate::observatories::LA_SILLA_OBSERVATORY`].
+    /// See [`crate::catalogs::observatories::LA_SILLA_OBSERVATORY`].
     pub const LA_SILLA: AtmosphereProfile = AtmosphereProfile {
         surface_pressure: Hectopascals::new(770.0),
         observer_altitude: Kilometers::new(2.400),

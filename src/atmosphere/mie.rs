@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! # Mie / aerosol optical depth — power-law parameterisation
@@ -68,7 +68,7 @@ impl MieParams {
     /// Cerro Paranal default used by `darknsb` / NSB
     /// (`τ₀ = 0.05`, `α = -1.38`, `λ_ref = 550 nm`).
     ///
-    /// See [`crate::observatories::EL_PARANAL`].
+    /// See [`crate::catalogs::observatories::EL_PARANAL`].
     pub const PARANAL: MieParams = MieParams {
         tau0: OpticalDepths::new(0.05),
         alpha: -1.38,
@@ -82,7 +82,7 @@ impl MieParams {
     /// AOD(500 nm) ≈ 0.022. Lombardi et al. 2008 + García-Gil et al. 2010
     /// median; not a single-night calibration.
     ///
-    /// See [`crate::observatories::ROQUE_DE_LOS_MUCHACHOS`].
+    /// See [`crate::catalogs::observatories::ROQUE_DE_LOS_MUCHACHOS`].
     pub const LA_PALMA: MieParams = MieParams {
         tau0: OpticalDepths::new(0.02),
         alpha: -1.38,
@@ -94,7 +94,7 @@ impl MieParams {
     /// `τ₀ = 0.03` at `λ_ref = 550 nm`, `α = −1.38`, giving
     /// AOD(500 nm) ≈ 0.034. Krisciunas 1990 representative median.
     ///
-    /// See [`crate::observatories::MAUNA_KEA`].
+    /// See [`crate::catalogs::observatories::MAUNA_KEA`].
     pub const MAUNA_KEA: MieParams = MieParams {
         tau0: OpticalDepths::new(0.03),
         alpha: -1.38,
@@ -106,7 +106,7 @@ impl MieParams {
     /// `τ₀ = 0.04` at `λ_ref = 550 nm`, `α = −1.38`, giving
     /// AOD(500 nm) ≈ 0.045. Burki et al. 1995 representative median.
     ///
-    /// See [`crate::observatories::LA_SILLA_OBSERVATORY`].
+    /// See [`crate::catalogs::observatories::LA_SILLA_OBSERVATORY`].
     pub const LA_SILLA: MieParams = MieParams {
         tau0: OpticalDepths::new(0.04),
         alpha: -1.38,

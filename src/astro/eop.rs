@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! # Earth Orientation Parameters (EOP)
@@ -51,7 +51,7 @@ use crate::time::JulianDate;
 /// Bulletin A/B data:
 /// - `dut1` in [`Seconds`] (UT1 − UTC)
 /// - `xp`, `yp` in [`Arcseconds`] (pole coordinates)
-/// - `dx`, `dy` in [`MilliArcseconds`] (celestial pole offsets)
+/// - `dx`, `dy` in [`crate::qtty::MilliArcseconds`] (celestial pole offsets)
 ///
 /// Use `.to::<Radian>()` on any angular field to get radians for computation.
 #[derive(Debug, Clone, Copy)]

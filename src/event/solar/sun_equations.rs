@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! # Solar apparent-position equations
@@ -28,7 +28,7 @@
 //! - [`Sun::get_horizontal`] — altitude/azimuth as seen from a site; accepts
 //!   any type convertible to `JulianDate` (e.g. `ModifiedJulianDate`).
 //! - [`Sun::ecliptic_longitude_geocentric`] — raw geocentric ecliptic
-//!   longitude in the J2000 mean ecliptic frame, returned as [`Radians`].
+//!   longitude in the J2000 mean ecliptic frame, returned as [`crate::qtty::Radians`].
 //!
 //! All methods are generic over the length unit `U` (pass
 //! `AstronomicalUnit`, `Meter`, etc.). The VSOP87 barycentric ephemeris
@@ -177,7 +177,7 @@ impl Sun {
     /// converted to spherical and the longitude component is returned.
     ///
     /// ### Returns
-    /// Longitude in [`Radians`] (`Quantity<Radian>`).  Convert to degrees with
+    /// Longitude in [`crate::qtty::Radians`] (`Quantity<Radian>`).  Convert to degrees with
     /// `.to::<Deg>()` or any other angular unit.
     ///
     /// ### Reference

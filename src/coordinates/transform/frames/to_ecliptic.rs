@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! Frame rotation implementations targeting [`EclipticMeanJ2000`](crate::coordinates::frames::EclipticMeanJ2000).

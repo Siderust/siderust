@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! # Airmass formulas
@@ -19,7 +19,7 @@
 //!
 //! ## Technical scope
 //!
-//! - Inputs are typed [`Radians`] zenith distances; the kernel integer is
+//! - Inputs are typed [`crate::qtty::Radians`] zenith distances; the kernel integer is
 //!   never expressed in raw `f64` at the public API.
 //! - Outputs are typed [`Airmasses`] (a `qtty` dimensionless newtype) so
 //!   downstream consumers cannot confuse an airmass with an optical depth
@@ -144,7 +144,7 @@ impl<F: AirmassFormula> Formula<F> {
 ///
 /// Returns the typed [`Airmasses`] multiplier by which the atmospheric
 /// path is longer than the vertical path at the zenith. The zenith
-/// distance is taken as a typed [`Radians`] quantity to prevent accidental
+/// distance is taken as a typed [`crate::qtty::Radians`] quantity to prevent accidental
 /// degree/radian mismatches at the call site.
 ///
 /// # Examples

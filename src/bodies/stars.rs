@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! # Stars
@@ -23,7 +23,7 @@
 //! - [`Star`] — typed catalog star with name, distance ([`LightYears`]),
 //!   mass ([`SolarMasses`]), radius ([`SolarRadiuses`]),
 //!   luminosity ([`SolarLuminosities`]), ICRS coordinate with optional
-//!   proper motion, parallax ([`MilliArcseconds`]), and radial velocity.
+//!   proper motion, parallax ([`crate::qtty::MilliArcseconds`]), and radial velocity.
 //! - [`Star::position_at`] — propagates position to an arbitrary epoch
 //!   ([`JulianDate`]) using proper motion and, when available, the full
 //!   Hipparcos-style 6D space-motion model.

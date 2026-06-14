@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! Lunar phase FFI, phase geometry, event finding, illumination periods.
@@ -46,11 +46,7 @@ fn phase_kind_from_rust(k: PhaseKind) -> SiderustPhaseKind {
 fn search_opts_to_phase(opts: SiderustSearchOpts) -> PhaseSearchOpts {
     PhaseSearchOpts {
         time_tolerance: Days::new(opts.time_tolerance_days),
-        scan_step: if opts.has_scan_step && opts.scan_step_days > 0.0 {
-            Days::new(opts.scan_step_days)
-        } else {
-            PhaseSearchOpts::default().scan_step
-        },
+        scan_step: PhaseSearchOpts::default().scan_step,
     }
 }
 
@@ -88,7 +84,7 @@ pub extern "C" fn siderust_moon_phase_geocentric(
             return SiderustStatus::NullPointer;
         }
         let geom = moon_phase_geocentric::<Vsop87Ephemeris>(ffi_try!(crate::ffi_utils::jd_from_f64(jd)));
-        // TODO: justify soundness — add doc comment before publishing
+        // SAFETY: raw-pointer use follows this function's C ABI preconditions.
         unsafe { *out = phase_geometry_from_rust(geom) };
         SiderustStatus::Ok
 
@@ -107,7 +103,7 @@ pub extern "C" fn siderust_moon_phase_topocentric(
             return SiderustStatus::NullPointer;
         }
         let geom = moon_phase_topocentric::<Vsop87Ephemeris>(ffi_try!(crate::ffi_utils::jd_from_f64(jd)), observer.to_rust());
-        // TODO: justify soundness — add doc comment before publishing
+        // SAFETY: raw-pointer use follows this function's C ABI preconditions.
         unsafe { *out = phase_geometry_from_rust(geom) };
         SiderustStatus::Ok
 
@@ -136,7 +132,7 @@ pub extern "C" fn siderust_moon_phase_label(
             MoonPhaseLabel::LastQuarter => SiderustMoonPhaseLabel::LastQuarter,
             MoonPhaseLabel::WaningCrescent => SiderustMoonPhaseLabel::WaningCrescent,
         };
-        // TODO: justify soundness — add doc comment before publishing
+        // SAFETY: raw-pointer use follows this function's C ABI preconditions.
         unsafe { *out = ffi_label };
         SiderustStatus::Ok
 
@@ -525,20 +521,23 @@ mod tests {
 
     // ── Custom scan step ──────────────────────────────────────────────────
 
-    fn opts_with_scan_step(step_days: f64) -> SiderustSearchOpts {
+    fn opts_with_tolerance(tolerance_days: f64) -> SiderustSearchOpts {
         SiderustSearchOpts {
-            time_tolerance_days: 1e-4,
-            scan_step_days: step_days,
-            has_scan_step: true,
+            time_tolerance_days: tolerance_days,
         }
     }
 
     #[test]
-    fn find_phase_events_with_custom_scan_step() {
+    fn find_phase_events_with_custom_tolerance() {
         let mut out: *mut SiderustPhaseEvent = ptr::null_mut();
         let mut count = 0usize;
         assert_eq!(
-            siderust_find_phase_events(one_month(), opts_with_scan_step(0.5), &mut out, &mut count),
+            siderust_find_phase_events(
+                one_month(),
+                opts_with_tolerance(1e-4),
+                &mut out,
+                &mut count
+            ),
             SiderustStatus::Ok
         );
         assert!(count >= 1);
@@ -553,7 +552,7 @@ mod tests {
             siderust_moon_illumination_above(
                 one_month(),
                 0.5,
-                opts_with_scan_step(0.25),
+                opts_with_tolerance(1e-4),
                 &mut out,
                 &mut count
             ),
@@ -570,7 +569,7 @@ mod tests {
             siderust_moon_illumination_below(
                 one_month(),
                 0.5,
-                opts_with_scan_step(0.25),
+                opts_with_tolerance(1e-4),
                 &mut out,
                 &mut count
             ),
@@ -588,7 +587,7 @@ mod tests {
                 one_month(),
                 0.25,
                 0.75,
-                opts_with_scan_step(0.25),
+                opts_with_tolerance(1e-4),
                 &mut out,
                 &mut count
             ),

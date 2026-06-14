@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! # Moon Phase Module
@@ -572,7 +572,7 @@ fn elongation_at_mjd<E: Ephemeris>(mjd: ModifiedJulianDate) -> f64 {
 #[derive(Debug, Clone, Copy)]
 pub struct PhaseSearchOpts {
     /// Time tolerance for Brent root refinement (days).
-    /// Default: ~1 µs (1 × 10⁻⁹ days ≈ 0.086 ms).
+    /// Default: ~86 µs (1 × 10⁻⁹ days ≈ 0.086 ms).
     pub time_tolerance: Days,
     /// Scan step for coarse bracketing (days).
     /// Default: 0.5 days.

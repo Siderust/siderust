@@ -1,276 +1,184 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Benchmarks for lunar altitude calculations.
+//! Lunar altitude benchmarks.
 //!
-//! Tests the performance of calculating Moon altitude and finding periods when
-//! the Moon is above/below the horizon using the ELP2000 lunar theory.
+//! Organized into two halves:
 //!
-//! ## Algorithms Compared
+//! - **`public_api/moon/{30d,184d,365d}`**: what callers invoke via the stable
+//!   Option A API. The default engine (`MoonAltitudeContext` + Chebyshev-first
+//!   crossing discovery + local scan+Brent fallback per unsafe segment) runs here.
 //!
-//! - **2-hour scan** (recommended): `find_moon_above_horizon`, fast, ~12 evals/day
-//! - **10-minute scan** (validation): `find_moon_above_horizon_scan`, finer step
+//! - **`engines/moon/{30d,184d,365d}`**: apples-to-apples internal engine
+//!   comparison using `bench_internals` baselines:
+//!   - `chebyshev_context` — default engine (same as `public_api`, labelled for
+//!     direct comparison)
+//!   - `scan_brent_baseline` — uniform scan + Brent refinement over the full
+//!     window (not exposed publicly)
 //!
-//! Both delegate to `math_core::intervals` for scan + Brent refinement.
+//! Note: topocentric parallax (~1° at the horizon) means each precise lunar
+//! altitude evaluation is heavier than the solar equivalent.
 //!
-//! ## Performance Targets
+//! Requires the `bench-internals` feature:
 //!
-//! - Single altitude computation: <1ms
-//! - 365-day search: <1s
+//! ```bash
+//! cargo bench --features bench-internals --bench moon_altitude
+//! cargo bench --no-run --features bench-internals
+//! ```
 
 use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
 use criterion::{criterion_group, criterion_main, Criterion};
+use siderust::bench_internals;
 use siderust::bodies::Moon;
 use siderust::catalogs::observatories::ROQUE_DE_LOS_MUCHACHOS;
-use siderust::event::altitude::{AltitudePeriodsProvider, AltitudeQuery};
-use siderust::qtty::*;
+use siderust::event::altitude::{above_threshold, altitude_ranges, below_threshold, SearchOpts};
+use siderust::qtty::Degrees;
 use siderust::time::{Interval, ModifiedJulianDate};
 use std::hint::black_box;
 use std::time::Duration;
 
 fn build_period(days: u32) -> Interval<ModifiedJulianDate> {
-    let start_naive = NaiveDate::from_ymd_opt(2026, 1, 1)
+    let start = NaiveDate::from_ymd_opt(2026, 1, 1)
         .unwrap()
         .and_time(NaiveTime::from_hms_opt(0, 0, 0).unwrap());
-    let end_naive = NaiveDate::from_ymd_opt(2026, 1, 1)
-        .unwrap()
-        .and_time(NaiveTime::from_hms_opt(0, 0, 0).unwrap())
-        + chrono::Duration::days(days as i64);
-
-    let start_dt = Utc.from_utc_datetime(&start_naive);
-    let end_dt = Utc.from_utc_datetime(&end_naive);
-
-    let mjd_start: ModifiedJulianDate = ModifiedJulianDate::from(start_dt);
-    let mjd_end: ModifiedJulianDate = ModifiedJulianDate::from(end_dt);
-
-    Interval::new(mjd_start, mjd_end)
+    let end = start + chrono::Duration::days(days as i64);
+    Interval::new(
+        ModifiedJulianDate::from(Utc.from_utc_datetime(&start)),
+        ModifiedJulianDate::from(Utc.from_utc_datetime(&end)),
+    )
 }
 
-// =============================================================================
-// Single Altitude Computation Benchmark
-// =============================================================================
+// ---------------------------------------------------------------------------
+// A. Public API benchmarks — stable Option A calls, default engine
+// ---------------------------------------------------------------------------
 
-fn bench_moon_altitude_computation(c: &mut Criterion) {
+fn bench_public_api_moon(c: &mut Criterion) {
     let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
-    let mjd = ModifiedJulianDate::new(51544.5); // J2000
+    let opts = SearchOpts::default();
 
-    let mut group = c.benchmark_group("moon_altitude_single");
+    for (label, days) in [("30d", 30u32), ("184d", 184), ("365d", 365)] {
+        let period = build_period(days);
 
-    // Benchmark single altitude computation via trait
-    group.bench_function("compute_altitude", |b| {
-        b.iter(|| {
-            let _altitude = Moon.altitude_at(black_box(&site), black_box(mjd));
-        });
-    });
+        let mut g = c.benchmark_group(format!("public_api/moon/{label}"));
 
-    group.finish();
-}
-
-// =============================================================================
-// Moon Above Horizon Benchmarks (2-hour scan, recommended)
-// =============================================================================
-
-fn bench_moon_above_horizon(c: &mut Criterion) {
-    let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
-
-    let mut group = c.benchmark_group("moon_above_horizon");
-
-    // 1-day horizon
-    group.bench_function("find_moon_above_horizon_1day", |b| {
-        let period = black_box(build_period(1));
-        b.iter(|| {
-            let _result = Moon.above_threshold(
-                black_box(site),
-                black_box(period),
-                black_box(Degrees::new(0.0)),
-            );
-        });
-    });
-
-    // 7-day horizon
-    group.bench_function("find_moon_above_horizon_7day", |b| {
-        let period = black_box(build_period(7));
-        b.iter(|| {
-            let _result = Moon.above_threshold(
-                black_box(site),
-                black_box(period),
-                black_box(Degrees::new(0.0)),
-            );
-        });
-    });
-
-    // 30-day horizon (full lunar cycle)
-    group.bench_function("find_moon_above_horizon_30day", |b| {
-        let period = black_box(build_period(30));
-        b.iter(|| {
-            let _result = Moon.above_threshold(
-                black_box(site),
-                black_box(period),
-                black_box(Degrees::new(0.0)),
-            );
-        });
-    });
-
-    // 365-day horizon (full year) - PRIMARY PERFORMANCE TARGET
-    group.bench_function("find_moon_above_horizon_365day", |b| {
-        let period = black_box(build_period(365));
-        b.iter(|| {
-            let _result = Moon.above_threshold(
-                black_box(site),
-                black_box(period),
-                black_box(Degrees::new(0.0)),
-            );
-        });
-    });
-
-    group.finish();
-}
-
-// =============================================================================
-// Moon Below Horizon Benchmarks (2-hour scan, recommended)
-// =============================================================================
-
-fn bench_moon_below_horizon(c: &mut Criterion) {
-    let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
-
-    let mut group = c.benchmark_group("moon_below_horizon");
-
-    // 1-day horizon
-    group.bench_function("find_moon_below_horizon_1day", |b| {
-        let period = black_box(build_period(1));
-        b.iter(|| {
-            let _result = Moon.below_threshold(
-                black_box(site),
-                black_box(period),
-                black_box(Degrees::new(-0.5)),
-            );
-        });
-    });
-
-    // 7-day horizon
-    group.bench_function("find_moon_below_horizon_7day", |b| {
-        let period = black_box(build_period(7));
-        b.iter(|| {
-            let _result = Moon.below_threshold(
-                black_box(site),
-                black_box(period),
-                black_box(Degrees::new(-0.5)),
-            );
-        });
-    });
-
-    // 30-day horizon
-    group.bench_function("find_moon_below_horizon_30day", |b| {
-        let period = black_box(build_period(30));
-        b.iter(|| {
-            let _result = Moon.below_threshold(
-                black_box(site),
-                black_box(period),
-                black_box(Degrees::new(-0.5)),
-            );
-        });
-    });
-
-    // 365-day horizon (full year) - PRIMARY PERFORMANCE TARGET
-    group.bench_function("find_moon_below_horizon_365day", |b| {
-        let period = black_box(build_period(365));
-        b.iter(|| {
-            let _result = Moon.below_threshold(
-                black_box(site),
-                black_box(period),
-                black_box(Degrees::new(-0.5)),
-            );
-        });
-    });
-
-    group.finish();
-}
-
-// =============================================================================
-// Altitude Range Benchmarks
-// =============================================================================
-
-fn bench_moon_altitude_range(c: &mut Criterion) {
-    let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
-
-    let mut group = c.benchmark_group("moon_altitude_range");
-
-    // Finding Moon at low altitude (0-30 degrees) over 7 days
-    group.bench_function("find_moon_low_altitude_7day", |b| {
-        let period = black_box(build_period(7));
-        b.iter(|| {
-            let _result = Moon.altitude_periods(&AltitudeQuery {
-                observer: black_box(site),
-                window: black_box(period),
-                min_altitude: black_box(Degrees::new(0.0)),
-                max_altitude: black_box(Degrees::new(30.0)),
-                correction_policy: siderust::astro::apparent::CorrectionPolicy::APPARENT,
+        g.bench_function("above_threshold/horizon", |b| {
+            b.iter(|| {
+                black_box(above_threshold(
+                    &Moon,
+                    &site,
+                    black_box(period),
+                    black_box(Degrees::new(0.0)),
+                    opts,
+                ))
             });
         });
-    });
 
-    // Finding Moon at high altitude (60-90 degrees) over 7 days
-    group.bench_function("find_moon_high_altitude_7day", |b| {
-        let period = black_box(build_period(7));
-        b.iter(|| {
-            let _result = Moon.altitude_periods(&AltitudeQuery {
-                observer: black_box(site),
-                window: black_box(period),
-                min_altitude: black_box(Degrees::new(60.0)),
-                max_altitude: black_box(Degrees::new(90.0)),
-                correction_policy: siderust::astro::apparent::CorrectionPolicy::APPARENT,
+        g.bench_function("below_threshold/horizon", |b| {
+            b.iter(|| {
+                black_box(below_threshold(
+                    &Moon,
+                    &site,
+                    black_box(period),
+                    black_box(Degrees::new(0.0)),
+                    opts,
+                ))
             });
         });
-    });
 
-    group.finish();
+        g.bench_function("altitude_ranges/observation_window", |b| {
+            b.iter(|| {
+                black_box(altitude_ranges(
+                    &Moon,
+                    &site,
+                    black_box(period),
+                    black_box(Degrees::new(0.0)),
+                    black_box(Degrees::new(30.0)),
+                    opts,
+                ))
+            });
+        });
+
+        g.finish();
+    }
 }
 
-// =============================================================================
-// Algorithm Comparison: Cached (default) vs above/below for 365-day horizons
-// =============================================================================
+// ---------------------------------------------------------------------------
+// B. Engine comparison — internal baselines via bench_internals
+// ---------------------------------------------------------------------------
 
-fn bench_algorithm_comparison(c: &mut Criterion) {
+fn bench_engines_moon(c: &mut Criterion) {
     let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
+    let opts = SearchOpts::default();
 
-    let mut group = c.benchmark_group("moon_algorithm_comparison");
-    group.measurement_time(Duration::from_secs(15));
+    for (label, days) in [("30d", 30u32), ("184d", 184), ("365d", 365)] {
+        let period = build_period(days);
 
-    // 365-day above vs below comparison
-    group.bench_function("moon_above_horizon_365day", |b| {
-        let period = black_box(build_period(365));
-        b.iter(|| {
-            let _result = Moon.above_threshold(
-                black_box(site),
-                black_box(period),
-                black_box(Degrees::new(0.0)),
-            );
+        // --- above_threshold: Chebyshev context vs scan+Brent ------------------
+        let mut g = c.benchmark_group(format!("engines/moon/{label}/above_threshold"));
+
+        // Default engine (matches public_api group above)
+        g.bench_function("chebyshev_context", |b| {
+            b.iter(|| {
+                black_box(above_threshold(
+                    &Moon,
+                    &site,
+                    black_box(period),
+                    black_box(Degrees::new(0.0)),
+                    opts,
+                ))
+            });
         });
-    });
 
-    group.bench_function("moon_below_horizon_365day", |b| {
-        let period = black_box(build_period(365));
-        b.iter(|| {
-            let _result = Moon.below_threshold(
-                black_box(site),
-                black_box(period),
-                black_box(Degrees::new(0.0)),
-            );
+        g.bench_function("scan_brent_baseline", |b| {
+            b.iter(|| {
+                black_box(bench_internals::lunar_above_threshold_scan_baseline(
+                    site,
+                    black_box(period),
+                    Degrees::new(0.0),
+                    opts,
+                ))
+            });
         });
-    });
 
-    group.finish();
+        g.finish();
+
+        // --- altitude_ranges: Chebyshev context vs scan+Brent ------------------
+        let mut g = c.benchmark_group(format!("engines/moon/{label}/altitude_ranges"));
+
+        g.bench_function("chebyshev_context", |b| {
+            b.iter(|| {
+                black_box(altitude_ranges(
+                    &Moon,
+                    &site,
+                    black_box(period),
+                    black_box(Degrees::new(0.0)),
+                    black_box(Degrees::new(30.0)),
+                    opts,
+                ))
+            });
+        });
+
+        g.bench_function("scan_brent_baseline", |b| {
+            b.iter(|| {
+                black_box(bench_internals::lunar_altitude_ranges_scan_baseline(
+                    site,
+                    black_box(period),
+                    Degrees::new(0.0),
+                    Degrees::new(30.0),
+                    opts,
+                ))
+            });
+        });
+
+        g.finish();
+    }
 }
 
 criterion_group! {
     name = moon_benches;
     config = Criterion::default()
-        .measurement_time(Duration::from_secs(10))
+        .measurement_time(Duration::from_secs(5))
         .sample_size(20);
-    targets = bench_moon_altitude_computation,
-              bench_moon_above_horizon,
-              bench_moon_below_horizon,
-              bench_moon_altitude_range,
-              bench_algorithm_comparison
+    targets = bench_public_api_moon, bench_engines_moon
 }
 criterion_main!(moon_benches);

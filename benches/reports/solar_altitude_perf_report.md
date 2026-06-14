@@ -1,122 +1,90 @@
-# Solar Altitude Bench, Performance Investigation (`find_night_periods_365day`)
+# Solar Altitude Bench — Architecture and Performance Notes
 
-> Note: This report lives under `benches/reports/` because it documents
-> benchmark-driven performance work.
+> Documents benchmark-driven performance work for `benches/solar_altitude.rs`.
 
-This report explains where time goes in the solar-night benchmarks in
-`benches/solar_altitude.rs`, and which levers matter most when you want the
-365‑day horizon to be fast without sacrificing physically meaningful altitude
-results.
+## Benchmark groups
 
-## What is being measured
+```
+public_api/solar/{30d,184d,365d}
+  below_threshold/astro_night          — below_threshold(&Sun, …, −18°)
+  above_threshold/horizon              — above_threshold(&Sun, …, 0°)
+  altitude_ranges/astro_to_nautical    — altitude_ranges(&Sun, …, −18°, −12°)  [batch daily path]
+  crossings/horizon                    — crossings(&Sun, …, 0°)
 
-The benchmark group `solar_altitude_periods` measures the end-to-end cost of
-finding periods where the Sun is **below** a twilight threshold (astronomical
-night uses −18°), for horizons of 1/7/30/365 days.
-
-At the API level, the benchmark calls:
-
-```rust
-Sun.below_threshold(site, period, twilight::ASTRONOMICAL)
+engines/solar/{30d,184d,365d}
+  below_threshold/daily_predictor      — default engine (same as public_api)
+  below_threshold/chebyshev_baseline   — Chebyshev-first, daily predictor disabled
+  below_threshold/scan_brent_baseline  — uniform scan + Brent (internal baseline)
+  altitude_ranges/daily_batch          — batch daily path (same as public_api)
+  altitude_ranges/chebyshev_baseline   — Chebyshev-first, no daily predictor
+  altitude_ranges/scan_brent_baseline  — uniform scan + Brent (internal baseline)
 ```
 
-That call includes both:
-
-1) scanning/bracketing potential crossings over the full time window, and  
-2) root refinement + interval assembly to produce precise boundaries.
-
-## Current call path (today)
-
-At a high level, the Sun-night pipeline is:
-
-1. `Sun.below_threshold(...)` (the altitude API)  
-2. Sun-specific altitude closure in `src/calculus/solar/altitude_periods.rs`  
-3. Generic scan→refine→assemble logic in `src/calculus/math_core/intervals.rs`  
-4. Per-sample Sun altitude computed by `Sun::get_horizontal(...)` in
-   `src/calculus/solar/sun_equations.rs`
-
-The *important* detail is how `Sun::get_horizontal` obtains a geocentric/topocentric
-Sun direction. It starts from a heliocentric “Sun at origin” position and shifts
-it to the geocentric frame via a center transform:
-
-- `cartesian::position::EclipticMeanJ2000::<U, Heliocentric>::CENTER`
-- `.transform(jd)` into a geocentric equatorial J2000 position
-
-That center transform requires Earth’s heliocentric position, which is provided
-by the analytical VSOP87 backend (Earth VSOP87A). So even “Sun altitude” is
-largely an **Earth ephemeris** workload.
-
-## The cost model: evaluation count × per-evaluation cost
-
-For this benchmark, the time spent is dominated by a single question:
-
-How many times do we evaluate “Sun altitude at time `t`” and how expensive is
-one evaluation?
-
-### Evaluation count
-
-The current Sun altitude period finder uses a fixed **2-hour scan step**
-(`SCAN_STEP` in `src/calculus/solar/altitude_periods.rs`). That produces about
-12 altitude evaluations per day for the coarse scan, plus a small number of
-refinement calls near each sunrise/sunset and near each twilight crossing.
-
-This matters more than micro-optimizations: if you double the evaluation count,
-you will usually double the runtime.
-
-### Per-evaluation cost
-
-A single altitude evaluation (`Sun::get_horizontal`) includes:
-
-- Earth VSOP87A evaluation (thousands of trigonometric terms)
-- a chain of rotations/transforms (precession/nutation, equatorial→horizontal)
-- conversion to spherical altitude
-
-So the performance floor is set by “how expensive is Earth VSOP87A + transforms”.
-
-## What tends to show up in profilers
-
-On typical x86_64 CPUs, profiles of the 365‑day benchmark are usually
-compute-bound and dominated by:
-
-- trigonometric range reduction and polynomial approximations (SIMD and scalar)
-- series accumulation (mul-add heavy loops)
-- nutation/precession argument generation and trig
-
-If you see `wide` SIMD trig frames dominating, that generally means “we are
-paying for a lot of VSOP87 terms”. If you see `mul_add` lowering through helper
-symbols, that usually means the build is not taking advantage of `+fma` on the
-local CPU.
-
-## What to optimize first (in practice)
-
-If this benchmark regresses or becomes a bottleneck, the most reliable ordering
-is:
-
-1. **Reduce evaluation count** (scan step, reuse precomputed values, avoid extra probes).  
-2. **Reduce per-evaluation work** (cache slow-changing transforms, cheaper solar model for bracketing).  
-3. **Only then** consider micro-optimizations inside VSOP87 loops.
-
-The generic interval engine already does one high-leverage thing: it reuses
-scan endpoint values when refining roots (via `brent_with_values`), so a bracket
-does not pay for redundant endpoint evaluations.
-
-## How to reproduce and profile
-
-Run the benchmark:
+All groups require `bench-internals`. Run with:
 
 ```bash
-cargo bench --bench solar_altitude
+cargo bench --features bench-internals --bench solar_altitude
+cargo bench --no-run --features bench-internals
 ```
 
-Profile it (Linux, `perf`) using the workflow in `benches/reports/profiling.md`.
+Plain `cargo bench --no-run` skips these benches because they require `bench-internals`.
 
-If you are doing local, machine-specific performance work, compiling with native
-CPU features is often meaningful:
+## Engine architecture
 
-```bash
-RUSTFLAGS="-C target-cpu=native" cargo bench --bench solar_altitude
-```
+### Default: solar daily predictor
 
-That build is not portable, but it is a good way to determine whether your
-bottleneck is “math kernel throughput” vs “evaluation count / algorithm”.
+1. Iterate full MJD days overlapping the requested window.
+2. Build an **analytic daily state** (approximate RA/Dec/transit) from a compact solar model.
+3. Predict morning/evening crossing candidates from hour-angle geometry.
+4. **Fast-model bracket** (Meeus-style `sin(altitude)` — ~8 arcmin accuracy, ~10× cheaper than
+   the precise model) to narrow the root location.
+5. **Newton/secant polish** (up to 6 iterations) using precise `sun_altitude_rad` residuals,
+   starting from the fast root. Accepts when `|residual| ≤ 1e-9` (time accuracy ~16–30 µs,
+   well within the declared 86 µs `time_tolerance`).
+6. Fallback to full-model Brent if Newton/secant does not converge (polar/grazing cases).
 
+For `altitude_ranges`, a **batch daily path** computes both threshold crossings (h_min and h_max)
+in a single day loop, sharing the daily state computation.
+
+Performance scales with **precise `sun_altitude_rad` evaluation count**, not window size.
+
+### Chebyshev-first baseline (internal)
+
+Generic Chebyshev polynomial fit on `sin(altitude) − sin(threshold)` per segment,
+with per-segment scan+Brent fallback. Daily predictor disabled.
+
+### Scan+Brent baseline (internal)
+
+Uniform scan at 2-hour steps across the full window, Brent refinement at each sign change.
+Not exposed in the public API.
+
+## Expected diagnostics (normal mid-latitude cases)
+
+For ordinary sites and twilight thresholds (measured: Roque de los Muchachos, 30 days, −18°):
+
+| Metric | Value |
+|--------|-------|
+| `crossings` | 60 |
+| `precise_evaluations` | ~261 |
+| `newton_accepted` | ~51 / 60 |
+| `evals/crossing` | ~4.3 |
+| `bracket_failures` | 0 |
+| `scan_fallback_days` | 0 |
+
+Polar and grazing cases will show non-zero `chebyshev_fallback_days` and still match
+scan baselines in tests.
+
+## Measured performance (Roque de los Muchachos, 2026, release build)
+
+Measured on Linux 6.17, AMD Ryzen, `cargo bench --features bench-internals`.
+
+| Benchmark | Time | Notes |
+|-----------|------|-------|
+| `public_api/solar/365d/below_threshold/astro_night` | **471 ms** | −45% vs pre-optimization 0.85 s |
+| `public_api/solar/365d/above_threshold/horizon` | **467 ms** | |
+| `public_api/solar/365d/altitude_ranges/astro_to_nautical` | **955 ms** | −40% vs pre-optimization 1.58 s |
+| `public_api/solar/365d/crossings/horizon` | **552 ms** | |
+
+The speedup comes from reducing precise `sun_altitude_rad` evaluations per root from ~9 (old
+Brent-only path) to ~4.3 (Newton/secant polish accepts 85% of mid-latitude crossings in 3
+iterations). No public API changes; no reduction in crossing accuracy.

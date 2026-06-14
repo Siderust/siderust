@@ -59,7 +59,7 @@ Siderust provides ephemerides, coordinate transforms, time-scale handling, and o
 | **Physical Units**      | Strongly typed `Mass`, `Length`, `Angle`, `Velocity`, `Duration` & more via the [`qtty`](https://crates.io/crates/qtty) crate, dimensional correctness at compile time.       |
 | **Celestial Mechanics** | VSOP87 & ELP2000 theories, Pluto (Meeus/Williams), light‑time & aberration, nutation & precession, apparent Sun & Moon, culmination searches, SGP4/TLE propagation.         |
 | **Ephemeris Backends**  | Pluggable `Ephemeris` / `DynEphemeris` traits: `Vsop87Ephemeris` (always available) and [`RuntimeEphemeris`](https://docs.rs/siderust/latest/siderust/ephemeris/struct.RuntimeEphemeris.html) for JPL DE4xx BSP files at runtime. |
-| **Altitude API**        | Unified `AltitudePeriodsProvider` trait for Sun, Moon, stars, and arbitrary ICRS directions, find crossings, culminations, altitude ranges, and above/below‑threshold periods.|
+| **Altitude API**        | Unified `AltitudeProvider` trait for Sun, Moon, stars, and arbitrary ICRS directions; find crossings, culminations, [`altitude_ranges`], [`above_threshold`], and [`below_threshold`] periods.|
 | **Catalogs & Bodies**   | Built‑in Sun→Neptune, asteroids (Ceres, Bennu, Apophis), comets (Halley, Encke, Hale-Bopp), a starter star catalog, + helpers for custom datasets.                           |
 | **Observatories**       | Predefined sites (Roque de los Muchachos, El Paranal, Mauna Kea, La Silla) with `ObserverSite` for topocentric transforms.                                                  |
 
@@ -307,7 +307,7 @@ cargo run --example 11_serde_serialization --features serde
 ├─ astro/         # Aberration, nutation, precession, sidereal time
 ├─ bodies/        # Planet, Star, Satellite, Asteroid, Comet + built-in catalogs
 ├─ calculus/
-│   ├─ altitude/     # Unified altitude API (AltitudePeriodsProvider trait)
+│   ├─ altitude/     # Unified altitude API (`AltitudeProvider` trait)
 │   ├─ ephemeris/    # Ephemeris trait + VSOP87 + runtime JPL backends
 │   ├─ jpl/          # Shared JPL DE4xx infrastructure (Chebyshev evaluation)
 │   ├─ math_core/    # Root-finding (Brent/bisection), extrema, interval assembly
@@ -334,7 +334,7 @@ cargo run --example 11_serde_serialization --features serde
 
 * [x] Custom dynamic reference centers (topocentric, bodycentric)
 * [x] DE440/DE441 JPL ephemerides
-* [x] Unified altitude API (`AltitudePeriodsProvider` trait)
+* [x] Unified altitude API (`AltitudeProvider` trait)
 * [x] Serde serialization support
 * [ ] Gaia DR3 star ingestion & cone search
 * [ ] Relativistic light‑time & gravitational deflection

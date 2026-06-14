@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! # CIO Locator and CIP Coordinates, IAU 2006/2000A
@@ -87,7 +87,7 @@ pub fn cip_xy(jd: JulianDate, dpsi: Radians, deps: Radians) -> (CipCoordinates, 
 /// `jd`: Julian Date (TT).
 /// `x`, `y`: CIP coordinates.
 ///
-/// Returns s as [`Radians`].
+/// Returns s as [`crate::qtty::Radians`].
 ///
 /// ## References
 /// * IERS Conventions (2010), §5.5.4

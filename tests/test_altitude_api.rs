@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! Integration tests for the unified altitude API (`event::altitude`).
@@ -8,8 +8,8 @@ use siderust::coordinates::centers::Geodetic;
 use siderust::coordinates::frames::ECEF;
 use siderust::coordinates::spherical::direction;
 use siderust::event::altitude::{
-    above_threshold, altitude_ranges, below_threshold, crossings, culminations,
-    AltitudePeriodsProvider, CrossingDirection, CulminationKind, SearchOpts,
+    above_threshold, altitude_ranges, below_threshold, crossings, culminations, AltitudeProvider,
+    CrossingDirection, CulminationKind, SearchOpts,
 };
 use siderust::time::{Interval, ModifiedJulianDate};
 

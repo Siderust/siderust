@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! Shared altitude helpers for the unified subject FFI.
@@ -74,7 +74,7 @@ pub(crate) fn icrs_from_c(
 ///   this call.
 #[no_mangle]
 pub unsafe extern "C" fn siderust_periods_free(ptr: *mut TempochPeriodMjd, count: usize) {
-    // TODO: justify soundness — add doc comment before publishing
+    // SAFETY: raw-pointer use follows this function's C ABI preconditions.
     unsafe { free_boxed_slice(ptr, count) };
 }
 
@@ -89,7 +89,7 @@ pub unsafe extern "C" fn siderust_periods_free(ptr: *mut TempochPeriodMjd, count
 ///   this call.
 #[no_mangle]
 pub unsafe extern "C" fn siderust_crossings_free(ptr: *mut SiderustCrossingEvent, count: usize) {
-    // TODO: justify soundness — add doc comment before publishing
+    // SAFETY: raw-pointer use follows this function's C ABI preconditions.
     unsafe { free_boxed_slice(ptr, count) };
 }
 
@@ -107,7 +107,7 @@ pub unsafe extern "C" fn siderust_culminations_free(
     ptr: *mut SiderustCulminationEvent,
     count: usize,
 ) {
-    // TODO: justify soundness — add doc comment before publishing
+    // SAFETY: raw-pointer use follows this function's C ABI preconditions.
     unsafe { free_boxed_slice(ptr, count) };
 }
 

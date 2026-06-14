@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! # Altitude Type Definitions
@@ -17,15 +17,12 @@
 //! Pure data types (no functions). Defines:
 //! - [`CrossingDirection`] / [`CrossingEvent`], threshold transit results.
 //! - [`CulminationKind`] / [`CulminationEvent`], altitude extrema.
-//! - [`AltitudeQuery`], grouped query parameters consumed by the
-//!   event‑finding APIs.
 //!
 //! ## References
 //! None.
 
-use crate::astro::apparent::CorrectionPolicy;
 use crate::qtty::*;
-use crate::time::{Interval, ModifiedJulianDate};
+use crate::time::ModifiedJulianDate;
 
 // ---------------------------------------------------------------------------
 // Crossing Types
@@ -104,26 +101,8 @@ impl std::fmt::Display for CulminationEvent {
 }
 
 // ---------------------------------------------------------------------------
-// Query & Period Types (from bodies/altitude.rs)
+// Tests
 // ---------------------------------------------------------------------------
-
-/// Describes *what* to search for: the observer, the time window, and the
-/// altitude band of interest.
-///
-/// All fields use strongly‑typed `qtty` quantities.
-#[derive(Debug, Clone, Copy)]
-pub struct AltitudeQuery {
-    /// Observer location on Earth.
-    pub observer: crate::coordinates::centers::Geodetic<crate::coordinates::frames::ECEF>,
-    /// Time window to search (MJD on the TT axis).
-    pub window: Interval<ModifiedJulianDate>,
-    /// Lower bound of the altitude band (inclusive).
-    pub min_altitude: Degrees,
-    /// Upper bound of the altitude band (inclusive).
-    pub max_altitude: Degrees,
-    /// Apparent-position correction policy for the target pipeline.
-    pub correction_policy: CorrectionPolicy,
-}
 
 #[cfg(test)]
 mod tests {

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! FFI bindings for observatory constants.
@@ -16,7 +16,7 @@ pub extern "C" fn siderust_observatory_roque_de_los_muchachos(
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
-        // TODO: justify soundness — add doc comment before publishing
+        // SAFETY: raw-pointer use follows this function's C ABI preconditions.
         unsafe {
             *out = SiderustGeodetict::from_rust(&observatories::ROQUE_DE_LOS_MUCHACHOS.geodetic);
         }
@@ -32,7 +32,7 @@ pub extern "C" fn siderust_observatory_el_paranal(out: *mut SiderustGeodetict) -
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
-        // TODO: justify soundness — add doc comment before publishing
+        // SAFETY: raw-pointer use follows this function's C ABI preconditions.
         unsafe {
             *out = SiderustGeodetict::from_rust(&observatories::EL_PARANAL.geodetic);
         }
@@ -48,7 +48,7 @@ pub extern "C" fn siderust_observatory_mauna_kea(out: *mut SiderustGeodetict) ->
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
-        // TODO: justify soundness — add doc comment before publishing
+        // SAFETY: raw-pointer use follows this function's C ABI preconditions.
         unsafe {
             *out = SiderustGeodetict::from_rust(&observatories::MAUNA_KEA.geodetic);
         }
@@ -64,7 +64,7 @@ pub extern "C" fn siderust_observatory_la_silla(out: *mut SiderustGeodetict) -> 
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
-        // TODO: justify soundness — add doc comment before publishing
+        // SAFETY: raw-pointer use follows this function's C ABI preconditions.
         unsafe {
             *out = SiderustGeodetict::from_rust(&observatories::LA_SILLA_OBSERVATORY.geodetic);
         }
@@ -85,7 +85,7 @@ pub extern "C" fn siderust_geodetic_new(
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
-        // TODO: justify soundness — add doc comment before publishing
+        // SAFETY: raw-pointer use follows this function's C ABI preconditions.
         unsafe {
             *out = SiderustGeodetict {
                 lon_deg,

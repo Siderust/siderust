@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! # Scattering phase functions
@@ -23,7 +23,7 @@
 //! ## Technical scope
 //!
 //! All phase-function evaluators take typed [`Nanometers`] wavelengths
-//! and typed [`Radians`] scattering angles, and return typed
+//! and typed [`crate::qtty::Radians`] scattering angles, and return typed
 //! [`Quantity<ScatteringFactor>`] values.
 //!
 //! ## References

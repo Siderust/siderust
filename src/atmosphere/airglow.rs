@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! # Airglow emission geometry
@@ -18,7 +18,7 @@
 //!
 //! ## Technical scope
 //!
-//! - Inputs: zenith distance as typed [`Radians`], emission-layer height
+//! - Inputs: zenith distance as typed [`crate::qtty::Radians`], emission-layer height
 //!   and (optionally) planetary radius as typed [`Kilometers`].
 //! - Output: dimensionless geometric factor as
 //!   [`Quantity<ScatteringFactor>`] (see

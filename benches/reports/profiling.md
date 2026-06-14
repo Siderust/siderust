@@ -99,7 +99,7 @@ Criterion supports filtering. Arguments after `--` are passed through to the
 benchmark harness:
 
 ```bash
-cargo flamegraph --bench moon_altitude -- --bench find_moon_above_horizon_365day
+cargo flamegraph --bench moon_altitude -- --bench above_threshold_365day
 ```
 
 If you only care about one case (e.g. the 365‑day horizon), filtering is the

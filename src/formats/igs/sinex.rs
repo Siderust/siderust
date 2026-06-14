@@ -305,3 +305,141 @@ fn sinex_epoch_to_mjd(s: &str) -> f64 {
     let days = (epoch - mjd_ref).num_days() as f64;
     days + sod / 86400.0
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::formats::ParseMode;
+
+    fn sample_sinex(with_velocity: bool, epoch: &str) -> Vec<u8> {
+        let mut data = format!(
+            "%=SNX 2.10 IGS 24:001:00000 IGS 00:000:00000 23:365:86370 P 00000 0 S\n\
+             +SITE/ID\n\
+             *Code Pt Domes____ T _Station Description__ _Longitude_ _Latitude__ _Height_\n\
+             ABCD  A 10101M001 P Some Station            010 00 00.0 050 00 00.0  100.000\n\
+             -SITE/ID\n\
+             +SOLUTION/ESTIMATE\n\
+             *Index Type__ Code Pt Soln _Ref_Epoch__ Unit S ___Estimated_Value___ __Std_Dev__\n\
+             1 STAX   ABCD  A    1 {epoch} m    2  1.000000000000000E+06  1.000E-04\n\
+             2 STAY   ABCD  A    1 {epoch} m    2 -2.000000000000000E+06  1.000E-04\n\
+             3 STAZ   ABCD  A    1 {epoch} m    2  3.000000000000000E+06  1.000E-04\n"
+        );
+        if with_velocity {
+            data.push_str(&format!(
+                "4 VELX   ABCD  A    1 {epoch} m/y  2  0.010000000000000E+00  1.000E-04\n\
+                 5 VELY   ABCD  A    1 {epoch} m/y  2  0.020000000000000E+00  1.000E-04\n\
+                 6 VELZ   ABCD  A    1 {epoch} m/y  2  0.030000000000000E+00  1.000E-04\n"
+            ));
+        }
+        data.push_str("-SOLUTION/ESTIMATE\n%ENDSNX\n");
+        data.into_bytes()
+    }
+
+    #[test]
+    fn parse_station_position() {
+        let sol = read_sinex(
+            sample_sinex(false, "00:001:00000").as_slice(),
+            ParseMode::Permissive,
+        )
+        .expect("parse");
+        assert_eq!(sol.agency, "IGS");
+        assert_eq!(sol.stations.len(), 1);
+        let st = &sol.stations[0];
+        assert_eq!(st.code, "ABCD");
+        assert_eq!(st.point_code, "A");
+        assert_eq!(st.solution_id, "1");
+        assert!((st.position.x().value() - 1.0e6).abs() < 1e-3);
+        assert!((st.position.y().value() + 2.0e6).abs() < 1e-3);
+        assert!((st.position.z().value() - 3.0e6).abs() < 1e-3);
+        assert!(st.velocity_m_yr.is_none());
+        assert!(st.ref_epoch_mjd > 0.0);
+    }
+
+    #[test]
+    fn parse_station_with_velocity() {
+        let sol = read_sinex(
+            sample_sinex(true, "00:001:00000").as_slice(),
+            ParseMode::Permissive,
+        )
+        .expect("parse");
+        let vel = sol.stations[0].velocity_m_yr.expect("velocity");
+        assert!((vel[0] - 0.01).abs() < 1e-12);
+        assert!((vel[1] - 0.02).abs() < 1e-12);
+        assert!((vel[2] - 0.03).abs() < 1e-12);
+    }
+
+    #[test]
+    fn strict_rejects_short_estimate_line() {
+        let data = b"%=SNX 2.10 IGS 24:001:00000 IGS 00:000:00000 23:365:86370 P 00000 0 S\n\
+                      +SOLUTION/ESTIMATE\n\
+                      1 STAX ABCD\n\
+                      -SOLUTION/ESTIMATE\n\
+                      %ENDSNX\n";
+        let err = read_sinex(&data[..], ParseMode::Strict).unwrap_err();
+        assert!(matches!(err, FormatError::Located { .. }));
+    }
+
+    #[test]
+    fn strict_rejects_unparseable_value() {
+        let data = b"%=SNX 2.10 IGS 24:001:00000 IGS 00:000:00000 23:365:86370 P 00000 0 S\n\
+                      +SOLUTION/ESTIMATE\n\
+                      *Index Type__ Code Pt Soln _Ref_Epoch__ Unit S ___Estimated_Value___ __Std_Dev__\n\
+                      1 STAX   ABCD  A    1 00:001:00000 m    2  not-a-number  1.000E-04\n\
+                      -SOLUTION/ESTIMATE\n\
+                      %ENDSNX\n";
+        let err = read_sinex(&data[..], ParseMode::Strict).unwrap_err();
+        assert!(matches!(err, FormatError::Located { .. }));
+    }
+
+    #[test]
+    fn permissive_skips_bad_estimate_lines() {
+        let data = b"%=SNX 2.10 IGS 24:001:00000 IGS 00:000:00000 23:365:86370 P 00000 0 S\n\
+                      +SOLUTION/ESTIMATE\n\
+                      short line\n\
+                      1 STAX   ABCD  A    1 00:001:00000 m    2  1.000000000000000E+06  1.000E-04\n\
+                      bad-value-line\n\
+                      2 STAY   ABCD  A    1 00:001:00000 m    2 -2.000000000000000E+06  1.000E-04\n\
+                      3 STAZ   ABCD  A    1 00:001:00000 m    2  3.000000000000000E+06  1.000E-04\n\
+                      -SOLUTION/ESTIMATE\n\
+                      %ENDSNX\n";
+        let sol = read_sinex(&data[..], ParseMode::Permissive).expect("parse");
+        assert_eq!(sol.stations.len(), 1);
+    }
+
+    #[test]
+    fn incomplete_xyz_skips_station() {
+        let data = b"%=SNX 2.10 IGS 24:001:00000 IGS 00:000:00000 23:365:86370 P 00000 0 S\n\
+                      +SOLUTION/ESTIMATE\n\
+                      1 STAX   ABCD  A    1 00:001:00000 m    2  1.000000000000000E+06  1.000E-04\n\
+                      2 STAY   ABCD  A    1 00:001:00000 m    2 -2.000000000000000E+06  1.000E-04\n\
+                      -SOLUTION/ESTIMATE\n\
+                      %ENDSNX\n";
+        let sol = read_sinex(&data[..], ParseMode::Permissive).expect("parse");
+        assert!(sol.stations.is_empty());
+    }
+
+    #[test]
+    fn epoch_yy80_maps_to_19xx() {
+        let sol = read_sinex(
+            sample_sinex(false, "85:001:00000").as_slice(),
+            ParseMode::Permissive,
+        )
+        .expect("parse");
+        assert!(sol.stations[0].ref_epoch_mjd > 46_000.0);
+    }
+
+    #[test]
+    fn invalid_epoch_returns_zero_mjd() {
+        let sol = read_sinex(
+            sample_sinex(false, "not-valid").as_slice(),
+            ParseMode::Permissive,
+        )
+        .expect("parse");
+        assert_eq!(sol.stations[0].ref_epoch_mjd, 0.0);
+    }
+
+    #[test]
+    fn geo_center_name() {
+        assert_eq!(GeoCenterItrf::center_name(), "Geocentric ITRF");
+    }
+}

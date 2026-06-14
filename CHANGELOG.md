@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2026-06-07
+
+### Added
+
+- Internal solar daily predictor for solar altitude threshold events.
+- Internal Chebyshev-first generic crossing engine using `cheby 0.4`.
+- Internal local scan+Brent fallback baseline.
+- `bench-internals` feature for Criterion baseline comparisons.
+
+### Changed
+
+- Public altitude period API standardized on [`altitude_ranges`], [`above_threshold`], and [`below_threshold`], plus event-level [`crossings`] and [`culminations`].
+- [`SearchOpts`] follows Option A and contains only `time_tolerance`.
+- [`AltitudeProvider`] now only represents single-point altitude evaluation.
+- Solar altitude events use an internal daily predictor with precise Brent validation and local fallback.
+- Lunar altitude events use `MoonAltitudeContext` + Chebyshev-first crossing discovery.
+- FFI [`SiderustSearchOpts`] mirrors public [`SearchOpts`] (time tolerance only).
+
+### Removed
+
+- `unstable-event-search` feature and experimental algorithm/tuning hooks.
+- FFI `_v2` altitude/crossing functions and v2 tuning structs.
+- Public algorithm/tuning structs and public scan-step override.
+- `AltitudeQuery`, `AltitudePeriodsProvider`, `altitude_periods`, `compute_altitude_periods`, and target-specific legacy period wrappers.
+- Local Chebyshev root code superseded by `cheby`.
+
 ## [0.9.1] - 2026-06-06
 
 ### Changed
@@ -429,7 +455,7 @@ let entry = iers_data::lookup(Days::new(jd_value_f64));
     suite `tests/test_azimuth_api.rs` covering trait and free-function APIs.
 
 * **C ABI / FFI layer**: new workspace crate `siderust-ffi` exposing a flat C API (generated header `siderust-ffi/include/siderust_ffi.h` via `cbindgen`) for coordinate transforms, ephemeris queries, altitude/azimuth events and periods, moon-phase sampling, observatories, and target tracking.
-* VSOP87 planets (Mercury–Neptune) now implement `AltitudePeriodsProvider` and `AzimuthProvider`, enabling altitude/azimuth queries and event finding for planets via the unified APIs.
+* VSOP87 planets (Mercury–Neptune) now implement `AltitudeProvider` and `AzimuthProvider`, enabling altitude/azimuth queries and event finding for planets via the unified APIs.
 
 ### Changed
 * Center-shift transformations are unified under `coordinates::transform::centers::TransformCenter` (`pos.to_center(...)` / `pos.to_center_with(...)`), replacing the previous per-center extension traits and legacy `to_*centric` modules.
@@ -534,15 +560,15 @@ let entry = iers_data::lookup(Days::new(jd_value_f64));
 * Build system `SIDERUST_JPL_STUB` env var and `siderust_mock_de441` cfg flag for CI stub backends
 
 #### Unified Altitude API
-* `calculus::altitude` module: `AltitudePeriodsProvider` trait for finding time intervals when celestial bodies are within specific altitude ranges
-* `AltitudePeriodsProvider` implementations for `Sun`, `Moon`, `Star<'_>`, and `direction::ICRS`
-* Free functions: `crossings()`, `culminations()`, `altitude_ranges()`, `above_threshold()`, `below_threshold()`, `altitude_periods()`
-* `AltitudeQuery`, `SearchOpts`, `CrossingEvent`, `CrossingDirection`, `CulminationEvent`, `CulminationKind` types
+* `event::altitude` module: `AltitudeProvider` trait for finding time intervals when celestial bodies are within specific altitude ranges
+* `AltitudeProvider` implementations for `Sun`, `Moon`, `Star<'_>`, and `direction::ICRS`
+* Free functions: `crossings()`, `culminations()`, `altitude_ranges()`, `above_threshold()`, `below_threshold()`
+* `SearchOpts`, `CrossingEvent`, `CrossingDirection`, `CulminationEvent`, `CulminationKind` types
 * Crate-root re-exports of the entire altitude API (`siderust::{above_threshold, crossings, ...}`)
 
 #### Body-Specific Altitude Engines
 * `calculus::stellar`, analytical sinusoidal model exploiting Earth's rotation for fixed-star altitude periods
-* `calculus::lunar`, Moon altitude functions with topocentric parallax (`find_moon_above_horizon`, `find_moon_below_horizon`, `find_moon_altitude_range`)
+* `event::lunar`, Moon altitude search with topocentric parallax via `above_threshold`, `below_threshold`, and `altitude_ranges`
 * Moon Chebyshev cache (`moon_cache`) for optimized repeated ephemeris evaluation
 * `calculus::horizontal`, shared equatorial→horizontal coordinate pipeline factored out of Sun/Moon engines
 
@@ -569,11 +595,11 @@ let entry = iers_data::lookup(Days::new(jd_value_f64));
 
 #### Examples
 * New `jpl_precise_ephemeris`, unified DE440/DE441 backend comparison (replaces separate DE440/DE441 examples)
-* New `altitude_periods_trait`, comprehensive `AltitudePeriodsProvider` trait demonstration
+* New altitude-provider example, comprehensive `AltitudeProvider` trait demonstration
 * New `compare_sun_moon_star`, generic body comparison via trait polymorphism
 * New `night_quality_scoring`, practical observing planner scoring nights by darkness and Moon interference
 * New `star_observability`, multi-star observing planner with visibility windows and peak altitudes
-* New `find_night_periods_365day`, full-year astronomical night search with CLI support
+* New full-year astronomical night example (`06_night_events.rs`), CLI support for week-long and year-long horizons
 
 #### Benchmarks
 * New `ephemeris_comparison`, comparative benchmark: VSOP87 vs DE440 vs DE441 across all `Ephemeris` trait methods
@@ -594,7 +620,7 @@ let entry = iers_data::lookup(Days::new(jd_value_f64));
 * `Satellite` type now uses `Cow<'a, str>` for the name field with `new_const()` and `new()` constructors
 * `DefaultEphemeris` selection prefers DE441 when `de441` is enabled, then DE440, then VSOP87
 * DE440/DE441 examples consolidated into single `jpl_precise_ephemeris.rs` with `#[cfg]` gates
-* `solar_altitude_culminations` example removed (functionality covered by `find_night_periods_365day`)
+* `solar_altitude_culminations` example removed (functionality covered by the night-events example)
 * Examples README reorganized by theme: Getting Started, Observational Astronomy, Solar System, Ephemeris Backends, Serialization
 * Benchmarks README updated to document comparative vs per-module benchmarks
 * `time` module fully migrated to `tempoch` crate with typed time scales (`Time<S>`)
@@ -617,7 +643,7 @@ let entry = iers_data::lookup(Days::new(jd_value_f64));
 * Local CI helper script `ci-local.sh`
 * Explicit equatorial frame split into `EquatorialMeanJ2000`, `EquatorialMeanOfDate`, and `EquatorialTrueOfDate`, including frame-bias (ICRS↔J2000), precession, and nutation rotations with helper matrices (e.g., `precession_rotation_from_j2000`)
 * Velocity-aware aberration helpers (`apply/remove_aberration_*_with_velocity`) for supplying arbitrary observer velocities alongside the VSOP87E annual model
-* Added the generic `calculus::events::altitude_periods` engine with Sun-specific wrappers (`calculus::solar::altitude_periods`), high-precision root-finding helpers, a new `examples/astronomical_night.rs`, and Roque de los Muchachos regression tests backed by JSON reference data for night/day/twilight windows
+* Added the generic event-search interval engine with Sun-specific wrappers (`solar_*_impl`), high-precision root-finding helpers, a new `examples/06_night_events.rs`, and Roque de los Muchachos regression tests backed by JSON reference data for night/day/twilight windows
 * Introduced the `time` module with the `TimeInstant` trait, generic `Period<T>` intervals, serde-serializable `ModifiedJulianDate`, and the `examples/time_periods.rs` showcase (plus the new `serde`/`serde_json` tooling for reference data)
 
 ### Changed

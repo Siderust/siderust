@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! Star observability in altitude + azimuth ranges.
@@ -8,7 +8,7 @@
 
 use siderust::bodies::catalog::SIRIUS;
 use siderust::catalogs::observatories::ROQUE_DE_LOS_MUCHACHOS;
-use siderust::event::altitude::{AltitudePeriodsProvider, AltitudeQuery};
+use siderust::event::altitude::{altitude_ranges, SearchOpts};
 use siderust::event::azimuth::{AzimuthProvider, AzimuthQuery};
 use siderust::time::intersect_periods;
 use siderust::time::{Interval, ModifiedJulianDate};
@@ -19,23 +19,16 @@ fn main() {
     println!("Star observability: altitude + azimuth constraints\n");
 
     let observer = ROQUE_DE_LOS_MUCHACHOS.geodetic();
-    let target = SIRIUS;
+    let target = &SIRIUS;
+    let opts = SearchOpts::default();
 
-    // One-night search window (MJD TT).
     let t_0 = ModifiedJulianDate::new(60000.0);
     let window = Interval::new(t_0, t_0 + Days::new(1.0));
 
-    // Constraint 1: altitude between 25° and 65°.
-    let altitude_query = AltitudeQuery {
-        observer,
-        window,
-        min_altitude: Degrees::new(25.0),
-        max_altitude: Degrees::new(65.0),
-        correction_policy: siderust::astro::apparent::CorrectionPolicy::APPARENT,
-    };
-    let altitude_periods = target.altitude_periods(&altitude_query);
+    let h_min = Degrees::new(25.0);
+    let h_max = Degrees::new(65.0);
+    let altitude_periods = altitude_ranges(target, &observer, window, h_min, h_max, opts);
 
-    // Constraint 2: azimuth between 110° and 220° (ESE -> SW sector).
     let azimuth_query = AzimuthQuery {
         observer,
         window,
@@ -46,17 +39,12 @@ fn main() {
     };
     let azimuth_periods = target.azimuth_periods(&azimuth_query);
 
-    // Final observability: periods satisfying both constraints simultaneously.
     let observable_periods = intersect_periods(&altitude_periods, &azimuth_periods);
 
     println!("Observer: {}", ROQUE_DE_LOS_MUCHACHOS.name);
     println!("Target: Sirius");
     println!("Window: {}\n", window);
-
-    println!(
-        "Altitude range: {}..{}",
-        altitude_query.min_altitude, altitude_query.max_altitude
-    );
+    println!("Altitude range: {}..{}", h_min, h_max);
     println!(
         "Azimuth range:  {}..{}\n",
         azimuth_query.min_azimuth, azimuth_query.max_azimuth

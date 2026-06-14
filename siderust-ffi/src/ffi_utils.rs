@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! Shared FFI utilities: null-pointer guard macro, generic Vec→C converter and
@@ -189,7 +189,7 @@ macro_rules! dispatch_subject {
                     return $crate::error::SiderustStatus::NullPointer;
                 }
                 // Dispatch on the inner position, not the whole CoordinateWithPM,
-                // because AltitudePeriodsProvider is implemented for the position type.
+                // because AltitudeProvider is implemented for the position type.
                 let $provider = unsafe { &(*__subj.generic_target_handle).inner.position };
                 $action
             }
@@ -259,7 +259,7 @@ pub unsafe fn write_out<T>(out: *mut T, value: T) -> SiderustStatus {
     if out.is_null() {
         return SiderustStatus::NullPointer;
     }
-    // TODO: justify soundness — add doc comment before publishing
+    // SAFETY: raw-pointer use follows this function's C ABI preconditions.
     unsafe { out.write(value) };
     SiderustStatus::Ok
 }
@@ -427,7 +427,7 @@ where
     }
     let v: Vec<U> = items.iter().map(conv).collect();
     let len = v.len();
-    // TODO: justify soundness — add doc comment before publishing
+    // SAFETY: raw-pointer use follows this function's C ABI preconditions.
     unsafe {
         *out = Box::into_raw(v.into_boxed_slice()) as *mut _;
         *count = len;

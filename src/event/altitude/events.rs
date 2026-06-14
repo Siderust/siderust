@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! # Event Finding Functions
@@ -9,7 +9,7 @@
 //! threshold crossings (rises/sets at any specified altitude), upper and
 //! lower culminations (local extrema of *h(t)*), and time intervals where
 //! the altitude stays inside a user‑defined band. The altitude function
-//! itself is delegated to [`AltitudePeriodsProvider`], so accuracy and
+//! itself is delegated to [`AltitudeProvider`], so accuracy and
 //! validity inherit from the underlying ephemeris/star model. Atmospheric
 //! refraction is not modelled here; observers wanting the standard
 //! geometric horizon should pass `−0.833°`.
@@ -21,28 +21,28 @@
 //! `tempoch::Time::<tempoch::UTC>::from_chrono(...).to::<tempoch::TT>().into()`
 //! into `ModifiedJulianDate` first. Public functions: [`crossings`], [`culminations`],
 //! [`altitude_ranges`], [`above_threshold`], [`below_threshold`]. The
-//! refinement uses bracketed root finding from `math_core::intervals` and
-//! `math_core::extrema`; precision is governed by [`SearchOpts`].
+//! refinement uses Chebyshev-first crossing discovery with precise validation
+//! and local scan+Brent fallback; precision is governed by [`SearchOpts`].
 //!
 //! ## References
 //! None.
 
-use super::provider::AltitudePeriodsProvider;
-use super::search::{SearchOpts, DEFAULT_SCAN_STEP, EXTREMA_SCAN_STEP};
+use super::provider::AltitudeProvider;
+use super::search::{InternalSearchConfig, SearchOpts, DEFAULT_SCAN_STEP, EXTREMA_SCAN_STEP};
 use super::types::{CrossingDirection, CrossingEvent, CulminationEvent, CulminationKind};
 use crate::astro::apparent::CorrectionPolicy;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
-use crate::event::search::{extrema, intervals};
+use crate::event::search::{extrema, intervals, periods as threshold_periods};
 use crate::qtty::*;
-use crate::time::{complement_within, Interval, ModifiedJulianDate};
+use crate::time::{Interval, ModifiedJulianDate};
 
 // ---------------------------------------------------------------------------
 // Internal: build altitude function from trait
 // ---------------------------------------------------------------------------
 
-/// Build an altitude function from any `AltitudePeriodsProvider`.
-fn make_altitude_fn<'a, T: AltitudePeriodsProvider>(
+/// Build an altitude function from any `AltitudeProvider`.
+fn make_altitude_fn<'a, T: AltitudeProvider + ?Sized>(
     target: &'a T,
     site: &'a Geodetic<ECEF>,
     policy: CorrectionPolicy,
@@ -51,16 +51,46 @@ fn make_altitude_fn<'a, T: AltitudePeriodsProvider>(
     move |t: ModifiedJulianDate| target.altitude_at_with_policy(&site, t, policy)
 }
 
-/// Choose the best scan step for the target.
-fn scan_step_for<T: AltitudePeriodsProvider>(target: &T, opts: &SearchOpts) -> Days {
+fn scan_step_for_opts<T: AltitudeProvider + ?Sized>(
+    target: &T,
+    opts: &InternalSearchConfig,
+) -> Days {
     super::search::resolve_scan_step(target.scan_step_hint(), opts, DEFAULT_SCAN_STEP)
 }
 
-fn can_use_provider_threshold_path(opts: &SearchOpts, policy: CorrectionPolicy) -> bool {
-    let default_opts = SearchOpts::default();
-    policy == CorrectionPolicy::APPARENT
-        && opts.scan_step_days.is_none()
-        && opts.time_tolerance == default_opts.time_tolerance
+fn labelled_crossings_for_altitude<F>(
+    window: Interval<ModifiedJulianDate>,
+    step: Days,
+    altitude: &F,
+    threshold: Radians,
+    opts: InternalSearchConfig,
+) -> (Vec<intervals::LabeledCrossing>, bool)
+where
+    F: Fn(ModifiedJulianDate) -> Radians,
+{
+    let signal = |t: ModifiedJulianDate| -> f64 { altitude(t).sin() };
+    let (labeled, start_above, _) = crate::event::search::crossings::find_labelled_crossings(
+        window,
+        step,
+        &signal,
+        threshold.sin(),
+        opts,
+    );
+    (labeled, start_above)
+}
+
+fn crossing_events_from_labelled(labeled: &[intervals::LabeledCrossing]) -> Vec<CrossingEvent> {
+    labeled
+        .iter()
+        .map(|lc| CrossingEvent {
+            mjd: lc.t,
+            direction: if lc.direction > 0 {
+                CrossingDirection::Rising
+            } else {
+                CrossingDirection::Setting
+            },
+        })
+        .collect()
 }
 
 // ---------------------------------------------------------------------------
@@ -72,7 +102,7 @@ fn can_use_provider_threshold_path(opts: &SearchOpts, policy: CorrectionPolicy) 
 /// Returns a chronologically sorted list of [`CrossingEvent`]s.
 ///
 /// # Arguments
-/// * `target`, any body implementing [`AltitudePeriodsProvider`]
+/// * `target`, any body implementing [`AltitudeProvider`]
 /// * `observer`, site on Earth
 /// * `window`, search interval (MJD on TT axis)
 /// * `threshold`, altitude threshold
@@ -102,52 +132,46 @@ fn can_use_provider_threshold_path(opts: &SearchOpts, policy: CorrectionPolicy) 
 ///
 /// A chronologically sorted `Vec<CrossingEvent>` containing every
 /// rising/setting transit found inside `window`.
-pub fn crossings<T: AltitudePeriodsProvider>(
+pub fn crossings<T: AltitudeProvider + ?Sized>(
     target: &T,
     observer: &Geodetic<ECEF>,
     window: Interval<ModifiedJulianDate>,
     threshold: Degrees,
     opts: SearchOpts,
 ) -> Vec<CrossingEvent> {
-    crossings_with_policy(
+    target.event_crossings(observer, window, threshold, opts)
+}
+
+pub(super) fn generic_crossings<T: AltitudeProvider + ?Sized>(
+    target: &T,
+    observer: &Geodetic<ECEF>,
+    window: Interval<ModifiedJulianDate>,
+    threshold: Degrees,
+    opts: SearchOpts,
+) -> Vec<CrossingEvent> {
+    generic_crossings_with_policy(
         target,
         observer,
         window,
         threshold,
-        opts,
+        InternalSearchConfig::from_public_opts(opts),
         CorrectionPolicy::APPARENT,
     )
 }
 
-/// Find threshold crossings using an explicit apparent-position correction
-/// policy.
-pub fn crossings_with_policy<T: AltitudePeriodsProvider>(
+fn generic_crossings_with_policy<T: AltitudeProvider + ?Sized>(
     target: &T,
     observer: &Geodetic<ECEF>,
     window: Interval<ModifiedJulianDate>,
     threshold: Degrees,
-    opts: SearchOpts,
+    opts: InternalSearchConfig,
     policy: CorrectionPolicy,
 ) -> Vec<CrossingEvent> {
     let f = make_altitude_fn(target, observer, policy);
     let thr_rad = threshold.to::<Radian>();
-    let step = scan_step_for(target, &opts);
-
-    // Use the fast scan + label approach from math_core
-    let mut raw_crossings = intervals::find_crossings(window, step, &f, thr_rad);
-    let labeled = intervals::label_crossings(&mut raw_crossings, &f, thr_rad);
-
-    labeled
-        .iter()
-        .map(|lc| CrossingEvent {
-            mjd: lc.t,
-            direction: if lc.direction > 0 {
-                CrossingDirection::Rising
-            } else {
-                CrossingDirection::Setting
-            },
-        })
-        .collect()
+    let step = scan_step_for_opts(target, &opts);
+    let (labeled, _) = labelled_crossings_for_altitude(window, step, &f, thr_rad, opts);
+    crossing_events_from_labelled(&labeled)
 }
 
 // ---------------------------------------------------------------------------
@@ -160,7 +184,7 @@ pub fn crossings_with_policy<T: AltitudePeriodsProvider>(
 ///
 /// # Arguments
 ///
-/// * `target`, any body implementing [`AltitudePeriodsProvider`]
+/// * `target`, any body implementing [`AltitudeProvider`]
 /// * `observer`, geodetic observer site
 /// * `window`, MJD/TT search interval
 /// * `opts`, search precision (scan step + refinement tolerance)
@@ -169,18 +193,25 @@ pub fn crossings_with_policy<T: AltitudePeriodsProvider>(
 ///
 /// `Vec<CulminationEvent>` sorted by time, mixing upper (`Max`) and lower
 /// (`Min`) culminations.
-pub fn culminations<T: AltitudePeriodsProvider>(
+pub fn culminations<T: AltitudeProvider + ?Sized>(
     target: &T,
     observer: &Geodetic<ECEF>,
     window: Interval<ModifiedJulianDate>,
     opts: SearchOpts,
 ) -> Vec<CulminationEvent> {
-    culminations_with_policy(target, observer, window, opts, CorrectionPolicy::APPARENT)
+    target.event_culminations(observer, window, opts)
 }
 
-/// Find altitude culminations using an explicit apparent-position correction
-/// policy.
-pub fn culminations_with_policy<T: AltitudePeriodsProvider>(
+pub(super) fn generic_culminations<T: AltitudeProvider + ?Sized>(
+    target: &T,
+    observer: &Geodetic<ECEF>,
+    window: Interval<ModifiedJulianDate>,
+    opts: SearchOpts,
+) -> Vec<CulminationEvent> {
+    generic_culminations_with_policy(target, observer, window, opts, CorrectionPolicy::APPARENT)
+}
+
+fn generic_culminations_with_policy<T: AltitudeProvider + ?Sized>(
     target: &T,
     observer: &Geodetic<ECEF>,
     window: Interval<ModifiedJulianDate>,
@@ -188,11 +219,7 @@ pub fn culminations_with_policy<T: AltitudePeriodsProvider>(
     policy: CorrectionPolicy,
 ) -> Vec<CulminationEvent> {
     let f = make_altitude_fn(target, observer, policy);
-    // For culminations, use a slightly larger step (or the target's hint)
-    let step = opts
-        .scan_step_days
-        .or_else(|| target.scan_step_hint())
-        .unwrap_or(EXTREMA_SCAN_STEP);
+    let step = target.scan_step_hint().unwrap_or(EXTREMA_SCAN_STEP);
     let tol = opts.time_tolerance;
 
     let raw: Vec<extrema::Extremum<Radian>> = extrema::find_extrema_tol(window, step, &f, tol);
@@ -223,10 +250,8 @@ pub fn culminations_with_policy<T: AltitudePeriodsProvider>(
 ///
 /// # Algorithm
 ///
-/// Uses the two‑stage approach:
-/// 1. Fast coarse scan to find threshold crossings of `h_min` and `h_max`.
-/// 2. Brent refinement for each bracket.
-/// 3. Interval algebra: `above(h_min) ∩ complement(above(h_max))`.
+/// Uses labelled threshold crossings of `h_min` and `h_max`, then interval
+/// algebra: `above(h_min) ∩ complement(above(h_max))`.
 ///
 /// # Example
 /// ```ignore
@@ -240,7 +265,7 @@ pub fn culminations_with_policy<T: AltitudePeriodsProvider>(
 ///
 /// # Arguments
 ///
-/// * `target`, any body implementing [`AltitudePeriodsProvider`]
+/// * `target`, any body implementing [`AltitudeProvider`]
 /// * `observer`, geodetic observer site
 /// * `window`, MJD/TT search interval
 /// * `h_min`, lower altitude bound (inclusive)
@@ -251,7 +276,7 @@ pub fn culminations_with_policy<T: AltitudePeriodsProvider>(
 ///
 /// Sorted, non‑overlapping `Vec<Interval<ModifiedJulianDate>>` covering the
 /// time intervals where `h_min ≤ altitude(t) ≤ h_max`.
-pub fn altitude_ranges<T: AltitudePeriodsProvider>(
+pub fn altitude_ranges<T: AltitudeProvider + ?Sized>(
     target: &T,
     observer: &Geodetic<ECEF>,
     window: Interval<ModifiedJulianDate>,
@@ -259,34 +284,53 @@ pub fn altitude_ranges<T: AltitudePeriodsProvider>(
     h_max: Degrees,
     opts: SearchOpts,
 ) -> Vec<Interval<ModifiedJulianDate>> {
-    altitude_ranges_with_policy(
+    target.event_altitude_ranges(observer, window, h_min, h_max, opts)
+}
+
+pub(super) fn generic_altitude_ranges<T: AltitudeProvider + ?Sized>(
+    target: &T,
+    observer: &Geodetic<ECEF>,
+    window: Interval<ModifiedJulianDate>,
+    h_min: Degrees,
+    h_max: Degrees,
+    opts: SearchOpts,
+) -> Vec<Interval<ModifiedJulianDate>> {
+    generic_altitude_ranges_with_policy(
         target,
         observer,
         window,
         h_min,
         h_max,
-        opts,
+        InternalSearchConfig::from_public_opts(opts),
         CorrectionPolicy::APPARENT,
     )
 }
 
-/// Find altitude-range periods using an explicit apparent-position correction
-/// policy.
-pub fn altitude_ranges_with_policy<T: AltitudePeriodsProvider>(
+fn generic_altitude_ranges_with_policy<T: AltitudeProvider + ?Sized>(
     target: &T,
     observer: &Geodetic<ECEF>,
     window: Interval<ModifiedJulianDate>,
     h_min: Degrees,
     h_max: Degrees,
-    opts: SearchOpts,
+    opts: InternalSearchConfig,
     policy: CorrectionPolicy,
 ) -> Vec<Interval<ModifiedJulianDate>> {
     let f = make_altitude_fn(target, observer, policy);
     let min_rad = h_min.to::<Radian>();
     let max_rad = h_max.to::<Radian>();
-    let step = scan_step_for(target, &opts);
+    let step = scan_step_for_opts(target, &opts);
 
-    intervals::in_range_periods(window, step, &f, min_rad, max_rad)
+    let (above_min, start_above_min) =
+        labelled_crossings_for_altitude(window, step, &f, min_rad, opts);
+    let (above_max, start_above_max) =
+        labelled_crossings_for_altitude(window, step, &f, max_rad, opts);
+    threshold_periods::assemble_in_range_periods(
+        &above_min,
+        start_above_min,
+        &above_max,
+        start_above_max,
+        window,
+    )
 }
 
 // ---------------------------------------------------------------------------
@@ -299,7 +343,7 @@ pub fn altitude_ranges_with_policy<T: AltitudePeriodsProvider>(
 ///
 /// # Arguments
 ///
-/// * `target`, body implementing [`AltitudePeriodsProvider`]
+/// * `target`, body implementing [`AltitudeProvider`]
 /// * `observer`, geodetic site
 /// * `window`, MJD/TT search interval
 /// * `threshold`, altitude lower bound
@@ -309,42 +353,46 @@ pub fn altitude_ranges_with_policy<T: AltitudePeriodsProvider>(
 ///
 /// Sorted, non‑overlapping `Vec<Interval<ModifiedJulianDate>>` covering the
 /// times when `altitude(t) ≥ threshold`.
-pub fn above_threshold<T: AltitudePeriodsProvider>(
+pub fn above_threshold<T: AltitudeProvider + ?Sized>(
     target: &T,
     observer: &Geodetic<ECEF>,
     window: Interval<ModifiedJulianDate>,
     threshold: Degrees,
     opts: SearchOpts,
 ) -> Vec<Interval<ModifiedJulianDate>> {
-    above_threshold_with_policy(
+    target.event_above_threshold(observer, window, threshold, opts)
+}
+
+pub(super) fn generic_above_threshold<T: AltitudeProvider + ?Sized>(
+    target: &T,
+    observer: &Geodetic<ECEF>,
+    window: Interval<ModifiedJulianDate>,
+    threshold: Degrees,
+    opts: SearchOpts,
+) -> Vec<Interval<ModifiedJulianDate>> {
+    generic_above_threshold_with_policy(
         target,
         observer,
         window,
         threshold,
-        opts,
+        InternalSearchConfig::from_public_opts(opts),
         CorrectionPolicy::APPARENT,
     )
 }
 
-/// Find above-threshold periods using an explicit apparent-position
-/// correction policy.
-pub fn above_threshold_with_policy<T: AltitudePeriodsProvider>(
+fn generic_above_threshold_with_policy<T: AltitudeProvider + ?Sized>(
     target: &T,
     observer: &Geodetic<ECEF>,
     window: Interval<ModifiedJulianDate>,
     threshold: Degrees,
-    opts: SearchOpts,
+    opts: InternalSearchConfig,
     policy: CorrectionPolicy,
 ) -> Vec<Interval<ModifiedJulianDate>> {
-    if can_use_provider_threshold_path(&opts, policy) {
-        return target.above_threshold(*observer, window, threshold);
-    }
-
     let f = make_altitude_fn(target, observer, policy);
     let thr_rad = threshold.to::<Radian>();
-    let step = scan_step_for(target, &opts);
-
-    intervals::above_threshold_periods(window, step, &f, thr_rad)
+    let step = scan_step_for_opts(target, &opts);
+    let (labeled, start_above) = labelled_crossings_for_altitude(window, step, &f, thr_rad, opts);
+    threshold_periods::assemble_above_threshold_periods(&labeled, window, start_above)
 }
 
 /// Convenience: find periods where altitude is **below** a threshold.
@@ -353,7 +401,7 @@ pub fn above_threshold_with_policy<T: AltitudePeriodsProvider>(
 ///
 /// # Arguments
 ///
-/// * `target`, body implementing [`AltitudePeriodsProvider`]
+/// * `target`, body implementing [`AltitudeProvider`]
 /// * `observer`, geodetic site
 /// * `window`, MJD/TT search interval
 /// * `threshold`, altitude upper bound
@@ -363,40 +411,105 @@ pub fn above_threshold_with_policy<T: AltitudePeriodsProvider>(
 ///
 /// Sorted, non‑overlapping `Vec<Interval<ModifiedJulianDate>>` covering the
 /// times inside `window` when `altitude(t) < threshold`.
-pub fn below_threshold<T: AltitudePeriodsProvider>(
+pub fn below_threshold<T: AltitudeProvider + ?Sized>(
     target: &T,
     observer: &Geodetic<ECEF>,
     window: Interval<ModifiedJulianDate>,
     threshold: Degrees,
     opts: SearchOpts,
 ) -> Vec<Interval<ModifiedJulianDate>> {
-    below_threshold_with_policy(
+    target.event_below_threshold(observer, window, threshold, opts)
+}
+
+pub(super) fn generic_below_threshold<T: AltitudeProvider + ?Sized>(
+    target: &T,
+    observer: &Geodetic<ECEF>,
+    window: Interval<ModifiedJulianDate>,
+    threshold: Degrees,
+    opts: SearchOpts,
+) -> Vec<Interval<ModifiedJulianDate>> {
+    generic_below_threshold_with_policy(
         target,
         observer,
         window,
         threshold,
-        opts,
+        InternalSearchConfig::from_public_opts(opts),
         CorrectionPolicy::APPARENT,
     )
 }
 
-/// Find below-threshold periods using an explicit apparent-position
-/// correction policy.
-pub fn below_threshold_with_policy<T: AltitudePeriodsProvider>(
+fn generic_below_threshold_with_policy<T: AltitudeProvider + ?Sized>(
     target: &T,
     observer: &Geodetic<ECEF>,
     window: Interval<ModifiedJulianDate>,
     threshold: Degrees,
-    opts: SearchOpts,
+    opts: InternalSearchConfig,
     policy: CorrectionPolicy,
 ) -> Vec<Interval<ModifiedJulianDate>> {
-    if can_use_provider_threshold_path(&opts, policy) {
-        return target.below_threshold(*observer, window, threshold);
+    let above =
+        generic_above_threshold_with_policy(target, observer, window, threshold, opts, policy);
+    threshold_periods::complement_threshold_periods(window, &above)
+}
+
+/// Ergonomic method-style altitude event API for every [`AltitudeProvider`].
+pub trait AltitudeEventsExt: AltitudeProvider {
+    /// Find periods where this target altitude is above `threshold`.
+    fn above_threshold(
+        &self,
+        observer: &Geodetic<ECEF>,
+        window: Interval<ModifiedJulianDate>,
+        threshold: Degrees,
+        opts: SearchOpts,
+    ) -> Vec<Interval<ModifiedJulianDate>> {
+        above_threshold(self, observer, window, threshold, opts)
     }
 
-    let above = above_threshold_with_policy(target, observer, window, threshold, opts, policy);
-    complement_within(window, &above)
+    /// Find periods where this target altitude is below `threshold`.
+    fn below_threshold(
+        &self,
+        observer: &Geodetic<ECEF>,
+        window: Interval<ModifiedJulianDate>,
+        threshold: Degrees,
+        opts: SearchOpts,
+    ) -> Vec<Interval<ModifiedJulianDate>> {
+        below_threshold(self, observer, window, threshold, opts)
+    }
+
+    /// Find periods where this target altitude lies within `[h_min, h_max]`.
+    fn altitude_ranges(
+        &self,
+        observer: &Geodetic<ECEF>,
+        window: Interval<ModifiedJulianDate>,
+        h_min: Degrees,
+        h_max: Degrees,
+        opts: SearchOpts,
+    ) -> Vec<Interval<ModifiedJulianDate>> {
+        altitude_ranges(self, observer, window, h_min, h_max, opts)
+    }
+
+    /// Find altitude threshold crossings for this target.
+    fn crossings(
+        &self,
+        observer: &Geodetic<ECEF>,
+        window: Interval<ModifiedJulianDate>,
+        threshold: Degrees,
+        opts: SearchOpts,
+    ) -> Vec<CrossingEvent> {
+        crossings(self, observer, window, threshold, opts)
+    }
+
+    /// Find altitude culminations for this target.
+    fn culminations(
+        &self,
+        observer: &Geodetic<ECEF>,
+        window: Interval<ModifiedJulianDate>,
+        opts: SearchOpts,
+    ) -> Vec<CulminationEvent> {
+        culminations(self, observer, window, opts)
+    }
 }
+
+impl<T: AltitudeProvider + ?Sized> AltitudeEventsExt for T {}
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -406,6 +519,8 @@ pub fn below_threshold_with_policy<T: AltitudePeriodsProvider>(
 mod tests {
     use super::*;
     use crate::bodies::solar_system::{Moon, Sun};
+    use crate::time::complement_within;
+    use chrono::{TimeZone, Utc};
 
     fn greenwich() -> Geodetic<ECEF> {
         Geodetic::<ECEF>::new(
@@ -413,6 +528,97 @@ mod tests {
             Degrees::new(51.4769),
             Quantity::<Meter>::new(0.0),
         )
+    }
+
+    fn roque_like() -> Geodetic<ECEF> {
+        Geodetic::<ECEF>::new(
+            Degrees::new(-17.892),
+            Degrees::new(28.762),
+            Quantity::<Meter>::new(2396.0),
+        )
+    }
+
+    fn cta_s() -> Geodetic<ECEF> {
+        Geodetic::<ECEF>::new(
+            Degrees::new(-70.406944),
+            Degrees::new(-24.627222),
+            Quantity::<Meter>::new(2100.0),
+        )
+    }
+
+    fn polar_summer() -> Geodetic<ECEF> {
+        Geodetic::<ECEF>::new(
+            Degrees::new(0.0),
+            Degrees::new(89.0),
+            Quantity::<Meter>::new(0.0),
+        )
+    }
+
+    fn utc_datetime_as_tt_mjd(
+        year: i32,
+        month: u32,
+        day: u32,
+        hour: u32,
+        minute: u32,
+        second: u32,
+    ) -> ModifiedJulianDate {
+        ModifiedJulianDate::from(
+            Utc.with_ymd_and_hms(year, month, day, hour, minute, second)
+                .single()
+                .unwrap(),
+        )
+    }
+
+    fn assert_periods_close(
+        actual: &[Interval<ModifiedJulianDate>],
+        expected: &[Interval<ModifiedJulianDate>],
+    ) {
+        assert_eq!(
+            actual.len(),
+            expected.len(),
+            "actual={actual:?} expected={expected:?}"
+        );
+        for (actual, expected) in actual.iter().zip(expected.iter()) {
+            assert!(
+                (actual.start.raw() - expected.start.raw()).abs() < Days::new(1e-6),
+                "start mismatch: actual={actual:?} expected={expected:?}"
+            );
+            assert!(
+                (actual.end.raw() - expected.end.raw()).abs() < Days::new(1e-6),
+                "end mismatch: actual={actual:?} expected={expected:?}"
+            );
+        }
+    }
+
+    fn assert_solar_threshold_identities(
+        site: Geodetic<ECEF>,
+        window: Interval<ModifiedJulianDate>,
+        threshold: Degrees,
+    ) {
+        let above = above_threshold(&Sun, &site, window, threshold, SearchOpts::default());
+        let below = below_threshold(&Sun, &site, window, threshold, SearchOpts::default());
+        let complement = complement_within(window, &above);
+        assert_periods_close(&below, &complement);
+
+        let below_as_range = altitude_ranges(
+            &Sun,
+            &site,
+            window,
+            Degrees::new(-90.0),
+            threshold,
+            SearchOpts::default(),
+        );
+        assert_periods_close(&below_as_range, &below);
+
+        let above_as_range = altitude_ranges(
+            &Sun,
+            &site,
+            window,
+            threshold,
+            Degrees::new(90.0),
+            SearchOpts::default(),
+        );
+        assert_periods_close(&above_as_range, &above);
     }
 
     #[test]
@@ -510,7 +716,7 @@ mod tests {
     }
 
     #[test]
-    fn public_sun_below_threshold_matches_provider_altitude_periods() {
+    fn public_sun_below_threshold_matches_solar_specialization() {
         let site = greenwich();
         let window = Interval::new(
             crate::time::ModifiedJulianDate::new(60000.0),
@@ -524,10 +730,15 @@ mod tests {
             Degrees::new(-18.0),
             SearchOpts::default(),
         );
-        let provider = Sun.below_threshold(site, window, Degrees::new(-18.0));
+        let specialized = crate::event::solar::solar_below_threshold_impl(
+            site,
+            window,
+            Degrees::new(-18.0),
+            InternalSearchConfig::default(),
+        );
 
-        assert_eq!(below.len(), provider.len());
-        for (actual, expected) in below.iter().zip(provider.iter()) {
+        assert_eq!(below.len(), specialized.len());
+        for (actual, expected) in below.iter().zip(specialized.iter()) {
             assert!((actual.start.raw() - expected.start.raw()).abs() < Days::new(1e-6));
             assert!((actual.end.raw() - expected.end.raw()).abs() < Days::new(1e-6));
         }
@@ -551,6 +762,28 @@ mod tests {
 
         // Should find nautical-to-astronomical twilight bands
         assert!(!twilight.is_empty(), "should find twilight bands");
+    }
+
+    #[test]
+    fn threshold_period_identities_hold_for_solar_sites() {
+        let threshold = Degrees::new(-18.0);
+        let standard_window = Interval::new(
+            utc_datetime_as_tt_mjd(2026, 1, 1, 0, 0, 0),
+            utc_datetime_as_tt_mjd(2026, 1, 8, 0, 0, 0),
+        );
+        let cta_s_window = Interval::new(
+            utc_datetime_as_tt_mjd(2025, 1, 1, 12, 0, 0),
+            utc_datetime_as_tt_mjd(2025, 1, 8, 12, 0, 0),
+        );
+        let polar_window = Interval::new(
+            utc_datetime_as_tt_mjd(2026, 6, 20, 0, 0, 0),
+            utc_datetime_as_tt_mjd(2026, 6, 23, 0, 0, 0),
+        );
+
+        assert_solar_threshold_identities(greenwich(), standard_window, threshold);
+        assert_solar_threshold_identities(roque_like(), standard_window, threshold);
+        assert_solar_threshold_identities(cta_s(), cta_s_window, threshold);
+        assert_solar_threshold_identities(polar_summer(), polar_window, threshold);
     }
 
     #[test]

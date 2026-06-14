@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! Shared azimuth helpers for the unified subject FFI.
@@ -41,7 +41,7 @@ pub unsafe extern "C" fn siderust_azimuth_crossings_free(
     ptr: *mut SiderustAzimuthCrossingEvent,
     count: usize,
 ) {
-    // TODO: justify soundness — add doc comment before publishing
+    // SAFETY: raw-pointer use follows this function's C ABI preconditions.
     unsafe { free_boxed_slice(ptr, count) };
 }
 
@@ -59,6 +59,6 @@ pub unsafe extern "C" fn siderust_azimuth_extrema_free(
     ptr: *mut SiderustAzimuthExtremum,
     count: usize,
 ) {
-    // TODO: justify soundness — add doc comment before publishing
+    // SAFETY: raw-pointer use follows this function's C ABI preconditions.
     unsafe { free_boxed_slice(ptr, count) };
 }

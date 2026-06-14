@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! Twilight classification FFI.
@@ -62,7 +62,7 @@ pub extern "C" fn siderust_twilight_classification_deg(
     ffi_guard! {{
         check_out!(out);
         let phase = twilight_classification(Degrees::new(altitude_deg));
-        // TODO: justify soundness — add doc comment before publishing
+        // SAFETY: raw-pointer use follows this function's C ABI preconditions.
         unsafe { *out = SiderustTwilightPhase::from_rust(phase) };
         SiderustStatus::Ok
     }}
@@ -80,7 +80,7 @@ pub extern "C" fn siderust_twilight_classification_rad(
     ffi_guard! {{
         check_out!(out);
         let phase = twilight_classification(qtty::angular::Radians::new(altitude_rad));
-        // TODO: justify soundness — add doc comment before publishing
+        // SAFETY: raw-pointer use follows this function's C ABI preconditions.
         unsafe { *out = SiderustTwilightPhase::from_rust(phase) };
         SiderustStatus::Ok
     }}

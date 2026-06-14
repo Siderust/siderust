@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! Smoke tests for the reduced siderust-ffi C API.
@@ -35,8 +35,6 @@ fn one_day_window() -> TempochPeriodMjd {
 fn default_opts() -> SiderustSearchOpts {
     SiderustSearchOpts {
         time_tolerance_days: 1e-9,
-        scan_step_days: 0.0,
-        has_scan_step: false,
     }
 }
 
@@ -294,25 +292,67 @@ fn subject_vector_queries_allocate_and_free() {
 }
 
 #[test]
-fn altitude_periods_stays_body_only() {
-    let query = SiderustAltitudeQuery {
-        observer: paris_observer(),
-        start_mjd: mjd(60000.0),
-        end_mjd: mjd(60001.0),
-        min_altitude_deg: -90.0,
-        max_altitude_deg: 90.0,
-    };
+fn event_queries_reject_invalid_search_opts() {
+    for time_tolerance_days in [f64::NAN, f64::INFINITY, 0.0, -1.0] {
+        let opts = SiderustSearchOpts {
+            time_tolerance_days,
+        };
+        let mut periods: *mut TempochPeriodMjd = ptr::null_mut();
+        let mut count: usize = 0;
+        let status = unsafe {
+            siderust_above_threshold(
+                sun_subject(),
+                paris_observer(),
+                one_day_window(),
+                0.0,
+                opts,
+                &mut periods,
+                &mut count,
+            )
+        };
+        assert_eq!(status, SiderustStatus::InvalidArgument);
+        assert!(periods.is_null());
+        assert_eq!(count, 0);
+    }
+}
 
+#[test]
+fn altitude_ranges_works_for_generic_target() {
     let mut out: *mut TempochPeriodMjd = ptr::null_mut();
     let mut count = 0usize;
-    let status = unsafe { siderust_altitude_periods(sun_subject(), query, &mut out, &mut count) };
+    let status = unsafe {
+        siderust_altitude_ranges(
+            sun_subject(),
+            paris_observer(),
+            one_day_window(),
+            -90.0,
+            90.0,
+            default_opts(),
+            &mut out,
+            &mut count,
+        )
+    };
     assert_eq!(status, SiderustStatus::Ok);
     unsafe { siderust_periods_free(out, count) };
 
     let (target_handle, target_subject) = generic_target_subject();
-    let status = unsafe { siderust_altitude_periods(target_subject, query, &mut out, &mut count) };
-    assert_eq!(status, SiderustStatus::InvalidArgument);
-    unsafe { siderust_generic_target_free(target_handle) };
+    let status = unsafe {
+        siderust_altitude_ranges(
+            target_subject,
+            paris_observer(),
+            one_day_window(),
+            0.0,
+            90.0,
+            default_opts(),
+            &mut out,
+            &mut count,
+        )
+    };
+    assert_eq!(status, SiderustStatus::Ok);
+    unsafe {
+        siderust_periods_free(out, count);
+        siderust_generic_target_free(target_handle);
+    }
 }
 
 #[test]

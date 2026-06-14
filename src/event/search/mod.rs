@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! # Event Search
@@ -21,6 +21,9 @@
 //! - Brent, R.P. (1973). *Algorithms for Minimization without Derivatives*. Prentice-Hall.
 
 pub(crate) mod bracketing;
+pub(crate) mod crossings;
 pub(crate) mod extrema;
 pub(crate) mod intervals;
+pub(crate) mod periods;
 pub(crate) mod root_finding;
+pub(crate) mod scan_fallback;

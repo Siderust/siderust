@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! [`SpkKernel`] — owns DAF bytes, indexes every segment, and resolves
@@ -15,9 +15,8 @@
 //!
 //! [`SpkKernel::state`] is intentionally a wire-format API for kernel-native
 //! access and performance-sensitive adapters. Callers looking for the typed
-//! scientific API should prefer `siderust` ephemeris providers such as
-//! [`crate::pod::spice::SpiceEphemerisProvider`], which lift epochs, centers,
-//! frames, and units into typed `tempoch`/`affn`/`qtty` abstractions.
+//! scientific API should prefer the `pod` feature's `SpiceEphemerisProvider`, which
+//! lift epochs, centers, frames, and units into typed `tempoch`/`affn`/`qtty` abstractions.
 
 use std::collections::{HashMap, VecDeque};
 use std::path::Path;
@@ -161,9 +160,9 @@ impl SpkKernel {
     /// # Safety / Wire-format API
     ///
     /// This method intentionally exposes raw SPICE wire-format scalars. Prefer
-    /// a typed [`crate::pod::providers::EphemerisProvider`] implementation such
-    /// as [`crate::pod::spice::SpiceEphemerisProvider`] when you want a
-    /// scientific API with typed epochs, centers, frames, and units.
+    /// a typed `EphemerisProvider` implementation such as `SpiceEphemerisProvider`
+    /// (both from the `pod` feature) when you want a scientific API with typed
+    /// epochs, centers, frames, and units.
     pub fn state(
         &self,
         target: i32,

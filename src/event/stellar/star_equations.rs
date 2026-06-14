@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! # Star Altitude Analytical Model
@@ -29,7 +29,7 @@
 //! yielding O(1) bracket discovery per sidereal cycle, much faster than the
 //! uniform scan used for bodies with non‑trivial orbital motion (Sun, Moon).
 
-#![allow(unreachable_pub)]
+#![allow(dead_code, unreachable_pub)]
 
 use crate::astro::earth_rotation::jd_ut1_from_tt_eop;
 use crate::astro::nutation::nutation_iau2000b;
