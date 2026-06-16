@@ -81,4 +81,3 @@ pub mod providers;
 pub mod qc;
 pub mod run;
 pub mod spice;
-pub mod tabulated;

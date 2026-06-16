@@ -3,14 +3,14 @@
 
 //! # ESA LISA mission — OEM ephemerides and inter-satellite range
 //!
-//! This example demonstrates how to use the reusable `siderust::pod` tabulated
-//! ephemeris and observation helpers with LISA-like CCSDS OEM orbit files.
+//! This example demonstrates how to use reusable tabulated ephemerides and POD
+//! observation helpers with LISA-like CCSDS OEM orbit files.
 //!
 //! ## What this example shows
 //!
 //! 1. Load one CCSDS OEM file per LISA spacecraft with
-//!    [`siderust::pod::tabulated::read_oem_tdb_ephemeris`].
-//! 2. Build a typed [`siderust::pod::tabulated::TabulatedEphemerisProvider`]
+//!    [`siderust::ephemeris::tabulated::read_oem_tdb_ephemeris`].
+//! 2. Build a typed [`siderust::ephemeris::tabulated::TabulatedEphemerisProvider`]
 //!    backed by cubic Hermite interpolation.
 //! 3. Query a typed spacecraft state and compute a one-way light-time-corrected
 //!    inter-spacecraft range with
@@ -41,11 +41,10 @@ use std::fs::File;
 use qtty::Second;
 use siderust::coordinates::centers::Heliocentric;
 use siderust::coordinates::frames::EME2000;
-use siderust::pod::observation::one_way_light_time_range;
-use siderust::pod::tabulated::{
-    read_oem_tdb_ephemeris, TabulatedEphemeris, TabulatedEphemerisProvider,
+use siderust::ephemeris::tabulated::{
+    offset_tdb_epoch, read_oem_tdb_ephemeris, TabulatedEphemeris, TabulatedEphemerisProvider,
 };
-use tempoch::{Time, TDB};
+use siderust::pod::observation::one_way_light_time_range;
 
 type LisaEphemeris = TabulatedEphemeris<Heliocentric, EME2000>;
 type LisaProvider = TabulatedEphemerisProvider<Heliocentric, EME2000>;
@@ -58,22 +57,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .coverage()?;
 
     let sc1 = provider.state_at(-1001, coverage_start)?;
-    println!(
-        "SC1 at coverage start: ({:.0}, {:.0}, {:.0}) km",
-        sc1.position.x().value(),
-        sc1.position.y().value(),
-        sc1.position.z().value()
-    );
-    println!(
-        "SC1 velocity: ({:.1}, {:.1}, {:.1}) km/s",
-        sc1.velocity.x().value(),
-        sc1.velocity.y().value(),
-        sc1.velocity.z().value()
-    );
+    println!("SC1 at coverage start: {}", sc1.position);
+    println!("SC1 velocity: {}", sc1.velocity);
 
-    let range_epoch = Time::<TDB>::from_raw_j2000_seconds(Second::new(
-        coverage_start.to::<tempoch::J2000s>().raw().value() + 10.0,
-    ))?;
+    let range_epoch = offset_tdb_epoch(coverage_start, Second::new(10.0))?;
     let measured = one_way_light_time_range(&provider, -1001, -1002, range_epoch)?;
     let modeled = one_way_light_time_range(&provider, -1001, -1002, range_epoch)?;
     let residual_m = measured.value() - modeled.value();

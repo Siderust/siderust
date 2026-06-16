@@ -7,9 +7,9 @@ use affn::{ReferenceCenter, ReferenceFrame};
 use qtty::unit::Meter;
 use tempoch::{Time, TDB};
 
+use crate::ephemeris::tabulated::TabulatedCartesianState;
 use crate::pod::observation::error::PodObservationsError;
 use crate::pod::providers::EphemerisProvider;
-use crate::pod::tabulated::TabulatedCartesianState;
 
 const C_KM_S: f64 = 299_792.458;
 
@@ -62,8 +62,8 @@ mod tests {
     use super::*;
     use crate::coordinates::centers::Heliocentric;
     use crate::coordinates::frames::EME2000;
-    use crate::pod::tabulated::{
-        read_oem_tdb_ephemeris, TabulatedEphemeris, TabulatedEphemerisProvider,
+    use crate::ephemeris::tabulated::{
+        offset_tdb_epoch, read_oem_tdb_ephemeris, TabulatedEphemeris, TabulatedEphemerisProvider,
     };
 
     const OEM_A: &str = "\
@@ -111,10 +111,7 @@ META_STOP\n\
         let b: LisaEphemeris = read_oem_tdb_ephemeris(-1002, OEM_B.as_bytes()).unwrap();
         let provider = LisaProvider::new(vec![a, b]).unwrap();
         let (coverage_start, _) = provider.ephemeris(-1001).unwrap().coverage().unwrap();
-        let epoch = Time::<TDB>::from_raw_j2000_seconds(qtty::Second::new(
-            coverage_start.to::<tempoch::J2000s>().raw().value() + 10.0,
-        ))
-        .unwrap();
+        let epoch = offset_tdb_epoch(coverage_start, qtty::Second::new(10.0)).unwrap();
         let range = one_way_light_time_range(&provider, -1001, -1002, epoch).unwrap();
         assert!((range.value() - 1_000_000.0).abs() < 1e-6);
     }

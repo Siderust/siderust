@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Tabulated Cartesian ephemerides for POD examples and adapters.
+//! Tabulated Cartesian ephemerides.
 //!
 //! This module turns time-tagged Cartesian state histories into typed
 //! [`EphemerisProvider`](crate::pod::providers::EphemerisProvider)
@@ -11,14 +11,15 @@ use std::collections::HashMap;
 use std::io::Read;
 
 use affn::cartesian::{Position, Velocity};
-use affn::interpolation::{CubicHermiteQuantityTable, InterpolationError, QuantityHermiteNode};
+use affn::interpolation::{CubicHermiteTable, HermiteNode, InterpolationError};
 use affn::{ReferenceCenter, ReferenceFrame};
-use qtty::unit::{Kilometer, Second};
+use qtty::unit::Kilometer;
 use qtty::{Day, KmPerSecond, Quantity};
 use tempoch::{Time, TDB};
 
 use crate::formats::ccsds::oem::read_oem;
 use crate::formats::FormatError;
+#[cfg(feature = "pod")]
 use crate::pod::providers::EphemerisProvider;
 
 const J2000_JD: f64 = 2_451_545.0;
@@ -45,7 +46,7 @@ where
     F: ReferenceFrame,
 {
     body_naif_id: i32,
-    table: CubicHermiteQuantityTable<Second, Position<C, F, Kilometer>>,
+    table: CubicHermiteTable<qtty::Second, Position<C, F, Kilometer>>,
 }
 
 impl<C, F> TabulatedEphemeris<C, F>
@@ -60,7 +61,7 @@ where
     ) -> Result<Self, InterpolationError> {
         let nodes = states
             .into_iter()
-            .map(|state| QuantityHermiteNode {
+            .map(|state| HermiteNode {
                 x: state.epoch.to::<tempoch::J2000s>().raw(),
                 value: state.position,
                 derivative: state.velocity,
@@ -68,7 +69,7 @@ where
             .collect();
         Ok(Self {
             body_naif_id,
-            table: CubicHermiteQuantityTable::new(nodes)?,
+            table: CubicHermiteTable::new(nodes)?,
         })
     }
 
@@ -154,6 +155,7 @@ where
     }
 }
 
+#[cfg(feature = "pod")]
 impl<C, F> EphemerisProvider for TabulatedEphemerisProvider<C, F>
 where
     C: ReferenceCenter<Params = ()>,
@@ -241,6 +243,14 @@ fn jd_to_time_tdb(jd: f64) -> Result<Time<TDB>, TabulatedEphemerisError> {
 fn seconds_to_time_tdb(seconds: f64) -> Result<Time<TDB>, TabulatedEphemerisError> {
     Time::<TDB>::from_raw_j2000_seconds(qtty::Second::new(seconds))
         .map_err(|e| TabulatedEphemerisError::InvalidEpoch(e.to_string()))
+}
+
+/// Returns a TDB epoch offset by a typed duration in seconds.
+pub fn offset_tdb_epoch(
+    epoch: Time<TDB>,
+    offset: qtty::Second,
+) -> Result<Time<TDB>, TabulatedEphemerisError> {
+    seconds_to_time_tdb(epoch.to::<tempoch::J2000s>().raw().value() + offset.value())
 }
 
 /// Converts TDB seconds since J2000 into a Julian Date.
