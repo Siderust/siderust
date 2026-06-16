@@ -19,6 +19,9 @@ print_stdout  = "warn"
 [workspace.lints.rustdoc]
 broken_intra_doc_links = "deny"
 
+[patch.crates-io]
+affn = { path = "../affn" }
+
 [package]
 name = "siderust"
 version = "0.10.0"
