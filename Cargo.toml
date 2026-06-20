@@ -21,7 +21,7 @@ broken_intra_doc_links = "deny"
 
 [package]
 name = "siderust"
-version = "0.10.0"
+version = "0.10.1"
 edition = "2021"
 authors = ["VPRamon <vallespuigramon@gmail.com>"]
 description = "High-precision astronomy and satellite mechanics in Rust."
@@ -117,54 +117,3 @@ serde_json = "1.0"
 name = "test_event_search"
 path = "tests/test_event_search.rs"
 required-features = ["bench-internals"]
-
-[build-dependencies]
-
-[[bench]]
-name = "converters"
-harness = false
-
-[[bench]]
-name = "vsop87"
-harness = false
-
-[[bench]]
-name = "solar_altitude"
-harness = false
-required-features = ["bench-internals"]
-
-[[bench]]
-name = "moon_altitude"
-harness = false
-required-features = ["bench-internals"]
-
-[[bench]]
-name = "star_altitude"
-harness = false
-
-[[bench]]
-name = "elp2000"
-harness = false
-
-[[bench]]
-name = "ephemeris_comparison"
-harness = false
-
-[[bench]]
-name = "altitude_comparison"
-harness = false
-
-[[bench]]
-name = "de441"
-harness = false
-
-[[bench]]
-name = "spk_perf"
-harness = false
-
-[[bench]]
-name = "sidereal"
-harness = false
-
-[lints]
-workspace = true
