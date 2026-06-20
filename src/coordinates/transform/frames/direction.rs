@@ -83,8 +83,7 @@ impl TransformFrame<Direction<frames::ICRS>> for Direction<frames::EquatorialMea
 /// Frame transform from ICRS to Galactic for directions.
 impl TransformFrame<Direction<frames::Galactic>> for Direction<frames::ICRS> {
     fn to_frame(&self) -> Direction<frames::Galactic> {
-        let [x, y, z] =
-            galactic::icrs_to_galactic().apply_array([self.x(), self.y(), self.z()]);
+        let [x, y, z] = galactic::icrs_to_galactic().apply_array([self.x(), self.y(), self.z()]);
         Direction::<frames::Galactic>::from_array([x, y, z])
     }
 }
@@ -92,8 +91,7 @@ impl TransformFrame<Direction<frames::Galactic>> for Direction<frames::ICRS> {
 /// Frame transform from Galactic to ICRS for directions.
 impl TransformFrame<Direction<frames::ICRS>> for Direction<frames::Galactic> {
     fn to_frame(&self) -> Direction<frames::ICRS> {
-        let [x, y, z] =
-            galactic::galactic_to_icrs().apply_array([self.x(), self.y(), self.z()]);
+        let [x, y, z] = galactic::galactic_to_icrs().apply_array([self.x(), self.y(), self.z()]);
         Direction::<frames::ICRS>::from_array([x, y, z])
     }
 }
@@ -101,8 +99,8 @@ impl TransformFrame<Direction<frames::ICRS>> for Direction<frames::Galactic> {
 /// Frame transform from EquatorialMeanJ2000 to Galactic for directions.
 impl TransformFrame<Direction<frames::Galactic>> for Direction<frames::EquatorialMeanJ2000> {
     fn to_frame(&self) -> Direction<frames::Galactic> {
-        let [x, y, z] = galactic::equatorial_j2000_to_galactic()
-            .apply_array([self.x(), self.y(), self.z()]);
+        let [x, y, z] =
+            galactic::equatorial_j2000_to_galactic().apply_array([self.x(), self.y(), self.z()]);
         Direction::<frames::Galactic>::from_array([x, y, z])
     }
 }
@@ -110,8 +108,8 @@ impl TransformFrame<Direction<frames::Galactic>> for Direction<frames::Equatoria
 /// Frame transform from Galactic to EquatorialMeanJ2000 for directions.
 impl TransformFrame<Direction<frames::EquatorialMeanJ2000>> for Direction<frames::Galactic> {
     fn to_frame(&self) -> Direction<frames::EquatorialMeanJ2000> {
-        let [x, y, z] = galactic::galactic_to_equatorial_j2000()
-            .apply_array([self.x(), self.y(), self.z()]);
+        let [x, y, z] =
+            galactic::galactic_to_equatorial_j2000().apply_array([self.x(), self.y(), self.z()]);
         Direction::<frames::EquatorialMeanJ2000>::from_array([x, y, z])
     }
 }
@@ -119,8 +117,8 @@ impl TransformFrame<Direction<frames::EquatorialMeanJ2000>> for Direction<frames
 /// Frame transform from EclipticMeanJ2000 to Galactic for directions.
 impl TransformFrame<Direction<frames::Galactic>> for Direction<frames::EclipticMeanJ2000> {
     fn to_frame(&self) -> Direction<frames::Galactic> {
-        let [x, y, z] = galactic::ecliptic_j2000_to_galactic()
-            .apply_array([self.x(), self.y(), self.z()]);
+        let [x, y, z] =
+            galactic::ecliptic_j2000_to_galactic().apply_array([self.x(), self.y(), self.z()]);
         Direction::<frames::Galactic>::from_array([x, y, z])
     }
 }
@@ -128,8 +126,8 @@ impl TransformFrame<Direction<frames::Galactic>> for Direction<frames::EclipticM
 /// Frame transform from Galactic to EclipticMeanJ2000 for directions.
 impl TransformFrame<Direction<frames::EclipticMeanJ2000>> for Direction<frames::Galactic> {
     fn to_frame(&self) -> Direction<frames::EclipticMeanJ2000> {
-        let [x, y, z] = galactic::galactic_to_ecliptic_j2000()
-            .apply_array([self.x(), self.y(), self.z()]);
+        let [x, y, z] =
+            galactic::galactic_to_ecliptic_j2000().apply_array([self.x(), self.y(), self.z()]);
         Direction::<frames::EclipticMeanJ2000>::from_array([x, y, z])
     }
 }

@@ -69,7 +69,7 @@ const ICRS_TO_GALACTIC: Rotation3 = Rotation3::from_matrix_unchecked([
     [
         0.494_109_427_875_583_7,
         -0.444_829_629_960_011_2,
-        0.746_982_244_497_218_9,
+        0.746_982_244_497_219,
     ],
     [
         -0.867_666_149_019_004_7,
@@ -152,7 +152,7 @@ mod tests {
             [
                 0.494_109_427_875_583_7,
                 -0.444_829_629_960_011_2,
-                0.746_982_244_497_218_9,
+                0.746_982_244_497_219,
             ],
             [
                 -0.867_666_149_019_004_7,
@@ -161,9 +161,9 @@ mod tests {
             ],
         ];
 
-        for i in 0..3 {
-            for j in 0..3 {
-                assert!((m.as_matrix()[i][j] - expected[i][j]).abs() < 1e-16);
+        for (actual_row, expected_row) in m.as_matrix().iter().zip(expected) {
+            for (actual, expected) in actual_row.iter().zip(expected_row) {
+                assert!((actual - expected).abs() < 1e-16);
             }
         }
     }
