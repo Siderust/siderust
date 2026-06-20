@@ -39,18 +39,6 @@
 use super::bias;
 use affn::Rotation3;
 
-/// ICRS right ascension of the Galactic north pole, degrees.
-#[allow(dead_code)]
-const GALACTIC_NORTH_POLE_RA_DEG: f64 = 192.859_48;
-
-/// ICRS declination of the Galactic north pole, degrees.
-#[allow(dead_code)]
-const GALACTIC_NORTH_POLE_DEC_DEG: f64 = 27.128_25;
-
-/// Galactic longitude of the ascending node on the ICRS equator, degrees.
-#[allow(dead_code)]
-const GALACTIC_ASCENDING_NODE_LON_DEG: f64 = 32.931_92;
-
 /// ICRS → Galactic rotation matrix.
 ///
 /// SOFA obtains this by computing:
@@ -130,6 +118,9 @@ mod tests {
 
     #[test]
     fn galactic_north_pole_maps_to_positive_galactic_z() {
+        const GALACTIC_NORTH_POLE_RA_DEG: f64 = 192.859_48;
+        const GALACTIC_NORTH_POLE_DEC_DEG: f64 = 27.128_25;
+
         let ra = GALACTIC_NORTH_POLE_RA_DEG.to_radians();
         let dec = GALACTIC_NORTH_POLE_DEC_DEG.to_radians();
         let v = [dec.cos() * ra.cos(), dec.cos() * ra.sin(), dec.sin()];
