@@ -5,8 +5,8 @@
 //!
 //! ## Scientific scope
 //!
-//! The J2000.0 epoch defines several fixed rotations that appear throughout
-//! astrometric software:
+//! The J2000.0 epoch defines two interrelated fixed rotations that appear
+//! throughout astrometric software:
 //!
 //! 1. **Frame bias** (`rb`): a ~80 µas rotation from the ICRS to the J2000.0
 //!    mean equator/equinox. It arises because the ICRS pole and equinox do not
@@ -14,56 +14,27 @@
 //! 2. **Mean obliquity** (ε₀ = 84 381.406″): the tilt between Earth's mean
 //!    equatorial and ecliptic planes at J2000.0, used to rotate between
 //!    equatorial and ecliptic coordinates.
-//! 3. **IAU Galactic orientation**: the fixed ICRS↔Galactic rotation used by
-//!    modern catalogues and sky-map tooling.
 //!
 //! ## Technical scope
 //!
-//! Every fixed frame rotation involving ICRS, EquatorialMeanJ2000,
-//! EclipticMeanJ2000, and Galactic is derived from the constants in this
-//! module:
+//! Every fixed frame rotation involving ICRS, EquatorialMeanJ2000 and
+//! EclipticMeanJ2000 is derived from the two constants in this module:
 //!
 //! 1. [`FRAME_BIAS_ICRS_TO_J2000`] – the IAU 2006 frame bias matrix `rb`
 //!    (equivalent to the output of SOFA `iauBp06` at J2000.0).
 //! 2. The J2000 mean obliquity ε₀ = 84 381.406″ (IAU 2006, `iauObl06`).
-//! 3. The orthonormal ICRS→Galactic rotation matrix.
 //!
 //! Both the legacy `TransformFrame` impls and the `FrameRotationProvider`
-//! pipeline use this module so that the fixed rotations cannot diverge.
+//! pipeline use this module so that the bias/obliquity values cannot diverge.
 //!
 //! ## References
 //!
 //! - Capitaine, N. & Wallace, P. T. (2006). *Astronomical Journal*, 132, 2922.
 //! - SOFA routines `iauBp06`, `iauObl06`.
-//! - Blaauw, A., Gum, C. S., Pawsey, J. L., & Westerhout, G. (1960).
-//!   "The new I.A.U. system of galactic coordinates". *MNRAS* 121, 123.
 
 use crate::astro::precession;
 use affn::Rotation3;
 use std::sync::OnceLock;
-
-/// ICRS → Galactic direction rotation.
-///
-/// This is the standard orthonormal IAU Galactic rotation used by modern
-/// catalogue tooling. It maps ICRS unit vectors to Galactic `(l, b)` axes using
-/// the Galactic north pole at approximately `(α, δ) = (192.85948°, 27.12825°)`.
-const ICRS_TO_GALACTIC: Rotation3 = Rotation3::from_matrix_unchecked([
-    [
-        -0.054_875_560_416_215_4,
-        -0.873_437_090_234_885_1,
-        -0.483_835_015_548_713_2,
-    ],
-    [
-        0.494_109_427_875_583_7,
-        -0.444_829_629_960_011_2,
-        0.746_982_244_580_286_6,
-    ],
-    [
-        -0.867_666_149_019_004_7,
-        -0.198_076_373_431_201_5,
-        0.455_983_776_175_066_9,
-    ],
-]);
 
 /// Frame bias rotation matrix from ICRS to mean equator/equinox of J2000.0.
 ///
@@ -118,44 +89,6 @@ pub(crate) fn obliquity_eq_to_ecl() -> Rotation3 {
 #[inline]
 pub(crate) fn obliquity_ecl_to_eq() -> Rotation3 {
     Rotation3::rx(j2000_obliquity())
-}
-
-// ── Galactic helpers ──────────────────────────────────────────────────
-
-/// ICRS → Galactic.
-#[inline]
-pub(crate) fn icrs_to_galactic() -> Rotation3 {
-    ICRS_TO_GALACTIC
-}
-
-/// Galactic → ICRS.
-#[inline]
-pub(crate) fn galactic_to_icrs() -> Rotation3 {
-    ICRS_TO_GALACTIC.inverse()
-}
-
-/// EquatorialMeanJ2000 → Galactic.
-#[inline]
-pub(crate) fn equatorial_j2000_to_galactic() -> Rotation3 {
-    icrs_to_galactic() * frame_bias_j2000_to_icrs()
-}
-
-/// Galactic → EquatorialMeanJ2000.
-#[inline]
-pub(crate) fn galactic_to_equatorial_j2000() -> Rotation3 {
-    equatorial_j2000_to_galactic().inverse()
-}
-
-/// EclipticMeanJ2000 → Galactic.
-#[inline]
-pub(crate) fn ecliptic_j2000_to_galactic() -> Rotation3 {
-    icrs_to_galactic() * ecliptic_j2000_to_icrs()
-}
-
-/// Galactic → EclipticMeanJ2000.
-#[inline]
-pub(crate) fn galactic_to_ecliptic_j2000() -> Rotation3 {
-    ecliptic_j2000_to_galactic().inverse()
 }
 
 // ── Composed helpers ──────────────────────────────────────────────────
@@ -336,27 +269,5 @@ mod tests {
         for k in 0..3 {
             assert!((back[k] - v[k]).abs() < 1e-14);
         }
-    }
-
-    #[test]
-    fn icrs_galactic_composed_roundtrip() {
-        let v = [0.3, -0.4, 0.5];
-        let fwd = icrs_to_galactic().apply_array(v);
-        let back = galactic_to_icrs().apply_array(fwd);
-        for k in 0..3 {
-            assert!((back[k] - v[k]).abs() < 1e-14);
-        }
-    }
-
-    #[test]
-    fn galactic_north_pole_matches_matrix_z_axis() {
-        let ra = 192.859_48_f64.to_radians();
-        let dec = 27.128_25_f64.to_radians();
-        let v = [dec.cos() * ra.cos(), dec.cos() * ra.sin(), dec.sin()];
-        let out = icrs_to_galactic().apply_array(v);
-
-        assert!(out[0].abs() < 1e-9);
-        assert!(out[1].abs() < 1e-9);
-        assert!((out[2] - 1.0).abs() < 1e-12);
     }
 }
