@@ -83,7 +83,8 @@ impl TransformFrame<Direction<frames::ICRS>> for Direction<frames::EquatorialMea
 /// Frame transform from ICRS to Galactic for directions.
 impl TransformFrame<Direction<frames::Galactic>> for Direction<frames::ICRS> {
     fn to_frame(&self) -> Direction<frames::Galactic> {
-        let [x, y, z] = galactic::icrs_to_galactic().apply_array([self.x(), self.y(), self.z()]);
+        let [x, y, z] =
+            galactic::icrs_to_galactic().apply_array([self.x(), self.y(), self.z()]);
         Direction::<frames::Galactic>::from_array([x, y, z])
     }
 }
@@ -91,7 +92,8 @@ impl TransformFrame<Direction<frames::Galactic>> for Direction<frames::ICRS> {
 /// Frame transform from Galactic to ICRS for directions.
 impl TransformFrame<Direction<frames::ICRS>> for Direction<frames::Galactic> {
     fn to_frame(&self) -> Direction<frames::ICRS> {
-        let [x, y, z] = galactic::galactic_to_icrs().apply_array([self.x(), self.y(), self.z()]);
+        let [x, y, z] =
+            galactic::galactic_to_icrs().apply_array([self.x(), self.y(), self.z()]);
         Direction::<frames::ICRS>::from_array([x, y, z])
     }
 }
