@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
+//! Error types for HEALPix grid, index, and map operations.
+
 use super::ordering::HealpixOrdering;
 
 /// Result alias for HEALPix operations.
@@ -29,7 +31,7 @@ pub enum HealpixError {
         /// Number of pixels in the grid.
         npix: u64,
     },
-    /// The provided longitude/latitude was invalid.
+    /// A vector or spherical HEALPix angular quantity was invalid.
     #[error("invalid HEALPix angular input: {reason}")]
     InvalidAngles {
         /// Explanation of the angular validation failure.
