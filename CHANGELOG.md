@@ -21,6 +21,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Make stable-toolchain FFI builds reuse the checked-in C header while retaining
   header generation on nightly toolchains.
 
+## [0.10.1] - 2026-06-20
+
+### Added
+
+* Added fixed ICRS ↔ Galactic direction-frame transforms.
+* Added composed EquatorialMeanJ2000 ↔ Galactic and EclipticMeanJ2000 ↔ Galactic direction-frame transforms.
+* Added spherical `Direction` frame-transform coverage for Galactic coordinates through the existing Cartesian round-trip blanket implementation.
+* Added Galactic frame regression tests covering round-trip stability, SOFA reference matrix values, and the IAU Galactic north-pole direction.
+
+### Changed
+
+* Isolated the IAU/Hipparcos Galactic realization in `coordinates::transform::frames::galactic`, keeping the J2000 `bias` module focused on frame-bias and obliquity helpers.
+
+### Fixed
+
+* Avoided requiring nightly/cbindgen header generation for regular `siderust-ffi` builds when a checked-in FFI header is available.
+
 ## [0.10.0] - 2026-06-07
 
 ### Added

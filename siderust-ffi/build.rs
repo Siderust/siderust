@@ -2,6 +2,15 @@
 
 use std::env;
 use std::path::{Path, PathBuf};
+use std::process::Command;
+
+fn is_nightly_toolchain() -> bool {
+    let rustc = env::var_os("RUSTC").unwrap_or_else(|| "rustc".into());
+    Command::new(rustc)
+        .arg("--version")
+        .output()
+        .is_ok_and(|output| String::from_utf8_lossy(&output.stdout).contains("nightly"))
+}
 
 fn copy_checked_in_header(include_dir: &Path, out_dir: &Path) -> bool {
     let checked_in_header = include_dir.join("siderust_ffi.h");
@@ -20,17 +29,7 @@ fn main() {
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
     let include_dir = PathBuf::from(&crate_dir).join("include");
 
-    println!("cargo:rerun-if-changed=cbindgen.toml");
-    println!("cargo:rerun-if-changed=src/");
-
-    let rustc = env::var("RUSTC").unwrap_or_else(|_| "rustc".to_string());
-    let is_nightly = std::process::Command::new(&rustc)
-        .arg("--version")
-        .output()
-        .map(|o| String::from_utf8_lossy(&o.stdout).contains("nightly"))
-        .unwrap_or(false);
-
-    if !is_nightly && copy_checked_in_header(&include_dir, &out_dir) {
+    if !is_nightly_toolchain() && copy_checked_in_header(&include_dir, &out_dir) {
         return;
     }
 

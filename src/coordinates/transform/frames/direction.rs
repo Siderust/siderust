@@ -13,9 +13,10 @@
 //!
 //! ## Technical scope
 //!
-//! This module provides `TransformFrame` impls for `cartesian::Direction<F>`
-//! between the J2000.0 fixed frames (ICRS, EquatorialMeanJ2000,
-//! EclipticMeanJ2000) using the constant rotation matrices from [`bias`].
+//! This module provides `TransformFrame` impls for `cartesian::Direction<F>`.
+//! The fixed rotation matrices themselves live in the frame-specific helper
+//! modules (`bias` for J2000 frame-bias/obliquity and `galactic` for the
+//! IAU/Hipparcos Galactic realization).
 //!
 //! The higher-level runtime transforms (precession, nutation, GAST) for
 //! `Direction` types are provided by the provider system in
@@ -24,11 +25,11 @@
 //! ## References
 //!
 //! - Capitaine, N. & Wallace, P. T. (2006). *Astronomical Journal*, 132, 2922.
-//! - SOFA routines `iauObl06`, `iauBp06`.
+//! - SOFA routines `iauObl06`, `iauBp06`, `iauIcrs2g`, `iauG2icrs`.
 
 use crate::coordinates::cartesian::Direction;
 use crate::coordinates::frames::{self, MutableFrame};
-use crate::coordinates::transform::frames::bias;
+use crate::coordinates::transform::frames::{bias, galactic};
 use crate::coordinates::transform::TransformFrame;
 use affn::Rotation3;
 
@@ -79,6 +80,58 @@ impl TransformFrame<Direction<frames::ICRS>> for Direction<frames::EquatorialMea
     }
 }
 
+/// Frame transform from ICRS to Galactic for directions.
+impl TransformFrame<Direction<frames::Galactic>> for Direction<frames::ICRS> {
+    fn to_frame(&self) -> Direction<frames::Galactic> {
+        let [x, y, z] = galactic::icrs_to_galactic().apply_array([self.x(), self.y(), self.z()]);
+        Direction::<frames::Galactic>::from_array([x, y, z])
+    }
+}
+
+/// Frame transform from Galactic to ICRS for directions.
+impl TransformFrame<Direction<frames::ICRS>> for Direction<frames::Galactic> {
+    fn to_frame(&self) -> Direction<frames::ICRS> {
+        let [x, y, z] = galactic::galactic_to_icrs().apply_array([self.x(), self.y(), self.z()]);
+        Direction::<frames::ICRS>::from_array([x, y, z])
+    }
+}
+
+/// Frame transform from EquatorialMeanJ2000 to Galactic for directions.
+impl TransformFrame<Direction<frames::Galactic>> for Direction<frames::EquatorialMeanJ2000> {
+    fn to_frame(&self) -> Direction<frames::Galactic> {
+        let [x, y, z] =
+            galactic::equatorial_j2000_to_galactic().apply_array([self.x(), self.y(), self.z()]);
+        Direction::<frames::Galactic>::from_array([x, y, z])
+    }
+}
+
+/// Frame transform from Galactic to EquatorialMeanJ2000 for directions.
+impl TransformFrame<Direction<frames::EquatorialMeanJ2000>> for Direction<frames::Galactic> {
+    fn to_frame(&self) -> Direction<frames::EquatorialMeanJ2000> {
+        let [x, y, z] =
+            galactic::galactic_to_equatorial_j2000().apply_array([self.x(), self.y(), self.z()]);
+        Direction::<frames::EquatorialMeanJ2000>::from_array([x, y, z])
+    }
+}
+
+/// Frame transform from EclipticMeanJ2000 to Galactic for directions.
+impl TransformFrame<Direction<frames::Galactic>> for Direction<frames::EclipticMeanJ2000> {
+    fn to_frame(&self) -> Direction<frames::Galactic> {
+        let [x, y, z] =
+            galactic::ecliptic_j2000_to_galactic().apply_array([self.x(), self.y(), self.z()]);
+        Direction::<frames::Galactic>::from_array([x, y, z])
+    }
+}
+
+/// Frame transform from Galactic to EclipticMeanJ2000 for directions.
+impl TransformFrame<Direction<frames::EclipticMeanJ2000>> for Direction<frames::Galactic> {
+    fn to_frame(&self) -> Direction<frames::EclipticMeanJ2000> {
+        let [x, y, z] =
+            galactic::galactic_to_ecliptic_j2000().apply_array([self.x(), self.y(), self.z()]);
+        Direction::<frames::EclipticMeanJ2000>::from_array([x, y, z])
+    }
+}
+
 /// Frame transform from EclipticMeanJ2000 to ICRS for directions.
 /// Composed via EquatorialMeanJ2000 intermediate frame.
 impl TransformFrame<Direction<frames::ICRS>> for Direction<frames::EclipticMeanJ2000> {
@@ -102,6 +155,8 @@ impl TransformFrame<Direction<frames::EclipticMeanJ2000>> for Direction<frames::
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::coordinates::spherical;
+    use crate::qtty::Degrees;
 
     fn assert_arr3_close(a: [f64; 3], b: [f64; 3], eps: f64) {
         assert!((a[0] - b[0]).abs() < eps);
@@ -132,5 +187,42 @@ mod tests {
         let back: Direction<frames::ICRS> = eq.to_frame();
 
         assert_arr3_close(icrs.as_array(), back.as_array(), 1e-12);
+    }
+
+    #[test]
+    fn icrs_to_galactic_roundtrip_matches_original() {
+        let icrs = Direction::<frames::ICRS>::from_array([0.2, -0.4, 0.7]);
+        let galactic: Direction<frames::Galactic> = icrs.to_frame();
+        let back: Direction<frames::ICRS> = galactic.to_frame();
+
+        assert_arr3_close(icrs.as_array(), back.as_array(), 1e-12);
+    }
+
+    #[test]
+    fn galactic_north_pole_maps_to_positive_galactic_z() {
+        // IAU Galactic north-pole direction in ICRS coordinates.
+        let ra = 192.859_48_f64.to_radians();
+        let dec = 27.128_25_f64.to_radians();
+        let icrs = Direction::<frames::ICRS>::from_array([
+            dec.cos() * ra.cos(),
+            dec.cos() * ra.sin(),
+            dec.sin(),
+        ]);
+
+        let galactic: Direction<frames::Galactic> = icrs.to_frame();
+        assert!((galactic.x()).abs() < 1e-9);
+        assert!((galactic.y()).abs() < 1e-9);
+        assert!((galactic.z() - 1.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn spherical_direction_blanket_impl_supports_galactic_frame() {
+        let icrs = spherical::Direction::<frames::ICRS>::new_unchecked(
+            Degrees::new(27.128_25),
+            Degrees::new(192.859_48),
+        );
+        let galactic: spherical::Direction<frames::Galactic> = icrs.to_frame();
+
+        assert!((galactic.polar.value() - 90.0).abs() < 1e-9);
     }
 }
