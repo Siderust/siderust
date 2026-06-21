@@ -2,7 +2,8 @@ use super::*;
 use crate::coordinates::cartesian::Direction;
 use crate::coordinates::frames::{EquatorialMeanJ2000, Galactic};
 use crate::coordinates::transform::TransformFrame;
-use crate::healpix::{direction_from_lon_lat_rad, HealpixGrid, HealpixOrdering, Nside};
+use crate::healpix::{direction_from_theta_phi, HealpixGrid, HealpixOrdering, Nside};
+use std::f64::consts::FRAC_PI_2;
 
 fn provenance() -> StellarMapProvenance {
     StellarMapProvenance {
@@ -31,9 +32,10 @@ fn builder() -> StellarSurfaceBrightnessMapBuilder {
     }
 }
 
-fn record(lon_deg: f64, lat_deg: f64, v_mag: f64) -> StellarCatalogueRecord {
-    let galactic: Direction<Galactic> =
-        direction_from_lon_lat_rad(lon_deg.to_radians(), lat_deg.to_radians());
+fn record(phi_deg: f64, dec_deg: f64, v_mag: f64) -> StellarCatalogueRecord {
+    let theta = FRAC_PI_2 - dec_deg.to_radians();
+    let phi = phi_deg.to_radians();
+    let galactic: Direction<Galactic> = direction_from_theta_phi(theta, phi);
     let equatorial: Direction<EquatorialMeanJ2000> = galactic.to_frame();
     StellarCatalogueRecord {
         source_id: None,
