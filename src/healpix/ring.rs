@@ -122,7 +122,7 @@ pub(super) fn pixel_to_lon_lat_rad_checked(
 }
 
 /// Build a typed cartesian direction from longitude/latitude in radians.
-pub(super) fn direction_from_lon_lat_rad<F>(lon_rad: f64, lat_rad: f64) -> Direction<F>
+pub(crate) fn direction_from_lon_lat_rad<F>(lon_rad: f64, lat_rad: f64) -> Direction<F>
 where
     F: ReferenceFrame,
 {
