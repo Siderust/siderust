@@ -18,4 +18,4 @@ pub use nside::{Nside, MAX_NSIDE};
 pub use ordering::HealpixOrdering;
 pub(crate) use validation::validate_healpix_map_complete;
 #[cfg(test)]
-pub(crate) use ring::direction_from_lon_lat_rad;
+pub(crate) use ring::direction_from_theta_phi;
