@@ -9,6 +9,9 @@ mod provenance;
 mod record;
 mod validation;
 
+#[cfg(test)]
+mod tests;
+
 pub use brightness::StellarSurfaceBrightness;
 pub use builder::StellarSurfaceBrightnessMapBuilder;
 pub use error::{Result, StellarMapError};
