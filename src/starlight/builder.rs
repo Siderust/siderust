@@ -1,3 +1,11 @@
+//! Builder for integrated stellar surface-brightness HEALPix maps.
+//!
+//! The builder transforms catalogue records from
+//! [`EquatorialMeanJ2000`](crate::coordinates::frames::EquatorialMeanJ2000) to
+//! [`Galactic`](crate::coordinates::frames::Galactic), bins each source into a
+//! HEALPix pixel, accumulates B- and V-band S10 flux, and normalizes by pixel
+//! area.
+
 use crate::coordinates::cartesian::Direction;
 use crate::coordinates::frames::Galactic;
 use crate::coordinates::transform::TransformFrame;
@@ -8,15 +16,31 @@ use crate::starlight::{
     StellarSurfaceBrightnessMap,
 };
 
+/// Builder for Galactic stellar surface-brightness HEALPix maps.
+///
+/// The v1 model treats catalogue magnitudes as point-source contributions to
+/// the HEALPix pixel containing each source. B and V magnitudes are accumulated
+/// in S10 units and then divided by the pixel area in square degrees. The
+/// integrated radiance field is obtained by multiplying the V-band S10 surface
+/// brightness by `integrated_per_v_s10`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct StellarSurfaceBrightnessMapBuilder {
+    /// Output HEALPix grid.
     pub grid: HealpixGrid,
+    /// Optional inclusive lower V-magnitude cut.
     pub min_v_mag: Option<ApparentMagnitude>,
+    /// Optional inclusive upper V-magnitude cut.
     pub max_v_mag: Option<ApparentMagnitude>,
+    /// Scale from V-band S10 per square degree to integrated photon radiance.
     pub integrated_per_v_s10: f64,
 }
 
 impl StellarSurfaceBrightnessMapBuilder {
+    /// Build a Galactic stellar surface-brightness HEALPix map.
+    ///
+    /// The returned [`StellarSurfaceBrightnessMap`] keeps the generated map and
+    /// its provenance together so downstream serializers and validators cannot
+    /// accidentally detach the data from its origin metadata.
     pub fn build<I>(
         &self,
         records: I,
