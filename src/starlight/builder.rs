@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! Builder for integrated stellar surface-brightness HEALPix maps.
 //!
 //! The builder transforms catalogue records from
