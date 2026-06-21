@@ -10,6 +10,7 @@
 //!
 //! - **ICRS / GCRS** — pseudo-inertial, tied to extragalactic radio sources.
 //! - **EquatorialMeanJ2000 / EclipticMeanJ2000** — J2000.0 epoch realisation.
+//! - **Galactic** — IAU/Hipparcos fixed Galactic orientation in ICRS.
 //! - **EquatorialMeanOfDate / EquatorialTrueOfDate** — precession and nutation.
 //! - **CIRS / TIRS / ITRF / ECEF** — Earth-fixed chain (ERA, polar motion).
 //! - **Horizontal** — local horizon frame, tied to an observer site.
@@ -36,6 +37,7 @@
 
 pub(crate) mod bias;
 pub mod direction;
+pub(crate) mod galactic;
 pub mod to_ecliptic;
 pub mod to_equatorial;
 pub mod to_horizontal;

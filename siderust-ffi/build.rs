@@ -2,6 +2,15 @@
 
 use std::env;
 use std::path::{Path, PathBuf};
+use std::process::Command;
+
+fn is_nightly_toolchain() -> bool {
+    let rustc = env::var_os("RUSTC").unwrap_or_else(|| "rustc".into());
+    Command::new(rustc)
+        .arg("--version")
+        .output()
+        .is_ok_and(|output| String::from_utf8_lossy(&output.stdout).contains("nightly"))
+}
 
 fn copy_checked_in_header(include_dir: &Path, out_dir: &Path) -> bool {
     let checked_in_header = include_dir.join("siderust_ffi.h");
@@ -19,6 +28,10 @@ fn main() {
     let crate_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
     let include_dir = PathBuf::from(&crate_dir).join("include");
+
+    if !is_nightly_toolchain() && copy_checked_in_header(&include_dir, &out_dir) {
+        return;
+    }
 
     let config =
         cbindgen::Config::from_file("cbindgen.toml").expect("Unable to read cbindgen.toml");
