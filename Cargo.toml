@@ -84,7 +84,7 @@ pod-doris = ["pod", "doris"]
 bench-internals = []
 
 [dependencies]
-affn = { version = "0.8", features = ["astro"] }
+affn = { version = "0.7", features = ["astro"] }
 cheby = { version = "0.4" }
 keplerian = { version = "0.2" }
 optica = { version = "0.2"}
