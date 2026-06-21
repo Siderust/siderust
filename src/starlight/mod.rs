@@ -1,3 +1,21 @@
+//! Integrated stellar surface-brightness map construction.
+//!
+//! This module builds Galactic HEALPix maps from stellar catalogue records. The
+//! v1 model bins catalogue-star flux into B- and V-band tenth-magnitude-star
+//! (`S10`) surface-brightness diagnostics, then scales V-band S10 to an
+//! integrated photon radiance using a caller-provided calibration factor.
+//!
+//! The implementation is intended for reproducible data-asset generation. It is
+//! not a full spectral synthesis or passband integration model.
+//!
+//! # References
+//!
+//! - Leinert, C. et al. (1998), "The 1997 reference of diffuse night sky
+//!   brightness", Astronomy and Astrophysics Supplement Series, 127, 1.
+//! - Gorski, K. M. et al. (2005), "HEALPix: A Framework for High-Resolution
+//!   Discretization and Fast Analysis of Data Distributed on the Sphere",
+//!   Astrophysical Journal, 622, 759.
+
 mod brightness;
 mod builder;
 pub mod csv;
