@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! HEALPix grid definition and frame-neutral pixelization operations.
 //!
 //! A [`HealpixGrid`] stores the HEALPix resolution parameter `nside` and the
