@@ -1,27 +1,33 @@
-// SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) 2026 Vallés Puig, Ramon
-
 use crate::coordinates::cartesian::Direction;
 use crate::coordinates::frames::ReferenceFrame;
 use crate::healpix::{HealpixError, HealpixGrid, HealpixIndex, HealpixOrdering, Result};
 use std::f64::consts::{FRAC_PI_2, TAU};
 
-pub(super) fn lon_lat_rad_to_pixel_checked(
-    grid: &HealpixGrid,
-    lon_rad: f64,
-    lat_rad: f64,
-) -> Result<HealpixIndex> {
+pub(super) fn unit_vector_to_pixel(grid: &HealpixGrid, xyz: [f64; 3]) -> Result<HealpixIndex> {
+    let [x, y, z] = xyz;
+    let radius = x.hypot(y).hypot(z);
+    if !radius.is_finite() || radius == 0.0 {
+        return Err(HealpixError::InvalidAngles {
+            reason: "direction vector must be finite and non-zero",
+        });
+    }
+    let phi = y.atan2(x).rem_euclid(TAU);
+    let z = (z / radius).clamp(-1.0, 1.0);
+    phi_z_to_pixel(grid, phi, z)
+}
+
+fn phi_z_to_pixel(grid: &HealpixGrid, phi: f64, z: f64) -> Result<HealpixIndex> {
     if grid.ordering() != HealpixOrdering::Ring {
         return Err(HealpixError::UnsupportedOrdering(grid.ordering()));
     }
-    if !lon_rad.is_finite() || !lat_rad.is_finite() {
+    if !phi.is_finite() || !z.is_finite() {
         return Err(HealpixError::InvalidAngles {
-            reason: "longitude and latitude must be finite",
+            reason: "HEALPix phi and z must be finite",
         });
     }
-    if !(-FRAC_PI_2..=FRAC_PI_2).contains(&lat_rad) {
+    if !(-1.0..=1.0).contains(&z) {
         return Err(HealpixError::InvalidAngles {
-            reason: "latitude must lie in [-pi/2, pi/2] radians",
+            reason: "HEALPix z must lie in [-1, 1]",
         });
     }
 
@@ -29,8 +35,7 @@ pub(super) fn lon_lat_rad_to_pixel_checked(
     let nside_f = nside as f64;
     let nl4 = 4 * nside;
     let ncap = 2 * nside * (nside - 1);
-    let phi = lon_rad.rem_euclid(TAU);
-    let z = lat_rad.sin();
+    let phi = phi.rem_euclid(TAU);
     let za = z.abs();
     let tt = phi / FRAC_PI_2;
 
@@ -73,10 +78,7 @@ pub(super) fn lon_lat_rad_to_pixel_checked(
     Ok(pixel)
 }
 
-pub(super) fn pixel_to_lon_lat_rad_checked(
-    grid: &HealpixGrid,
-    index: HealpixIndex,
-) -> Result<(f64, f64)> {
+pub(super) fn pixel_to_theta_phi(grid: &HealpixGrid, index: HealpixIndex) -> Result<(f64, f64)> {
     if grid.ordering() != HealpixOrdering::Ring {
         return Err(HealpixError::UnsupportedOrdering(grid.ordering()));
     }
@@ -101,11 +103,7 @@ pub(super) fn pixel_to_lon_lat_rad_checked(
         let ip = pix - ncap;
         let iring = ip / nl4 + nside;
         let iphi = ip % nl4 + 1;
-        let fodd = if ((iring + nside) & 1) == 1 {
-            1.0
-        } else {
-            0.5
-        };
+        let fodd = if ((iring + nside) & 1) == 1 { 1.0 } else { 0.5 };
         let z = (2.0 * nside_f - iring as f64) * fact1;
         let phi = (iphi as f64 - fodd) * FRAC_PI_2 / nside_f;
         (phi, z)
@@ -118,18 +116,17 @@ pub(super) fn pixel_to_lon_lat_rad_checked(
         (phi, z)
     };
 
-    Ok((phi.rem_euclid(TAU), z.clamp(-1.0, 1.0).asin()))
+    Ok((z.clamp(-1.0, 1.0).acos(), phi.rem_euclid(TAU)))
 }
 
-/// Build a typed cartesian direction from longitude/latitude in radians.
-pub(crate) fn direction_from_lon_lat_rad<F>(lon_rad: f64, lat_rad: f64) -> Direction<F>
+pub(crate) fn direction_from_theta_phi<F>(theta: f64, phi: f64) -> Direction<F>
 where
     F: ReferenceFrame,
 {
-    let cos_lat = lat_rad.cos();
+    let sin_theta = theta.sin();
     Direction::<F>::from_array([
-        cos_lat * lon_rad.cos(),
-        cos_lat * lon_rad.sin(),
-        lat_rad.sin(),
+        sin_theta * phi.cos(),
+        sin_theta * phi.sin(),
+        theta.cos(),
     ])
 }
