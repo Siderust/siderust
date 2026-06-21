@@ -69,5 +69,5 @@ fn push_optional_header(out: &mut String, key: &str, value: Option<&str>) {
 }
 
 fn sanitize_header_value(value: &str) -> String {
-    value.replace(['\r', '\n'], " ")
+    value.replace('\r', " ").replace('\n', " ")
 }
