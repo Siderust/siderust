@@ -29,8 +29,7 @@
 use crate::coordinates::cartesian::Direction;
 use crate::coordinates::frames::{EquatorialMeanJ2000, Galactic};
 use crate::coordinates::transform::TransformFrame;
-use crate::healpix::{direction_from_lon_lat_rad, HealpixGrid, HealpixMap, HealpixError, HealpixIndex};
-use std::f64::consts::PI;
+use crate::healpix::{HealpixError, HealpixGrid, HealpixIndex, HealpixMap};
 
 /// Result alias for stellar surface-brightness map operations.
 pub type Result<T> = std::result::Result<T, StellarMapError>;
@@ -424,22 +423,12 @@ fn push_optional_header(out: &mut String, key: &str, value: Option<&str>) {
     }
 }
 
-fn galactic_record(lon_deg: f64, lat_deg: f64, v_mag: f64) -> StellarCatalogueRecord {
-    let galactic: Direction<Galactic> = direction_from_lon_lat_rad(lon_deg.to_radians(), lat_deg.to_radians());
-    let equatorial: Direction<EquatorialMeanJ2000> = galactic.to_frame();
-    StellarCatalogueRecord {
-        source_id: None,
-        direction: equatorial,
-        b_mag: Some(ApparentMagnitude::new(v_mag).expect("finite B magnitude")),
-        v_mag: Some(ApparentMagnitude::new(v_mag).expect("finite V magnitude")),
-        weight: 1.0,
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::healpix::{HealpixOrdering, Nside};
+    use crate::coordinates::frames::EquatorialMeanJ2000;
+    use crate::healpix::{direction_from_lon_lat_rad, HealpixOrdering, Nside};
+    use std::f64::consts::PI;
 
     fn provenance() -> StellarMapProvenance {
         StellarMapProvenance {
@@ -466,6 +455,19 @@ mod tests {
             max_v_mag: None,
             integrated_per_v_s10: 42.0,
             smoothing_fwhm_deg: None,
+        }
+    }
+
+    fn galactic_record(lon_deg: f64, lat_deg: f64, v_mag: f64) -> StellarCatalogueRecord {
+        let galactic: Direction<Galactic> =
+            direction_from_lon_lat_rad(lon_deg.to_radians(), lat_deg.to_radians());
+        let equatorial: Direction<EquatorialMeanJ2000> = galactic.to_frame();
+        StellarCatalogueRecord {
+            source_id: None,
+            direction: equatorial,
+            b_mag: Some(ApparentMagnitude::new(v_mag).expect("finite B magnitude")),
+            v_mag: Some(ApparentMagnitude::new(v_mag).expect("finite V magnitude")),
+            weight: 1.0,
         }
     }
 
