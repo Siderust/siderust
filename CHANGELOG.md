@@ -13,6 +13,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add a reusable POD helper for one-way inter-satellite range with a light-time
   correction.
 - Add a LISA POD example using the tabulated ephemeris provider and range helper.
+- Add typed HEALPix primitives for reusable full-sky maps: validated `Nside`,
+  `HealpixIndex`, `HealpixOrdering`, `HealpixGrid`, and frame-typed
+  `HealpixMap<F, T>`.
+- Add frame-neutral HEALPix pixelization from typed Cartesian `Direction<F>`
+  values, with a documented private RING kernel using HEALPix `theta`, `phi`,
+  and `z = cos(theta)` terminology.
+- Add integrated-starlight map APIs for Galactic HEALPix surface-brightness maps,
+  including catalogue records, apparent-magnitude validation, S10 photometry,
+  provenance metadata, deterministic CSV serialization, and scientific
+  validators for generated map assets.
 
 ### Changed
 
@@ -20,6 +30,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to the crates.io `tempoch-ffi` 0.6.6 release.
 - Make stable-toolchain FFI builds reuse the checked-in C header while retaining
   header generation on nightly toolchains.
+- Document the new HEALPix and starlight modules with scientific scope,
+  technical scope, and primary references, following the workspace
+  `missing_docs = "deny"` policy.
 
 ## [0.10.1] - 2026-06-20
 
