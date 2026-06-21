@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! CSV serialization for generated stellar surface-brightness maps.
 //!
 //! The CSV representation is intentionally simple and deterministic so it can
