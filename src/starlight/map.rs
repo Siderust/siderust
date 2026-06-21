@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! Generated stellar surface-brightness map wrapper.
 //!
 //! The wrapper keeps the typed Galactic HEALPix map and its provenance metadata
