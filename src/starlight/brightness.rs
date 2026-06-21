@@ -1,10 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
+//! Pixel values stored in stellar surface-brightness maps.
+//!
+//! The v1 representation keeps both diagnostic S10 surface-brightness values
+//! and the integrated photon radiance used by downstream night-sky-brightness
+//! calculations.
+
 /// Pixel value for a stellar surface-brightness map.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct StellarSurfaceBrightness {
-    /// Integrated photon radiance in photons cm^-2 ns^-1 sr^-1.
+    /// Integrated photon radiance in photons per square centimeter per nanosecond per steradian.
     pub integrated_ph_cm2_ns_sr: f64,
     /// B-band tenth-magnitude-star surface brightness per square degree.
     pub b_s10: f64,
