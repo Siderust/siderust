@@ -1,4 +1,6 @@
 use super::*;
+use crate::coordinates::cartesian::Direction;
+use crate::coordinates::frames;
 use std::f64::consts::PI;
 
 fn ring_grid(nside: u32) -> HealpixGrid {
@@ -25,6 +27,16 @@ fn pixel_areas_sum_to_full_sphere() {
     let grid = ring_grid(64);
     let area = grid.pixel_area_sr() * grid.npix() as f64;
     assert!((area - 4.0 * PI).abs() < 1e-12);
+}
+
+#[test]
+fn pixel_centres_roundtrip_through_direction_api() {
+    let grid = ring_grid(8);
+    for raw in [0, 1, 7, 63, 128, 511, grid.npix() - 1] {
+        let index = HealpixIndex::new(raw);
+        let direction: Direction<frames::Galactic> = grid.pixel_center(index).expect("center");
+        assert_eq!(grid.direction_to_pixel(direction).expect("pixel"), index);
+    }
 }
 
 #[test]
