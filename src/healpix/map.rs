@@ -4,16 +4,15 @@ use std::marker::PhantomData;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct HealpixMap<F, T>
-where
-    F: ReferenceFrame,
+where F: ReferenceFrame,
 {
     grid: HealpixGrid,
     values: Vec<T>,
     pub(crate) marker: PhantomData<F>,
-}\n
+}
+
 impl<F, T> HealpixMap<F, T>
-where
-    F: ReferenceFrame,
+where F: ReferenceFrame,
 {
     pub fn new(grid: HealpixGrid, values: Vec<T>) -> Result<Self> {
         let len = values.len();
