@@ -1,6 +1,3 @@
-// SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) 2026 Vallés Puig, Ramon
-
 use crate::coordinates::cartesian::Direction;
 use crate::coordinates::frames::Galactic;
 use crate::coordinates::transform::TransformFrame;
@@ -8,30 +5,23 @@ use crate::healpix::{HealpixGrid, HealpixMap};
 use crate::starlight::{
     flux_10mag_units, validate_stellar_map_values, ApparentMagnitude, Result,
     StellarCatalogueRecord, StellarMapError, StellarMapProvenance, StellarSurfaceBrightness,
+    StellarSurfaceBrightnessMap,
 };
 
-/// Builder for Galactic stellar surface-brightness HEALPix maps.
 #[derive(Debug, Clone, PartialEq)]
 pub struct StellarSurfaceBrightnessMapBuilder {
-    /// Output HEALPix grid.
     pub grid: HealpixGrid,
-    /// Optional inclusive lower V-magnitude cut.
     pub min_v_mag: Option<ApparentMagnitude>,
-    /// Optional inclusive upper V-magnitude cut.
     pub max_v_mag: Option<ApparentMagnitude>,
-    /// Scale from V S10 per square degree to integrated photon radiance.
     pub integrated_per_v_s10: f64,
-    /// Optional smoothing FWHM in degrees. The v1 builder requires `None`.
-    pub smoothing_fwhm_deg: Option<f64>,
 }
 
 impl StellarSurfaceBrightnessMapBuilder {
-    /// Build a Galactic HEALPix stellar surface-brightness map.
     pub fn build<I>(
         &self,
         records: I,
-        _provenance: StellarMapProvenance,
-    ) -> Result<HealpixMap<Galactic, StellarSurfaceBrightness>>
+        provenance: StellarMapProvenance,
+    ) -> Result<StellarSurfaceBrightnessMap>
     where
         I: IntoIterator<Item = StellarCatalogueRecord>,
     {
@@ -39,9 +29,6 @@ impl StellarSurfaceBrightnessMapBuilder {
             return Err(StellarMapError::InvalidRadianceScale(
                 self.integrated_per_v_s10,
             ));
-        }
-        if self.smoothing_fwhm_deg.is_some() {
-            return Err(StellarMapError::UnsupportedSmoothing);
         }
 
         let npix = usize::try_from(self.grid.npix()).expect("HEALPix npix fits usize");
@@ -90,7 +77,7 @@ impl StellarSurfaceBrightnessMapBuilder {
 
         let map = HealpixMap::<Galactic, StellarSurfaceBrightness>::new(self.grid, values)?;
         validate_stellar_map_values(&map)?;
-        Ok(map)
+        Ok(StellarSurfaceBrightnessMap::new(map, provenance))
     }
 
     fn passes_v_magnitude_cut(&self, magnitude: Option<ApparentMagnitude>) -> bool {
