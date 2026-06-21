@@ -4,8 +4,10 @@
 use crate::coordinates::cartesian::Direction;
 use crate::coordinates::frames::ReferenceFrame;
 use crate::coordinates::spherical;
-use crate::healpix::{ring, HealpixError, HealpixIndex, HealpixOrdering, Nside, Result};
+use crate::healpix::{HealpixError, HealpixIndex, HealpixOrdering, Nside, Result};
 use std::f64::consts::PI;
+
+use super::ring;
 
 /// HEALPix grid definition.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -94,7 +96,10 @@ impl HealpixGrid {
     ///
     /// Siderust spherical directions store latitude-like polar angle first and
     /// longitude-like azimuth second, both as typed angular quantities.
-    pub fn spherical_to_pixel<F>(&self, direction: spherical::Direction<F>) -> Result<HealpixIndex>
+    pub fn spherical_to_pixel<F>(
+        &self,
+        direction: spherical::Direction<F>,
+    ) -> Result<HealpixIndex>
     where
         F: ReferenceFrame,
     {
