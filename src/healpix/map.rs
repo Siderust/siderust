@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! Frame-typed HEALPix map storage.
 //!
 //! A HEALPix map is represented as one value per pixel in the ordering defined
