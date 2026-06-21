@@ -73,9 +73,11 @@ fn catalogues_without_usable_photometry_fail() {
 }
 
 #[test]
-fn csv_contains_one_row_per_pixel() {
+fn csv_contains_header_and_one_row_per_pixel() {
     let map = builder()
         .build(vec![record(0.0, 0.0, 10.0)], provenance())
         .expect("map");
-    assert_eq!(csv::to_csv(&map).lines().count(), map.values().len());
+    let csv = csv::to_csv(&map);
+    assert!(csv.starts_with("healpix_index,integrated_ph_cm2_ns_sr,b_s10,v_s10"));
+    assert_eq!(csv.lines().count(), map.values().len() + 1);
 }
