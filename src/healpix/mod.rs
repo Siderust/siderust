@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! HEALPix grids, pixel indices, and frame-typed map containers.
 //!
 //! This module implements reusable library primitives for the Hierarchical Equal
