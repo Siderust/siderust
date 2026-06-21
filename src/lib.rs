@@ -70,6 +70,8 @@
 //! ## Crate Modules
 //!
 //! - [`coordinates`]             : Cartesian & Spherical coordinate types and transformations; includes [`SkyGrid`] sampling utility
+//! - [`healpix`]                 : Typed HEALPix full-sky grid, index, and map primitives
+//! - [`starlight`]               : Stellar surface-brightness HEALPix map builder and validators
 //! - [`targets`]                 : `CoordinateWithPM<T>` + `Trackable` trait for observation targets
 //! - [`time`]                    : Thin re-export facade over `tempoch`; adds TT-default [`JulianDate`] / [`J2000`] aliases
 //! - [`astro`]                   : Aberration, nutation, precession, sidereal time, conic helpers, event support, orbits, orbital mechanics
@@ -131,6 +133,7 @@ pub mod coordinates;
 pub mod ephemeris;
 pub mod event;
 pub mod formats;
+pub mod healpix;
 pub mod mission;
 #[cfg(feature = "photometry")]
 pub mod photometry;
@@ -139,6 +142,7 @@ pub mod pod;
 pub mod qtty;
 #[cfg(feature = "spice")]
 pub mod spice;
+pub mod starlight;
 pub mod targets;
 pub mod time;
 
