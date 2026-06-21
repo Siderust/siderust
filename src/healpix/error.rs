@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-use crate::healpix::HealpixOrdering;
+use super::ordering::HealpixOrdering;
 
 /// Result alias for HEALPix operations.
 pub type Result<T> = std::result::Result<T, HealpixError>;
