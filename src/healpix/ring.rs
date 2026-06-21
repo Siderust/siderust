@@ -1,3 +1,18 @@
+//! HEALPix RING-ordering numerical kernels.
+//!
+//! This private module implements the RING indexing formulae used by
+//! [`HealpixGrid`](crate::healpix::HealpixGrid). The public API remains based on
+//! typed Cartesian directions; this module converts unit vectors to the HEALPix
+//! spherical variables `phi` and `z = cos(theta)` before applying the RING
+//! indexing equations.
+//!
+//! # References
+//!
+//! - Gorski, K. M. et al. (2005), "HEALPix: A Framework for High-Resolution
+//!   Discretization and Fast Analysis of Data Distributed on the Sphere",
+//!   Astrophysical Journal, 622, 759.
+//! - HEALPix Primer, section on RING and NESTED pixel numbering schemes.
+
 use crate::coordinates::cartesian::Direction;
 use crate::coordinates::frames::ReferenceFrame;
 use crate::healpix::{HealpixError, HealpixGrid, HealpixIndex, HealpixOrdering, Result};
