@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
+//! Input catalogue records consumed by the starlight map builder.
+//!
+//! Records are intentionally minimal: source identifier, sky direction, optional
+//! B/V magnitudes, and an optional weighting factor. The builder owns catalogue
+//! filtering and validation policy.
+
 use crate::coordinates::cartesian::Direction;
 use crate::coordinates::frames::EquatorialMeanJ2000;
 use crate::starlight::ApparentMagnitude;
