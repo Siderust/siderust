@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
+//! Provenance metadata for generated stellar map assets.
+//!
+//! Provenance is part of the scientific data product. It records the source
+//! catalogue, release, photometric model, generation time, and generator identity
+//! needed to reproduce or audit a generated starlight map.
+
 /// Provenance metadata for generated stellar maps.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StellarMapProvenance {
