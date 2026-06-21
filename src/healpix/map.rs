@@ -9,9 +9,8 @@ where
 {
     grid: HealpixGrid,
     values: Vec<T>,
-    marker: PhantomData<F>,
-}
-
+    pub(crate) marker: PhantomData<F>,
+}\n
 impl<F, T> HealpixMap<F, T>
 where
     F: ReferenceFrame,
