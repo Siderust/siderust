@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
+use crate::coordinates::cartesian::Direction;
 use crate::coordinates::frames::Galactic;
-use crate::healpix::{HealpixError, HealpixIndex, HealpixMap};
+use crate::healpix::{HealpixError, HealpixGrid, HealpixIndex, HealpixMap};
 use crate::starlight::{Result, StellarMapError, StellarSurfaceBrightness};
+use std::f64::consts::TAU;
 
 /// Validate that a stellar map contains finite, non-negative values.
 pub fn validate_stellar_map_values(
@@ -76,11 +78,10 @@ pub fn validate_plane_pole_contrast(
     let mut pole_count = 0_u64;
 
     for (raw, value) in map.values().iter().enumerate() {
-        let (_, lat) = map
-            .grid()
-            .pixel_to_lon_lat_rad_checked(HealpixIndex::new(
-                u64::try_from(raw).expect("index fits u64"),
-            ))?;
+        let (_, lat) = pixel_lon_lat_rad(
+            map.grid(),
+            HealpixIndex::new(u64::try_from(raw).expect("index fits u64")),
+        )?;
         let lat_deg = lat.to_degrees().abs();
         if lat_deg <= 10.0 {
             plane_sum += value.v_s10;
@@ -137,11 +138,10 @@ pub fn validate_no_longitude_wrap_artifact(
     let mut high_count = 0_u64;
 
     for (raw, value) in map.values().iter().enumerate() {
-        let (lon, lat) = map
-            .grid()
-            .pixel_to_lon_lat_rad_checked(HealpixIndex::new(
-                u64::try_from(raw).expect("index fits u64"),
-            ))?;
+        let (lon, lat) = pixel_lon_lat_rad(
+            map.grid(),
+            HealpixIndex::new(u64::try_from(raw).expect("index fits u64")),
+        )?;
         let lon_deg = lon.to_degrees();
         let lat_deg = lat.to_degrees().abs();
         if lat_deg <= 30.0 && lon_deg <= 10.0 {
@@ -169,4 +169,12 @@ pub fn validate_no_longitude_wrap_artifact(
             "longitude wrap jump exceeds tolerance",
         ))
     }
+}
+
+fn pixel_lon_lat_rad(grid: HealpixGrid, index: HealpixIndex) -> Result<(f64, f64)> {
+    let direction: Direction<Galactic> = grid.pixel_center(index)?;
+    let [x, y, z] = direction.as_array();
+    let lon = y.atan2(x).rem_euclid(TAU);
+    let lat = z.clamp(-1.0, 1.0).asin();
+    Ok((lon, lat))
 }
