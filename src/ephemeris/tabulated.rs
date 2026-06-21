@@ -62,7 +62,7 @@ where
         let nodes = states
             .into_iter()
             .map(|state| HermiteNode {
-                x: state.epoch.to::<tempoch::J2000s>().raw(),
+                abscissa: state.epoch.to::<tempoch::J2000s>().raw(),
                 value: state.position,
                 derivative: state.velocity,
             })
@@ -81,8 +81,8 @@ where
     /// Returns the first and last supported epochs.
     pub fn coverage(&self) -> Result<(Time<TDB>, Time<TDB>), TabulatedEphemerisError> {
         let samples = self.table.samples();
-        let start = samples[0].x.value();
-        let stop = samples[samples.len() - 1].x.value();
+        let start = samples[0].abscissa.value();
+        let stop = samples[samples.len() - 1].abscissa.value();
         Ok((seconds_to_time_tdb(start)?, seconds_to_time_tdb(stop)?))
     }
 
@@ -303,7 +303,9 @@ META_STOP\n\
             read_oem_tdb_ephemeris(-1001, OEM_SAMPLE.as_bytes()).unwrap();
         let provider = LisaProvider::new(vec![ephemeris]).unwrap();
         assert!(matches!(
-            provider.state(999, epoch0_seconds()).unwrap_err(),
+            provider
+                .state_at(999, seconds_to_time_tdb(epoch0_seconds()).unwrap())
+                .unwrap_err(),
             TabulatedEphemerisError::UnknownBody(999)
         ));
     }
@@ -333,6 +335,6 @@ META_STOP\n\
     fn epoch0_seconds() -> f64 {
         let ephemeris: LisaEphemeris =
             read_oem_tdb_ephemeris(-1001, OEM_SAMPLE.as_bytes()).unwrap();
-        ephemeris.table.samples()[0].x.value()
+        ephemeris.table.samples()[0].abscissa.value()
     }
 }

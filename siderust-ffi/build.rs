@@ -20,6 +20,20 @@ fn main() {
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
     let include_dir = PathBuf::from(&crate_dir).join("include");
 
+    println!("cargo:rerun-if-changed=cbindgen.toml");
+    println!("cargo:rerun-if-changed=src/");
+
+    let rustc = env::var("RUSTC").unwrap_or_else(|_| "rustc".to_string());
+    let is_nightly = std::process::Command::new(&rustc)
+        .arg("--version")
+        .output()
+        .map(|o| String::from_utf8_lossy(&o.stdout).contains("nightly"))
+        .unwrap_or(false);
+
+    if !is_nightly && copy_checked_in_header(&include_dir, &out_dir) {
+        return;
+    }
+
     let config =
         cbindgen::Config::from_file("cbindgen.toml").expect("Unable to read cbindgen.toml");
 
