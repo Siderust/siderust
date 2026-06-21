@@ -56,7 +56,9 @@ mod tests {
     use crate::coordinates::cartesian::Direction;
     use crate::coordinates::frames::{EquatorialMeanJ2000, Galactic};
     use crate::coordinates::transform::TransformFrame;
-    use crate::healpix::{direction_from_lon_lat_rad, HealpixGrid, HealpixMap, HealpixOrdering, Nside};
+    use crate::healpix::{
+        direction_from_lon_lat_rad, HealpixGrid, HealpixMap, HealpixOrdering, Nside,
+    };
     use std::f64::consts::PI;
 
     fn provenance() -> StellarMapProvenance {
@@ -109,7 +111,10 @@ mod tests {
 
     #[test]
     fn stellar_fixture_conserves_b_and_v_flux() {
-        let records = vec![galactic_record(0.0, 0.0, 10.0), galactic_record(90.0, 0.0, 11.0)];
+        let records = vec![
+            galactic_record(0.0, 0.0, 10.0),
+            galactic_record(90.0, 0.0, 11.0),
+        ];
         let input_flux = records
             .iter()
             .map(|record| flux_10mag_units(record.v_mag.expect("V magnitude")))
@@ -178,7 +183,8 @@ mod tests {
             value.v_s10 = 1.0;
             value.integrated_ph_cm2_ns_sr = 1.0;
         }
-        let map = HealpixMap::<Galactic, StellarSurfaceBrightness>::new(grid, values).expect("map");
+        let map =
+            HealpixMap::<Galactic, StellarSurfaceBrightness>::new(grid, values).expect("map");
         validate_no_longitude_wrap_artifact(&map, 0.0).expect("no wrap jump");
     }
 
