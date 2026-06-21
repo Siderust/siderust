@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Add typed tabulated Cartesian ephemerides with cubic Hermite interpolation,
+  multi-body lookup, coverage queries, and TDB CCSDS OEM loading.
+- Add a reusable POD helper for one-way inter-satellite range with a light-time
+  correction.
+- Add a LISA POD example using the tabulated ephemeris provider and range helper.
+
+### Changed
+
+- Update `affn` to 0.8, `optica` to 0.2, `parquet` to 59, and the FFI dependency
+  to the crates.io `tempoch-ffi` 0.6.6 release.
+- Make stable-toolchain FFI builds reuse the checked-in C header while retaining
+  header generation on nightly toolchains.
+
 ## [0.10.1] - 2026-06-20
 
 ### Added
@@ -20,7 +37,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 * Avoided requiring nightly/cbindgen header generation for regular `siderust-ffi` builds when a checked-in FFI header is available.
-
 
 ## [0.10.0] - 2026-06-07
 

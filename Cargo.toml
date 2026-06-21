@@ -84,13 +84,13 @@ pod-doris = ["pod", "doris"]
 bench-internals = []
 
 [dependencies]
-affn = { version = "0.7", features = ["astro"] }
-cheby = "0.4"
-keplerian = "0.2"
-optica = "0.1"
-principia = { version = "0.2", features = ["alloc"] }
+affn = { version = "0.8", features = ["astro"] }
+cheby = { version = "0.4" }
+keplerian = { version = "0.2" }
+optica = { version = "0.2"}
+principia = { version = "0.2", features = ["alloc"]}
 qtty = { version = "0.8", features = ["astro", "density", "frequency", "radiometry", "satellite"] }
-tempoch = "0.6"
+tempoch = { version = "0.6"}
 siderust-archive = { version = "0.1", features = ["jpl", "vsop", "elp", "nutation", "gravity", "atmosphere", "pluto", "time"] }
 
 thiserror = "2"
@@ -106,7 +106,7 @@ wide = "1.4"
 # POD toolkit dependencies (gated on the `pod` feature family)
 faer = { version = "0.24", default-features = false, features = ["std", "linalg"], optional = true }
 hex = { version = "0.4", optional = true }
-parquet = { version = "58", default-features = false, optional = true }
+parquet = { version = "59", default-features = false, optional = true }
 
 [dev-dependencies]
 rstest = "0.26"
@@ -117,8 +117,6 @@ serde_json = "1.0"
 name = "test_event_search"
 path = "tests/test_event_search.rs"
 required-features = ["bench-internals"]
-
-[build-dependencies]
 
 [[bench]]
 name = "converters"

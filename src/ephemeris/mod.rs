@@ -57,6 +57,7 @@ pub(crate) mod jpl;
 #[cfg(feature = "lagrange-centers")]
 pub mod lagrange;
 pub mod pluto;
+pub mod tabulated;
 pub(crate) mod vsop87;
 
 mod runtime_backend;

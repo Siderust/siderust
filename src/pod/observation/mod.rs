@@ -15,8 +15,8 @@
 //!   object-safe batching plus a [`CorrectionRegistry`] pipeline
 //!   (PCO/PCV, Shapiro, Earth tide displacement).
 //!
-//! Mission-specific observation models (e.g. LISA inter-satellite range)
-//! are implemented in `siderust/examples/` rather than the library source.
+//! Mission-specific observation structs stay in downstream code, while generic
+//! helpers such as one-way inter-satellite range live here.
 //!
 //! ## Technical scope
 //!
@@ -44,6 +44,7 @@ pub mod error;
 pub mod gnss_obs;
 pub mod obs_trait;
 pub mod provider_bundle;
+pub mod range;
 pub mod slr_obs;
 
 pub use batch::ObservationBatch;
@@ -58,4 +59,5 @@ pub use obs_trait::{
     AnyObservation, CartesianState, ObsResidual, ObsType, Observation, PhaseResidual,
 };
 pub use provider_bundle::{NullProviderBundle, ProviderBundle};
+pub use range::one_way_light_time_range;
 pub use slr_obs::SlrNormalPointObs;
