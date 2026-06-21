@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! Integrated stellar surface-brightness map construction.
 //!
 //! This module builds Galactic HEALPix maps from stellar catalogue records. The
