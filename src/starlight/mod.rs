@@ -1,37 +1,9 @@
-// SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) 2026 Vallés Puig, Ramon
-
-//! Stellar surface-brightness map construction.
-//!
-//! ## Scientific scope
-//!
-//! Integrated starlight is represented as a Galactic HEALPix map whose pixels
-//! accumulate catalogue-star flux in tenth-magnitude-star units. The current
-//! model is an explicitly labelled v1 approximation intended for reproducible
-//! data-asset generation and validation, not full passband/spectral synthesis.
-//!
-//! ## Technical scope
-//!
-//! This module consumes in-memory catalogue records, transforms their typed
-//! EquatorialMeanJ2000 directions to Galactic directions with Siderust frame
-//! transforms, bins them into a typed
-//! [`crate::healpix::HealpixMap<crate::coordinates::frames::Galactic, StellarSurfaceBrightness>`],
-//! and provides reusable validators for flux conservation and simple full-sky
-//! sanity checks.
-//!
-//! ## References
-//!
-//! - Gorski, K. M. et al. (2005). *HEALPix: A Framework for High-Resolution
-//!   Discretization and Fast Analysis of Data Distributed on the Sphere*, ApJ,
-//!   622, 759.
-//! - Leinert, C. et al. (1998). *The 1997 reference of diffuse night sky
-//!   brightness*, A&AS, 127, 1.
-
 mod brightness;
 mod builder;
-mod csv;
+pub mod csv;
 mod error;
 mod magnitude;
+mod map;
 mod photometry;
 mod provenance;
 mod record;
@@ -39,9 +11,9 @@ mod validation;
 
 pub use brightness::StellarSurfaceBrightness;
 pub use builder::StellarSurfaceBrightnessMapBuilder;
-pub use csv::stellar_map_to_csv;
 pub use error::{Result, StellarMapError};
 pub use magnitude::ApparentMagnitude;
+pub use map::StellarSurfaceBrightnessMap;
 pub use photometry::flux_10mag_units;
 pub use provenance::StellarMapProvenance;
 pub use record::StellarCatalogueRecord;
@@ -86,7 +58,6 @@ mod tests {
             min_v_mag: None,
             max_v_mag: None,
             integrated_per_v_s10: 42.0,
-            smoothing_fwhm_deg: None,
         }
     }
 
@@ -120,7 +91,8 @@ mod tests {
             .map(|record| flux_10mag_units(record.v_mag.expect("V magnitude")))
             .sum::<f64>();
         let map = builder().build(records, provenance()).expect("map");
-        validate_flux_conservation(input_flux, input_flux, &map, 1e-12).expect("flux conserved");
+        validate_flux_conservation(input_flux, input_flux, map.healpix_map(), 1e-12)
+            .expect("flux conserved");
     }
 
     #[test]
@@ -131,7 +103,7 @@ mod tests {
             galactic_record(180.0, -3.0, 8.0),
         ];
         let map = builder().build(records, provenance()).expect("map");
-        validate_plane_pole_contrast(&map, 2.0).expect("plane brighter than poles");
+        validate_plane_pole_contrast(map.healpix_map(), 2.0).expect("plane brighter than poles");
     }
 
     #[test]
@@ -158,19 +130,19 @@ mod tests {
     }
 
     #[test]
-    fn csv_contains_expected_headers_and_rows() {
+    fn csv_contains_rows_for_all_pixels() {
         let records = vec![galactic_record(0.0, 0.0, 10.0)];
+        let map = builder().build(records, provenance()).expect("map");
+        let csv = csv::to_csv(&map);
+        assert_eq!(csv.lines().count(), map.values().len());
+    }
+
+    #[test]
+    fn generated_map_keeps_provenance() {
         let provenance = provenance();
+        let records = vec![galactic_record(0.0, 0.0, 10.0)];
         let map = builder().build(records, provenance.clone()).expect("map");
-        let csv = stellar_map_to_csv(&map, &provenance);
-        assert!(csv.contains("# map_type=healpix"));
-        assert!(csv.contains("# schema_version=stellar_healpix_csv_v1"));
-        assert!(csv.contains("# coordinate_frame=galactic"));
-        assert!(csv.contains("healpix_index,integrated_ph_cm2_ns_sr,b_s10,v_s10"));
-        assert_eq!(
-            csv.lines().filter(|line| !line.starts_with('#')).count(),
-            map.values().len() + 1
-        );
+        assert_eq!(map.provenance(), &provenance);
     }
 
     #[test]
