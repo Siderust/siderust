@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
+//! Apparent-magnitude value type for stellar photometry inputs.
+//!
+//! Magnitudes are logarithmic astronomical brightness measurements. The v1
+//! starlight model uses finite apparent magnitudes as inputs to an S10 flux
+//! conversion.
+
 use crate::starlight::{Result, StellarMapError};
 
 /// Apparent magnitude newtype used by the v1 photometric model.
