@@ -84,11 +84,11 @@ pod-doris = ["pod", "doris"]
 bench-internals = []
 
 [dependencies]
-affn = { version = "0.7", features = ["astro"] }
+affn = { version = "0.8", features = ["astro"] }
 cheby = { version = "0.4" }
 keplerian = { version = "0.2" }
 optica = { version = "0.2"}
-principia = { version = "0.2", features = ["alloc"]}
+principia = { version = "0.2.1", features = ["alloc"]}
 qtty = { version = "0.8", features = ["astro", "density", "frequency", "radiometry", "satellite"] }
 tempoch = { version = "0.6"}
 siderust-archive = { version = "0.1", features = ["jpl", "vsop", "elp", "nutation", "gravity", "atmosphere", "pluto", "time"] }
