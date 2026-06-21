@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
+//! HEALPix `nside` resolution parameter.
+//!
+//! HEALPix divides the sphere into `12 * nside^2` equal-area pixels. `nside`
+//! must be strictly positive; NESTED indexing additionally requires a
+//! power-of-two value and is validated by [`crate::healpix::HealpixGrid`].
+
 use crate::healpix::{HealpixError, Result};
 
 /// Largest `nside` whose `12 * nside^2` pixel count fits in `u64`.
