@@ -5,7 +5,7 @@ use crate::coordinates::frames::ReferenceFrame;
 use crate::healpix::{HealpixError, HealpixMap, Result};
 
 /// Validate that a HEALPix map has one value for every pixel.
-pub fn validate_healpix_map_complete<F, T>(map: &HealpixMap<F, T>) -> Result<()>
+pub(crate) fn validate_healpix_map_complete<F, T>(map: &HealpixMap<F, T>) -> Result<()>
 where
     F: ReferenceFrame,
 {

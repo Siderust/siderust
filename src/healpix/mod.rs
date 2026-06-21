@@ -39,6 +39,6 @@ pub use index::HealpixIndex;
 pub use map::HealpixMap;
 pub use nside::{Nside, MAX_NSIDE};
 pub use ordering::HealpixOrdering;
-pub(crate) use validation::validate_healpix_map_complete;
 #[cfg(test)]
 pub(crate) use ring::direction_from_theta_phi;
+pub(crate) use validation::validate_healpix_map_complete;

@@ -27,8 +27,7 @@ fn provenance() -> StellarMapProvenance {
 
 fn builder() -> StellarSurfaceBrightnessMapBuilder {
     StellarSurfaceBrightnessMapBuilder {
-        grid: HealpixGrid::new(Nside::new(8).expect("nside"), HealpixOrdering::Ring)
-            .expect("grid"),
+        grid: HealpixGrid::new(Nside::new(8).expect("nside"), HealpixOrdering::Ring).expect("grid"),
         min_v_mag: None,
         max_v_mag: None,
         integrated_per_v_s10: 42.0,

@@ -42,6 +42,6 @@ pub use photometry::flux_10mag_units;
 pub use provenance::StellarMapProvenance;
 pub use record::StellarCatalogueRecord;
 pub use validation::{
-    validate_flux_conservation, validate_no_longitude_wrap_artifact,
-    validate_plane_pole_contrast, validate_stellar_map_values,
+    validate_flux_conservation, validate_no_longitude_wrap_artifact, validate_plane_pole_contrast,
+    validate_stellar_map_values,
 };

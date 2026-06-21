@@ -154,7 +154,9 @@ pub fn validate_no_longitude_wrap_artifact(
     }
 
     if low_count == 0 || high_count == 0 {
-        return Err(StellarMapError::Validation("longitude wrap regions are empty"));
+        return Err(StellarMapError::Validation(
+            "longitude wrap regions are empty",
+        ));
     }
 
     let low_mean = low_sum / low_count as f64;

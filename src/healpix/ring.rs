@@ -59,8 +59,7 @@ fn phi_z_to_pixel(grid: &HealpixGrid, phi: f64, z: f64) -> Result<HealpixIndex> 
         let jm = (nside_f * (0.5 + tt + 0.75 * z)).floor() as i64;
         let ir = i64::try_from(nside).expect("nside fits i64") + 1 + jp - jm;
         let kshift = 1 - (ir & 1);
-        let mut ip =
-            (jp + jm - i64::try_from(nside).expect("nside fits i64") + kshift + 1) / 2 + 1;
+        let mut ip = (jp + jm - i64::try_from(nside).expect("nside fits i64") + kshift + 1) / 2 + 1;
         let nl4_i = i64::try_from(nl4).expect("nl4 fits i64");
         if ip > nl4_i {
             ip -= nl4_i;
@@ -139,9 +138,5 @@ where
     F: ReferenceFrame,
 {
     let sin_theta = theta.sin();
-    Direction::<F>::from_array([
-        sin_theta * phi.cos(),
-        sin_theta * phi.sin(),
-        theta.cos(),
-    ])
+    Direction::<F>::from_array([sin_theta * phi.cos(), sin_theta * phi.sin(), theta.cos()])
 }

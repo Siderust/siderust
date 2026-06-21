@@ -110,8 +110,11 @@ impl StellarSurfaceBrightnessMapBuilder {
     fn passes_v_magnitude_cut(&self, magnitude: Option<ApparentMagnitude>) -> bool {
         match magnitude {
             Some(value) => {
-                self.min_v_mag.is_none_or(|min| value.value() >= min.value())
-                    && self.max_v_mag.is_none_or(|max| value.value() <= max.value())
+                self.min_v_mag
+                    .is_none_or(|min| value.value() >= min.value())
+                    && self
+                        .max_v_mag
+                        .is_none_or(|max| value.value() <= max.value())
             }
             None => self.min_v_mag.is_none() && self.max_v_mag.is_none(),
         }
