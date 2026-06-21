@@ -1,7 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-/// Validated HEALPix pixel index.
+//! HEALPix pixel index type.
+//!
+//! Pixel indices are zero-based offsets into the ordering scheme selected by a
+//! [`crate::healpix::HealpixGrid`]. The index type stores the integer value,
+//! while grid-range validation is performed against a concrete grid.
+
+/// HEALPix pixel index.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct HealpixIndex(u64);
 
