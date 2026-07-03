@@ -8,9 +8,9 @@
 //! returns integrated photon flux in `photons m^-2 s^-1`.
 
 use super::error::{GaiaDr3Error, Result};
+use crate::qtty::velocity::C;
 
 const PLANCK_J_S: f64 = 6.626_070_15e-34;
-const SPEED_OF_LIGHT_M_S: f64 = 299_792_458.0;
 
 /// Wavelength in nanometers.
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
@@ -208,6 +208,8 @@ pub fn integrate_photon_flux(
 ) -> Result<PhotonFlux> {
     band.validate()?;
 
+    let c_m_s = C.value();
+
     let min_nm = band.min_wavelength.value();
     let max_nm = band.max_wavelength.value();
     let mut wavelengths = Vec::with_capacity(spectrum.samples.len() + 2);
@@ -239,8 +241,8 @@ pub fn integrate_photon_flux(
             .ok_or(GaiaDr3Error::InsufficientBandCoverage { name: band.name })?;
         let l0_m = l0_nm * 1.0e-9;
         let l1_m = l1_nm * 1.0e-9;
-        let y0 = (f0 * 1.0e9) * l0_m / (PLANCK_J_S * SPEED_OF_LIGHT_M_S);
-        let y1 = (f1 * 1.0e9) * l1_m / (PLANCK_J_S * SPEED_OF_LIGHT_M_S);
+        let y0 = (f0 * 1.0e9) * l0_m / (PLANCK_J_S * c_m_s);
+        let y1 = (f1 * 1.0e9) * l1_m / (PLANCK_J_S * c_m_s);
         total += 0.5 * (y0 + y1) * (l1_m - l0_m);
     }
 

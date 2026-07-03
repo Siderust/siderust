@@ -137,8 +137,10 @@ mod tests {
 
     type MilliArcsecondPerDay = crate::qtty::Per<crate::qtty::MilliArcsecond, crate::qtty::Day>;
     type MilliArcsecondsPerDay = crate::qtty::Quantity<MilliArcsecondPerDay>;
-    type DegreesPerYear =
-        crate::qtty::angular_rate::AngularRate<crate::qtty::unit::Degree, crate::qtty::unit::Year>;
+    type DegreesPerJulianYear = crate::qtty::angular_rate::AngularRate<
+        crate::qtty::unit::Degree,
+        crate::qtty::unit::JulianYear,
+    >;
 
     #[test]
     fn test_target_new() {
@@ -249,8 +251,8 @@ mod tests {
         let retrieved_pm = target.get_proper_motion();
         assert!(retrieved_pm.is_some());
         if let Some(pm) = retrieved_pm {
-            assert_eq!(pm.pm_ra, DegreesPerYear::new(0.0020291249999999997));
-            assert_eq!(pm.pm_dec, DegreesPerYear::new(0.001217475));
+            assert_eq!(pm.pm_ra, DegreesPerJulianYear::new(0.002029166666666667));
+            assert_eq!(pm.pm_dec, DegreesPerJulianYear::new(0.0012175));
             assert_eq!(pm.ra_convention, RaProperMotionConvention::MuAlphaStar);
         }
 
@@ -307,8 +309,8 @@ mod tests {
         // Check that proper motion was preserved
         assert!(target.proper_motion.is_some());
         if let Some(pm) = target.get_proper_motion() {
-            assert_eq!(pm.pm_ra, DegreesPerYear::new(0.0025364062499999996));
-            assert_eq!(pm.pm_dec, DegreesPerYear::new(0.0015218437499999998));
+            assert_eq!(pm.pm_ra, DegreesPerJulianYear::new(0.0025364583333333333));
+            assert_eq!(pm.pm_dec, DegreesPerJulianYear::new(0.001521875));
             assert_eq!(pm.ra_convention, RaProperMotionConvention::MuAlphaStar);
         }
     }
@@ -395,8 +397,8 @@ mod tests {
 
         assert!(target.proper_motion.is_some());
         if let Some(pm) = target.get_proper_motion() {
-            assert_eq!(pm.pm_ra, DegreesPerYear::new(0.0));
-            assert_eq!(pm.pm_dec, DegreesPerYear::new(0.0));
+            assert_eq!(pm.pm_ra, DegreesPerJulianYear::new(0.0));
+            assert_eq!(pm.pm_dec, DegreesPerJulianYear::new(0.0));
             assert_eq!(pm.ra_convention, RaProperMotionConvention::MuAlphaStar);
         }
     }

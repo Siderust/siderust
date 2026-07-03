@@ -14,8 +14,8 @@ pub mod quality;
 pub mod raw;
 
 pub use dr3::{
-    GaiaDr3Astrometry, GaiaDr3Photometry, GaiaDr3Source, GaiaSourceId, JulianYear,
-    MilliArcsecondsPerYear, PassbandIntegratedStellarSource, ProperMotion,
+    GaiaDr3Astrometry, GaiaDr3Photometry, GaiaDr3Source, GaiaSourceId,
+    PassbandIntegratedStellarSource,
 };
 pub use error::{GaiaDr3Error, Result};
 pub use photometry::{
@@ -29,6 +29,11 @@ pub use raw::{parse_gaia_dr3_csv_chunk, GaiaDr3RawSourceRow};
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::astro::proper_motion::{ProperMotion, RaProperMotionConvention};
+    use crate::qtty::{angular_rate::AngularRate, unit, MilliArcsecond};
+
+    type GaiaProperMotionRate = AngularRate<MilliArcsecond, unit::JulianYear>;
+    type DegreesPerJulianYear = AngularRate<crate::qtty::unit::Degree, unit::JulianYear>;
 
     fn raw_row() -> GaiaDr3RawSourceRow {
         GaiaDr3RawSourceRow {
@@ -53,15 +58,12 @@ mod tests {
 
         assert_eq!(source.source_id.value(), 42);
         assert_eq!(source.astrometry.epoch.value(), 2016.0);
-        assert_eq!(
-            source
-                .astrometry
-                .proper_motion
-                .expect("proper motion")
-                .pmra_cosdec
-                .value(),
-            1.5
-        );
+        let pm = source.astrometry.proper_motion.expect("proper motion");
+        assert_eq!(pm.ra_convention, RaProperMotionConvention::MuAlphaStar);
+        let pmra_mas: GaiaProperMotionRate = pm.pm_ra.to();
+        let pmdec_mas: GaiaProperMotionRate = pm.pm_dec.to();
+        assert!((pmra_mas.value() - 1.5).abs() < 1e-12);
+        assert!((pmdec_mas.value() + 2.5).abs() < 1e-12);
         assert_eq!(source.astrometry.parallax.expect("parallax").value(), 3.0);
         assert_eq!(
             source
@@ -103,6 +105,71 @@ mod tests {
         let source = GaiaDr3Source::try_from(raw_row()).expect("typed source");
 
         let _: crate::coordinates::spherical::direction::ICRS = source.astrometry.direction;
+    }
+
+    #[test]
+    fn ref_epoch_jyr_converts_to_julian_years() {
+        let source = GaiaDr3Source::try_from(raw_row()).expect("typed source");
+
+        assert_eq!(source.astrometry.epoch.value(), 2016.0);
+    }
+
+    #[test]
+    fn non_finite_ref_epoch_jyr_is_rejected() {
+        let mut row = raw_row();
+        row.ref_epoch_jyr = f64::NAN;
+        assert!(matches!(
+            GaiaDr3Source::try_from(row),
+            Err(GaiaDr3Error::NonFinite {
+                field: "ref_epoch_jyr",
+                ..
+            })
+        ));
+    }
+
+    #[test]
+    fn proper_motion_uses_mu_alpha_star_convention() {
+        let source = GaiaDr3Source::try_from(raw_row()).expect("typed source");
+        let pm = source.astrometry.proper_motion.expect("proper motion");
+
+        assert_eq!(pm.ra_convention, RaProperMotionConvention::MuAlphaStar);
+    }
+
+    #[test]
+    fn missing_one_proper_motion_component_is_rejected() {
+        let mut row = raw_row();
+        row.pmdec_mas_per_yr = None;
+        assert!(matches!(
+            GaiaDr3Source::try_from(row),
+            Err(GaiaDr3Error::MissingRequiredField { field: "pmdec" })
+        ));
+
+        let mut row = raw_row();
+        row.pmra_mas_per_yr = None;
+        assert!(matches!(
+            GaiaDr3Source::try_from(row),
+            Err(GaiaDr3Error::MissingRequiredField { field: "pmra" })
+        ));
+    }
+
+    #[test]
+    fn gaia_proper_motion_rate_converts_to_degrees_per_julian_year() {
+        let rate: GaiaProperMotionRate = GaiaProperMotionRate::new(3_600_000.0);
+        let deg_per_jy: DegreesPerJulianYear = rate.to();
+        assert!((deg_per_jy.value() - 1.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn finite_pmra_pmdec_build_domain_proper_motion() {
+        let pm = ProperMotion::from_mu_alpha_star(
+            GaiaProperMotionRate::new(1.5),
+            GaiaProperMotionRate::new(-2.5),
+        );
+        assert_eq!(pm.ra_convention, RaProperMotionConvention::MuAlphaStar);
+        let pmra_mas: GaiaProperMotionRate = pm.pm_ra.to();
+        let pmdec_mas: GaiaProperMotionRate = pm.pm_dec.to();
+        assert!((pmra_mas.value() - 1.5).abs() < 1e-12);
+        assert!((pmdec_mas.value() + 2.5).abs() < 1e-12);
     }
 
     #[test]
