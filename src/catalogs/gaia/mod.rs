@@ -13,15 +13,15 @@ pub mod photometry;
 pub mod quality;
 pub mod raw;
 
+pub use crate::qtty::Nanometers;
 pub use dr3::{
     GaiaDr3Astrometry, GaiaDr3Photometry, GaiaDr3Source, GaiaSourceId,
     PassbandIntegratedStellarSource,
 };
 pub use error::{GaiaDr3Error, Result};
 pub use photometry::{
-    integrate_photon_flux, GaiaXpSampledSpectrum, Nanometers, PhotonFlux, SpectralBand,
-    SpectralFluxDensity, SpectralFluxSample, StellarPhotometryModel,
-    GAIA_XP_STELLAR_RADIANCE_330_650_NM,
+    integrate_photon_flux, GaiaXpSampledSpectrum, PhotonFlux, SpectralBand, SpectralFluxDensity,
+    SpectralFluxSample, StellarPhotometryModel, GAIA_XP_STELLAR_RADIANCE_330_650_NM,
 };
 pub use quality::GaiaDr3QualityFlags;
 pub use raw::{parse_gaia_dr3_csv_chunk, GaiaDr3RawSourceRow};

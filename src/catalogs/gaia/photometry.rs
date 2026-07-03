@@ -9,40 +9,18 @@
 
 use super::error::{GaiaDr3Error, Result};
 use crate::qtty::velocity::C;
+use crate::qtty::Nanometers;
 
 const PLANCK_J_S: f64 = 6.626_070_15e-34;
 
-/// Wavelength in nanometers.
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
-pub struct Nanometers(f64);
-
-impl Nanometers {
-    /// Build a positive finite wavelength.
-    pub fn new(value: f64) -> Result<Self> {
-        if !value.is_finite() {
-            return Err(GaiaDr3Error::NonFinite {
-                field: "wavelength_nm",
-                value,
-            });
-        }
-        if value <= 0.0 {
-            return Err(GaiaDr3Error::NotPositive {
-                field: "wavelength_nm",
-                value,
-            });
-        }
-        Ok(Self(value))
+fn wavelength_nm(field: &'static str, value: f64) -> Result<Nanometers> {
+    if !value.is_finite() {
+        return Err(GaiaDr3Error::NonFinite { field, value });
     }
-
-    /// Return the wavelength in nanometers.
-    pub const fn value(self) -> f64 {
-        self.0
+    if value <= 0.0 {
+        return Err(GaiaDr3Error::NotPositive { field, value });
     }
-
-    /// Return the wavelength in meters.
-    pub fn meters(self) -> f64 {
-        self.0 * 1.0e-9
-    }
+    Ok(Nanometers::new(value))
 }
 
 /// Spectral flux density in `W m^-2 nm^-1`.
@@ -122,8 +100,8 @@ impl SpectralBand {
     pub fn new(name: &'static str, min_wavelength_nm: f64, max_wavelength_nm: f64) -> Result<Self> {
         let band = Self {
             name,
-            min_wavelength: Nanometers::new(min_wavelength_nm)?,
-            max_wavelength: Nanometers::new(max_wavelength_nm)?,
+            min_wavelength: wavelength_nm("min_wavelength_nm", min_wavelength_nm)?,
+            max_wavelength: wavelength_nm("max_wavelength_nm", max_wavelength_nm)?,
         };
         band.validate()?;
         Ok(band)
@@ -140,8 +118,8 @@ impl SpectralBand {
 /// Gaia XP starlight production band, 330-650 nm.
 pub const GAIA_XP_STELLAR_RADIANCE_330_650_NM: SpectralBand = SpectralBand {
     name: "Gaia XP stellar radiance 330-650 nm",
-    min_wavelength: Nanometers(330.0),
-    max_wavelength: Nanometers(650.0),
+    min_wavelength: Nanometers::new(330.0),
+    max_wavelength: Nanometers::new(650.0),
 };
 
 /// One sampled spectral-flux-density point.
@@ -155,9 +133,9 @@ pub struct SpectralFluxSample {
 
 impl SpectralFluxSample {
     /// Build a validated sample from `nm` and `W m^-2 nm^-1`.
-    pub fn new(wavelength_nm: f64, flux_density_w_m2_nm: f64) -> Result<Self> {
+    pub fn new(wavelength_nm_value: f64, flux_density_w_m2_nm: f64) -> Result<Self> {
         Ok(Self {
-            wavelength: Nanometers::new(wavelength_nm)?,
+            wavelength: wavelength_nm("wavelength_nm", wavelength_nm_value)?,
             flux_density: SpectralFluxDensity::new_w_m2_nm(flux_density_w_m2_nm)?,
         })
     }
