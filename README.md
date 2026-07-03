@@ -60,7 +60,8 @@ Siderust provides ephemerides, coordinate transforms, time-scale handling, and o
 | **Celestial Mechanics** | VSOP87 & ELP2000 theories, Pluto (Meeus/Williams), light‑time & aberration, nutation & precession, apparent Sun & Moon, culmination searches, SGP4/TLE propagation.         |
 | **Ephemeris Backends**  | Pluggable `Ephemeris` / `DynEphemeris` traits: `Vsop87Ephemeris` (always available) and [`RuntimeEphemeris`](https://docs.rs/siderust/latest/siderust/ephemeris/struct.RuntimeEphemeris.html) for JPL DE4xx BSP files at runtime. |
 | **Altitude API**        | Unified `AltitudeProvider` trait for Sun, Moon, stars, and arbitrary ICRS directions; find crossings, culminations, [`altitude_ranges`], [`above_threshold`], and [`below_threshold`] periods.|
-| **Catalogs & Bodies**   | Built‑in Sun→Neptune, asteroids (Ceres, Bennu, Apophis), comets (Halley, Encke, Hale-Bopp), a starter star catalog, + helpers for custom datasets.                           |
+| **Catalogs & Bodies**   | Built‑in Sun→Neptune, asteroids (Ceres, Bennu, Apophis), comets (Halley, Encke, Hale-Bopp), a starter star catalog, typed Gaia DR3 raw/domain ingestion, + helpers for custom datasets. |
+| **Starlight & Photometry** | HEALPix stellar surface-brightness maps, S10 diagnostics, passband-aware Gaia XP sampled-spectrum photon-flux integration, and typed passband-integrated stellar source records. |
 | **Observatories**       | Predefined sites (Roque de los Muchachos, El Paranal, Mauna Kea, La Silla) with `ObserverSite` for topocentric transforms.                                                  |
 
 Coordinate algebra and reusable conic geometry are provided by [`affn`](https://crates.io/crates/affn); Kepler-equation solving and domain-neutral conic propagation live in [`keplerian`](https://crates.io/crates/keplerian); `siderust` adds astronomy-specific time, frame transforms, ephemeris backends, and body/observer orchestration on top.
@@ -336,7 +337,7 @@ cargo run --example 11_serde_serialization --features serde
 * [x] DE440/DE441 JPL ephemerides
 * [x] Unified altitude API (`AltitudeProvider` trait)
 * [x] Serde serialization support
-* [ ] Gaia DR3 star ingestion & cone search
+* [x] Gaia DR3 star ingestion & cone search
 * [ ] Relativistic light‑time & gravitational deflection
 * [ ] Batch orbit determination helpers (LSQ & EKF)
 * [ ] GPU acceleration via `wgpu` (experiment)

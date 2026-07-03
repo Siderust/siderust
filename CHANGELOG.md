@@ -23,6 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   including catalogue records, apparent-magnitude validation, S10 photometry,
   provenance metadata, deterministic CSV serialization, and scientific
   validators for generated map assets.
+- Add Gaia DR3 typed catalogue support with a strict raw/domain split, typed
+  ICRS astrometry, Gaia quality metadata, local CSV row parsing, passband-aware
+  XP sampled-spectrum photon-flux integration, and passband-integrated stellar
+  source records for downstream starlight products.
 
 ### Changed
 
