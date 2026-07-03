@@ -178,7 +178,7 @@ pub extern "C" fn siderust_find_phase_events(
 // Illumination period finding
 // ═══════════════════════════════════════════════════════════════════════════
 
-/// Find windows where geocentric Moon illumination is above `k_min` ∈ [0,1].
+/// Find windows where geocentric Moon illumination is above `k_min` in `[0, 1]`.
 #[no_mangle]
 pub extern "C" fn siderust_moon_illumination_above(
     window: TempochPeriodMjd,
@@ -205,7 +205,7 @@ pub extern "C" fn siderust_moon_illumination_above(
     }}
 }
 
-/// Find windows where geocentric Moon illumination is below `k_max` ∈ [0,1].
+/// Find windows where geocentric Moon illumination is below `k_max` in `[0, 1]`.
 #[no_mangle]
 pub extern "C" fn siderust_moon_illumination_below(
     window: TempochPeriodMjd,

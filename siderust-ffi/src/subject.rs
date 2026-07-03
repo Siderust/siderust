@@ -14,7 +14,7 @@
 //! - `Body`: Solar-system bodies (Sun, Moon, planets)
 //! - `Star`: Catalog or custom stars via `SiderustStar` handle
 //! - `Icrs`: Fixed ICRS direction (RA/Dec)
-//! - `GenericTarget`: Full `CoordinateWithPM<T>` via [`SiderustGenericTarget`] handle
+//! - `GenericTarget`: Full `CoordinateWithPM<T>` via `SiderustGenericTarget` handle
 
 use crate::altitude::{crossings_to_c, culminations_to_c, periods_to_c, window_from_c};
 use crate::azimuth::{vec_az_crossings_to_c, vec_az_extrema_to_c};

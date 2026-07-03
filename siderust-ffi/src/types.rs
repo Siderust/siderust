@@ -368,7 +368,7 @@ ffi_enum! {
 }
 
 ffi_enum! {
-    /// Coordinate kind discriminant for [`SiderustTargetCoord`].
+    /// Coordinate kind discriminant for `SiderustTargetCoord`.
     ///
     /// Specifies which coordinate representation is stored in the target.
     pub enum SiderustTargetCoordKind {
