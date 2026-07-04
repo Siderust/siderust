@@ -4,7 +4,7 @@
 //! Tabulated Cartesian ephemerides.
 //!
 //! This module turns time-tagged Cartesian state histories into typed
-//! [`EphemerisProvider`](crate::pod::providers::EphemerisProvider)
+//! `EphemerisProvider`
 //! implementations backed by cubic Hermite interpolation.
 
 use std::collections::HashMap;

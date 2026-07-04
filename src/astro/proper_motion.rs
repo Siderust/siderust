@@ -21,7 +21,7 @@
 //! ## Technical scope
 //!
 //! [`ProperMotion`] stores the right-ascension and declination rates as
-//! typed `DegreesPerYear` quantities together with a
+//! typed `DegreesPerJulianYear` quantities together with a
 //! [`RaProperMotionConvention`] flag distinguishing the true RA rate `µα`
 //! from the catalogue rate `µα⋆ = µα cos(δ)`. Helpers
 //! [`ProperMotion::from_mu_alpha`] and [`ProperMotion::from_mu_alpha_star`]
@@ -46,8 +46,8 @@ use std::fmt;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-type DegreePerYear = crate::qtty::Per<Degree, Year>;
-type DegreesPerYear = crate::qtty::angular_rate::AngularRate<Degree, Year>;
+type DegreePerJulianYear = crate::qtty::Per<Degree, unit::JulianYear>;
+type DegreesPerJulianYear = crate::qtty::angular_rate::AngularRate<Degree, unit::JulianYear>;
 
 const COS_DEC_EPSILON: f64 = 1.0e-12;
 
@@ -55,9 +55,9 @@ const COS_DEC_EPSILON: f64 = 1.0e-12;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum RaProperMotionConvention {
-    /// True RA angular rate `µα` in deg/year.
+    /// True RA angular rate `µα` in deg/Julian year.
     MuAlpha,
-    /// Catalog rate `µα⋆ = µα cos(δ)` in deg/year.
+    /// Catalog rate `µα⋆ = µα cos(δ)` in deg/Julian year.
     MuAlphaStar,
 }
 
@@ -82,9 +82,9 @@ impl std::fmt::Display for RaProperMotionConvention {
 pub struct ProperMotion {
     /// Right-ascension proper motion in degrees per Julian year.
     /// Interpretation (µα or µα⋆) is given by `ra_convention`.
-    pub pm_ra: DegreesPerYear,
+    pub pm_ra: DegreesPerJulianYear,
     /// Declination proper motion in degrees per Julian year.
-    pub pm_dec: DegreesPerYear,
+    pub pm_dec: DegreesPerJulianYear,
     /// States whether `pm_ra` is the true RA rate µα or the catalogue
     /// rate µα⋆ = µα cos(δ).
     pub ra_convention: RaProperMotionConvention,
@@ -127,9 +127,9 @@ impl std::error::Error for ProperMotionError {}
 impl RaProperMotionConvention {
     fn to_mu_alpha(
         self,
-        pm_ra: DegreesPerYear,
+        pm_ra: DegreesPerJulianYear,
         dec: Degrees,
-    ) -> Result<DegreesPerYear, ProperMotionError> {
+    ) -> Result<DegreesPerJulianYear, ProperMotionError> {
         match self {
             RaProperMotionConvention::MuAlpha => Ok(pm_ra),
             RaProperMotionConvention::MuAlphaStar => {
@@ -150,8 +150,8 @@ impl ProperMotion {
         T: AngularRateUnit,
     {
         Self {
-            pm_ra: pm_ra.to::<DegreePerYear>(),
-            pm_dec: pm_dec.to::<DegreePerYear>(),
+            pm_ra: pm_ra.to::<DegreePerJulianYear>(),
+            pm_dec: pm_dec.to::<DegreePerJulianYear>(),
             ra_convention: RaProperMotionConvention::MuAlpha,
         }
     }
@@ -162,13 +162,13 @@ impl ProperMotion {
         T: AngularRateUnit,
     {
         Self {
-            pm_ra: pm_ra_cosdec.to::<DegreePerYear>(),
-            pm_dec: pm_dec.to::<DegreePerYear>(),
+            pm_ra: pm_ra_cosdec.to::<DegreePerJulianYear>(),
+            pm_dec: pm_dec.to::<DegreePerJulianYear>(),
             ra_convention: RaProperMotionConvention::MuAlphaStar,
         }
     }
 
-    fn ra_rate_at_epoch(&self, dec: Degrees) -> Result<DegreesPerYear, ProperMotionError> {
+    fn ra_rate_at_epoch(&self, dec: Degrees) -> Result<DegreesPerJulianYear, ProperMotionError> {
         self.ra_convention.to_mu_alpha(self.pm_ra, dec)
     }
 }
@@ -177,7 +177,7 @@ impl ProperMotion {
 ///
 /// # Arguments
 /// - `mean_position`: the reference position at epoch `epoch_jd`
-/// - `proper_motion`: angular velocity in RA and DEC (degrees/year)
+/// - `proper_motion`: angular velocity in RA and DEC (degrees/Julian year)
 /// - `jd`: the target Julian Day (epoch at which we want the new position)
 /// - `epoch_jd`: the epoch of the original mean position
 ///
@@ -194,7 +194,7 @@ fn set_proper_motion_since_epoch<U: LengthUnit>(
 ) -> Result<position::EquatorialMeanJ2000<U>, ProperMotionError> {
     // Time difference in Julian years (365.25 d), matching the convention used
     // in proper-motion catalogs (Hipparcos, Gaia) and propagate_space_motion.
-    let t: Years = Years::new((jd.raw() - epoch_jd.raw()).value() / 365.25);
+    let t: JulianYears = JulianYears::new((jd.raw() - epoch_jd.raw()).value() / 365.25);
     let ra_rate = proper_motion.ra_rate_at_epoch(mean_position.dec())?;
     // Linearly apply proper motion in RA and DEC
     Ok(position::EquatorialMeanJ2000::<U>::new(
@@ -208,7 +208,7 @@ fn set_proper_motion_since_epoch<U: LengthUnit>(
 ///
 /// # Arguments
 /// - `mean_position`: star's catalogued position at J2000.0
-/// - `proper_motion`: proper motion in RA/DEC (deg/year)
+/// - `proper_motion`: proper motion in RA/DEC (deg/Julian year)
 /// - `jd`: target Julian Day for evaluation
 ///
 /// # Returns
@@ -243,9 +243,9 @@ pub fn set_proper_motion_since_j2000<U: LengthUnit>(
 #[derive(Debug, Clone, Copy)]
 pub struct StarSpaceMotion {
     /// Right-ascension proper motion in the catalog convention `μα⋆ = μα·cos(δ)`.
-    pub pm_ra_cos_dec: crate::qtty::angular_rate::AngularRate<MilliArcsecond, Year>,
+    pub pm_ra_cos_dec: crate::qtty::angular_rate::AngularRate<MilliArcsecond, unit::JulianYear>,
     /// Declination proper motion `μδ`.
-    pub pm_dec: crate::qtty::angular_rate::AngularRate<MilliArcsecond, Year>,
+    pub pm_dec: crate::qtty::angular_rate::AngularRate<MilliArcsecond, unit::JulianYear>,
     /// Annual trigonometric parallax (positive).
     pub parallax: MilliArcseconds,
     /// Radial velocity, positive away from the Solar System.
@@ -325,8 +325,12 @@ pub fn propagate_space_motion(
     // Angular rates → linear transverse velocity in AU/yr.
     // μα⋆ already includes cos(δ); divide once to get true μα, then scale by
     // r·cos(δ) to recover the AU/yr coefficient on e_alpha.
-    let pm_ra_rad_yr = motion.pm_ra_cos_dec.to::<Per<Radian, Year>>().value() / cos_dec;
-    let pm_dec_rad_yr = motion.pm_dec.to::<Per<Radian, Year>>().value();
+    let pm_ra_rad_yr = motion
+        .pm_ra_cos_dec
+        .to::<Per<Radian, unit::JulianYear>>()
+        .value()
+        / cos_dec;
+    let pm_dec_rad_yr = motion.pm_dec.to::<Per<Radian, unit::JulianYear>>().value();
 
     let v_alpha_au_yr = pm_ra_rad_yr * r_au * cos_d;
     let v_delta_au_yr = pm_dec_rad_yr * r_au;
@@ -334,7 +338,7 @@ pub fn propagate_space_motion(
     // Radial velocity in AU/yr (positive = away).
     let v_r_au_yr = motion
         .radial_velocity
-        .to::<Per<AstronomicalUnit, Year>>()
+        .to::<Per<AstronomicalUnit, unit::JulianYear>>()
         .value();
 
     // BCRS velocity vector in AU/yr.
@@ -392,7 +396,7 @@ mod tests {
     };
     use crate::qtty::{AstronomicalUnit, Degrees};
 
-    type DegreesPerYear = crate::qtty::Quantity<crate::qtty::Per<Degree, Year>>;
+    type DegreesPerJulianYear = crate::qtty::Quantity<crate::qtty::Per<Degree, unit::JulianYear>>;
 
     #[test]
     fn test_proper_motion_linear_shift_mu_alpha() {
@@ -404,9 +408,9 @@ mod tests {
         );
 
         // Proper motion: 0.01°/year in RA, -0.005°/year in DEC
-        let mu = ProperMotion::from_mu_alpha::<DegreePerYear>(
-            DegreesPerYear::new(0.01),
-            DegreesPerYear::new(-0.005),
+        let mu = ProperMotion::from_mu_alpha::<DegreePerJulianYear>(
+            DegreesPerJulianYear::new(0.01),
+            DegreesPerJulianYear::new(-0.005),
         );
 
         // Target epoch: 50 years after J2000
@@ -445,9 +449,9 @@ mod tests {
         );
 
         // µα = 0.01 deg/yr, so µα⋆ = µα cos(dec) = 0.005 deg/yr.
-        let mu = ProperMotion::from_mu_alpha_star::<DegreePerYear>(
-            DegreesPerYear::new(0.005),
-            DegreesPerYear::new(0.0),
+        let mu = ProperMotion::from_mu_alpha_star::<DegreePerJulianYear>(
+            DegreesPerJulianYear::new(0.005),
+            DegreesPerJulianYear::new(0.0),
         );
 
         let jy = JULIAN_YEAR.to::<qtty::unit::Day>();
@@ -471,9 +475,9 @@ mod tests {
             Degrees::new(90.0),
             1.0,
         );
-        let mu = ProperMotion::from_mu_alpha_star::<DegreePerYear>(
-            DegreesPerYear::new(0.01),
-            DegreesPerYear::new(0.0),
+        let mu = ProperMotion::from_mu_alpha_star::<DegreePerJulianYear>(
+            DegreesPerJulianYear::new(0.01),
+            DegreesPerJulianYear::new(0.0),
         );
         let jy = JULIAN_YEAR.to::<qtty::unit::Day>();
         let jd_future = crate::time::JulianDate::new((crate::J2000.raw() + jy).value());

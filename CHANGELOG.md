@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-07-03
+
 ### Added
 
 - Add typed tabulated Cartesian ephemerides with cubic Hermite interpolation,
@@ -23,6 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   including catalogue records, apparent-magnitude validation, S10 photometry,
   provenance metadata, deterministic CSV serialization, and scientific
   validators for generated map assets.
+- Add Gaia DR3 typed catalogue support with a strict raw/domain split, typed
+  ICRS astrometry, Gaia quality metadata, local CSV row parsing, passband-aware
+  XP sampled-spectrum photon-flux integration, and passband-integrated stellar
+  source records for downstream starlight products.
 
 ### Changed
 
@@ -33,6 +39,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Document the new HEALPix and starlight modules with scientific scope,
   technical scope, and primary references, following the workspace
   `missing_docs = "deny"` policy.
+- Reuse canonical `qtty` Julian-year quantities, angular rates, and
+  `astro::proper_motion::ProperMotion` in Gaia DR3 astrometry instead of local
+  unit wrappers.
+- Align proper-motion propagation and `StarSpaceMotion` with Julian-year catalogue
+  conventions (Gaia/Hipparcos).
+- Reuse `qtty::velocity::C` and `qtty::Nanometers` in Gaia photometry instead of
+  local physical-constant and wavelength wrappers.
 
 ## [0.10.1] - 2026-06-20
 

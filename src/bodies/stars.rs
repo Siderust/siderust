@@ -251,8 +251,9 @@ mod tests {
     use crate::targets::Trackable;
     use crate::J2000;
 
-    type DegreesPerYear =
-        crate::qtty::Quantity<crate::qtty::Per<crate::qtty::unit::Degree, crate::qtty::unit::Year>>;
+    type DegreesPerJulianYear = crate::qtty::Quantity<
+        crate::qtty::Per<crate::qtty::unit::Degree, crate::qtty::unit::JulianYear>,
+    >;
 
     fn make_pos() -> position::EquatorialMeanJ2000<LightYear> {
         // new_unchecked(polar=dec, azimuth=ra, distance)
@@ -307,8 +308,8 @@ mod tests {
     #[test]
     fn has_full_space_motion_true_with_all_fields() {
         let pm = ProperMotion {
-            pm_ra: DegreesPerYear::new(1e-6),
-            pm_dec: DegreesPerYear::new(1e-6),
+            pm_ra: DegreesPerJulianYear::new(1e-6),
+            pm_dec: DegreesPerJulianYear::new(1e-6),
             ra_convention: RaProperMotionConvention::MuAlphaStar,
         };
         let coord = CoordinateWithPM::new(make_pos(), J2000, pm);
@@ -352,8 +353,8 @@ mod tests {
     #[test]
     fn position_at_with_pm_only_returns_ok() {
         let pm = ProperMotion {
-            pm_ra: DegreesPerYear::new(1e-6),
-            pm_dec: DegreesPerYear::new(1e-6),
+            pm_ra: DegreesPerJulianYear::new(1e-6),
+            pm_dec: DegreesPerJulianYear::new(1e-6),
             ra_convention: RaProperMotionConvention::MuAlphaStar,
         };
         let coord = CoordinateWithPM::new(make_pos(), J2000, pm);

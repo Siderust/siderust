@@ -11,7 +11,7 @@
 use crate::error::SiderustStatus;
 use crate::types::*;
 use qtty::angular::Degrees;
-use qtty::unit::{Degree, Year};
+use qtty::unit::{Degree, JulianYear};
 use qtty::*;
 use siderust::astro::proper_motion::ProperMotion;
 use siderust::coordinates::frames::{
@@ -23,9 +23,9 @@ use siderust::targets::CoordinateWithPM;
 use siderust::time::JulianDate;
 
 /// Unit type alias for degrees per Julian year.
-type DegreePerYear = qtty::Per<Degree, Year>;
+type DegreePerJulianYear = qtty::Per<Degree, JulianYear>;
 /// Quantity alias for degrees per Julian year.
-type DegreesPerYear = qtty::Quantity<DegreePerYear>;
+type DegreesPerJulianYear = qtty::Quantity<DegreePerJulianYear>;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Generic Target Handle (CoordinateWithPM<T>)
@@ -60,14 +60,16 @@ fn proper_motion_from_ffi(data: &SiderustGenericTargetData) -> Option<ProperMoti
     }
 
     Some(match data.proper_motion.ra_convention {
-        SiderustRaConvention::MuAlpha => ProperMotion::from_mu_alpha::<DegreePerYear>(
-            DegreesPerYear::new(data.proper_motion.pm_ra_deg_yr),
-            DegreesPerYear::new(data.proper_motion.pm_dec_deg_yr),
+        SiderustRaConvention::MuAlpha => ProperMotion::from_mu_alpha::<DegreePerJulianYear>(
+            DegreesPerJulianYear::new(data.proper_motion.pm_ra_deg_yr),
+            DegreesPerJulianYear::new(data.proper_motion.pm_dec_deg_yr),
         ),
-        SiderustRaConvention::MuAlphaStar => ProperMotion::from_mu_alpha_star::<DegreePerYear>(
-            DegreesPerYear::new(data.proper_motion.pm_ra_deg_yr),
-            DegreesPerYear::new(data.proper_motion.pm_dec_deg_yr),
-        ),
+        SiderustRaConvention::MuAlphaStar => {
+            ProperMotion::from_mu_alpha_star::<DegreePerJulianYear>(
+                DegreesPerJulianYear::new(data.proper_motion.pm_ra_deg_yr),
+                DegreesPerJulianYear::new(data.proper_motion.pm_dec_deg_yr),
+            )
+        }
     })
 }
 

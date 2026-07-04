@@ -4,7 +4,7 @@
 //! FFI bindings for the runtime-loaded ephemeris backend.
 //!
 //! All functions in this module work with an opaque [`SiderustRuntimeEphemeris`]
-//! handle that wraps a [`RuntimeEphemeris`](siderust::ephemeris::RuntimeEphemeris).
+//! handle that wraps a [`RuntimeEphemeris`].
 //!
 //! ## Lifecycle
 //!

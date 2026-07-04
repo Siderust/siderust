@@ -42,6 +42,7 @@
 #![forbid(unsafe_code)]
 
 pub mod catalog;
+pub mod gaia;
 pub mod ingest;
 pub mod observatories;
 pub mod record;
