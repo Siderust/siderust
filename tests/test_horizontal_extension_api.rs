@@ -45,10 +45,8 @@ fn cartesian_direction_horizontal_extensions_round_trip() {
     );
 
     // Explicit UT1+TT path.
-    let horizontal =
-        DirectionAstroExt::to_horizontal_precise(&equatorial, &jd_tt, &jd_ut1, &site);
-    let back =
-        DirectionAstroExt::to_equatorial_precise(&horizontal, &jd_tt, &jd_ut1, &site);
+    let horizontal = DirectionAstroExt::to_horizontal_precise(&equatorial, &jd_tt, &jd_ut1, &site);
+    let back = DirectionAstroExt::to_equatorial_precise(&horizontal, &jd_tt, &jd_ut1, &site);
     let separation = equatorial
         .to_spherical()
         .angular_separation(&back.to_spherical())
@@ -79,12 +77,8 @@ fn spherical_direction_horizontal_extensions_round_trip() {
     );
 
     // Explicit UT1+TT spherical wrapper.
-    let horizontal = SphericalDirectionAstroExt::to_horizontal_precise(
-        &equatorial,
-        &jd_tt,
-        &jd_ut1,
-        &site,
-    );
+    let horizontal =
+        SphericalDirectionAstroExt::to_horizontal_precise(&equatorial, &jd_tt, &jd_ut1, &site);
     let back =
         SphericalDirectionAstroExt::to_equatorial_precise(&horizontal, &jd_tt, &jd_ut1, &site);
     let separation = equatorial.angular_separation(&back).value();
@@ -105,21 +99,26 @@ fn topocentric_position_aliases_match_explicit_methods() {
         Degrees::new(101.287),
         Degrees::new(-16.716),
     );
-    let equatorial_spherical = equatorial_direction
-        .position_with_params::<Topocentric, Kilometer>(site, distance);
-    let equatorial =
-        Position::<Topocentric, EquatorialTrueOfDate, Kilometer>::from_spherical(
-            &equatorial_spherical,
-        );
+    let equatorial_spherical =
+        equatorial_direction.position_with_params::<Topocentric, Kilometer>(site, distance);
+    let equatorial = Position::<Topocentric, EquatorialTrueOfDate, Kilometer>::from_spherical(
+        &equatorial_spherical,
+    );
 
     let horizontal_explicit =
         TopocentricEquatorialExt::to_horizontal_position(&equatorial, &jd_ut1, &jd_tt);
     let horizontal_alias = TopocentricEquatorialExt::to_horizontal(&equatorial, &jd_ut1, &jd_tt);
 
     assert_eq!(horizontal_alias.center_params(), &site);
-    assert!((horizontal_alias.x().value() - horizontal_explicit.x().value()).abs() < POSITION_EPSILON);
-    assert!((horizontal_alias.y().value() - horizontal_explicit.y().value()).abs() < POSITION_EPSILON);
-    assert!((horizontal_alias.z().value() - horizontal_explicit.z().value()).abs() < POSITION_EPSILON);
+    assert!(
+        (horizontal_alias.x().value() - horizontal_explicit.x().value()).abs() < POSITION_EPSILON
+    );
+    assert!(
+        (horizontal_alias.y().value() - horizontal_explicit.y().value()).abs() < POSITION_EPSILON
+    );
+    assert!(
+        (horizontal_alias.z().value() - horizontal_explicit.z().value()).abs() < POSITION_EPSILON
+    );
 
     let equatorial_explicit =
         TopocentricHorizontalExt::to_equatorial_position(&horizontal_alias, &jd_ut1, &jd_tt);
@@ -127,7 +126,13 @@ fn topocentric_position_aliases_match_explicit_methods() {
         TopocentricHorizontalExt::to_equatorial(&horizontal_alias, &jd_ut1, &jd_tt);
 
     assert_eq!(equatorial_alias.center_params(), &site);
-    assert!((equatorial_alias.x().value() - equatorial_explicit.x().value()).abs() < POSITION_EPSILON);
-    assert!((equatorial_alias.y().value() - equatorial_explicit.y().value()).abs() < POSITION_EPSILON);
-    assert!((equatorial_alias.z().value() - equatorial_explicit.z().value()).abs() < POSITION_EPSILON);
+    assert!(
+        (equatorial_alias.x().value() - equatorial_explicit.x().value()).abs() < POSITION_EPSILON
+    );
+    assert!(
+        (equatorial_alias.y().value() - equatorial_explicit.y().value()).abs() < POSITION_EPSILON
+    );
+    assert!(
+        (equatorial_alias.z().value() - equatorial_explicit.z().value()).abs() < POSITION_EPSILON
+    );
 }
