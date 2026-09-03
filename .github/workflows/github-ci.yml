@@ -12,7 +12,7 @@ permissions:
   pull-requests: write   # needed to post PR comments
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 env:
