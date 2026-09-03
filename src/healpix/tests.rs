@@ -4,6 +4,7 @@
 use super::*;
 use crate::coordinates::cartesian::Direction;
 use crate::coordinates::frames;
+use crate::coordinates::spherical;
 use std::f64::consts::PI;
 
 fn ring_grid(nside: u32) -> HealpixGrid {
@@ -40,6 +41,49 @@ fn pixel_centres_roundtrip_through_direction_api() {
         let direction: Direction<frames::Galactic> = grid.pixel_center(index).expect("center");
         assert_eq!(grid.direction_to_pixel(direction).expect("pixel"), index);
     }
+}
+
+#[test]
+fn spherical_pixel_centres_match_cartesian_centres_and_roundtrip() {
+    let grid = ring_grid(8);
+    for raw in [0, 1, 7, 63, 128, 511, grid.npix() - 1] {
+        let index = HealpixIndex::new(raw);
+        let cartesian: Direction<frames::Galactic> = grid.pixel_center(index).expect("center");
+        let spherical: spherical::Direction<frames::Galactic> = grid
+            .pixel_center_spherical(index)
+            .expect("spherical center");
+
+        let from_spherical = spherical.to_cartesian();
+        for (actual, expected) in from_spherical.as_array().iter().zip(cartesian.as_array()) {
+            assert!((actual - expected).abs() < 1e-12);
+        }
+        assert_eq!(
+            grid.direction_to_pixel(from_spherical).expect("pixel"),
+            index
+        );
+    }
+}
+
+#[test]
+fn spherical_pixel_centres_are_canonical_at_wrap_and_polar_regions() {
+    let grid = ring_grid(8);
+    for raw in [0, 1, grid.npix() / 2, grid.npix() - 2, grid.npix() - 1] {
+        let center: spherical::Direction<frames::Galactic> = grid
+            .pixel_center_spherical(HealpixIndex::new(raw))
+            .expect("spherical center");
+        assert!((-90.0..=90.0).contains(&center.polar.value()));
+        assert!((0.0..360.0).contains(&center.azimuth.value()));
+    }
+}
+
+#[test]
+fn spherical_pixel_centres_preserve_nested_ordering_behavior() {
+    let grid = HealpixGrid::new(Nside::new(8).expect("valid nside"), HealpixOrdering::Nested)
+        .expect("valid grid");
+    assert!(matches!(
+        grid.pixel_center_spherical::<frames::Galactic>(HealpixIndex::new(0)),
+        Err(HealpixError::UnsupportedOrdering(HealpixOrdering::Nested))
+    ));
 }
 
 #[test]

@@ -10,6 +10,7 @@
 
 use crate::coordinates::cartesian::Direction;
 use crate::coordinates::frames::ReferenceFrame;
+use crate::coordinates::spherical;
 use crate::healpix::{HealpixError, HealpixIndex, HealpixOrdering, Nside, Result};
 use std::f64::consts::PI;
 
@@ -110,5 +111,27 @@ impl HealpixGrid {
     {
         let (theta, phi) = ring::pixel_to_theta_phi(self, index)?;
         Ok(ring::direction_from_theta_phi(theta, phi))
+    }
+
+    /// Return the center of a pixel as a typed spherical direction.
+    ///
+    /// The returned [`spherical::Direction`] is expressed in the requested
+    /// reference frame type `F`; the grid itself is frame-neutral, so callers
+    /// must choose a frame consistent with the map or grid they are working
+    /// with.
+    ///
+    /// HEALPix describes a center using `theta`, its colatitude, and `phi`, its
+    /// longitude. This method maps those angles directly to Siderust's
+    /// spherical convention: `polar = π/2 - theta` and `azimuth = phi`.
+    /// The result uses the canonical angular ranges supplied by `affn` and
+    /// `qtty`: polar is in `[-90°, +90°]` and azimuth is in `[0°, 360°)`.
+    ///
+    /// No Cartesian conversion is performed.
+    pub fn pixel_center_spherical<F>(&self, index: HealpixIndex) -> Result<spherical::Direction<F>>
+    where
+        F: ReferenceFrame,
+    {
+        let (theta, phi) = ring::pixel_to_theta_phi(self, index)?;
+        Ok(ring::spherical_direction_from_theta_phi(theta, phi))
     }
 }
