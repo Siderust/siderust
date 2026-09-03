@@ -70,7 +70,7 @@ pub use types::*;
 #[allow(clippy::erasing_op, clippy::identity_op)]
 #[no_mangle]
 pub extern "C" fn siderust_ffi_version() -> u32 {
-    0 * 10000 + 4 * 100 + 0 // 0.4.0
+    0 * 10000 + 11 * 100 + 1 // 0.11.1
 }
 
 #[cfg(test)]
@@ -80,7 +80,7 @@ mod tests {
     #[test]
     fn version_returns_expected_value() {
         let v = siderust_ffi_version();
-        // 0.4.0 → 0*10000 + 4*100 + 0 = 400
-        assert_eq!(v, 400);
+        // 0.11.1 → 0*10000 + 11*100 + 1 = 1101
+        assert_eq!(v, 1101);
     }
 }

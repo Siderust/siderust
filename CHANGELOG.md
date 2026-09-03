@@ -6,6 +6,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.1] - 2026-09-03
+
+### Added
+
+- Add ergonomic `EquatorialTrueOfDate` ↔ `Horizontal` transformations for
+  Cartesian and spherical directions, including precise UT1+TT variants,
+  reverse transformations, and topocentric position aliases.
+- Add `HealpixGrid::pixel_center_spherical` for retrieving HEALPix pixel
+  centers directly as typed spherical coordinates.
+
+### Changed
+
+- Align `siderust` and `siderust-ffi` release metadata with version `0.11.1`
+  and report FFI version `1101` from `siderust_ffi_version()`.
+
 ## [0.11.0] - 2026-07-03
 
 ### Added
@@ -717,7 +732,6 @@ let entry = iers_data::lookup(Days::new(jd_value_f64));
 * Internal `src/units/` module (angular.rs, frequency.rs, length.rs, mass.rs, power.rs, time.rs, unitless.rs, velocity.rs)
 * Deprecated transformation APIs: `TransformToTopocentric` and the legacy `to_horizontal` helper
 * Deprecated spherical coordinate extension modules replaced by the `coordinates::spherical` wrapper types
-
 ### Fixed
 * Build/CI tooling improvements (Git LFS support, stub cleanup, improved local CI scripts)
 
