@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-use crate::coordinates::cartesian::Direction;
 use crate::coordinates::frames::Galactic;
 use crate::healpix::{HealpixError, HealpixGrid, HealpixIndex, HealpixMap};
+use crate::qtty::Radian;
 use crate::starlight::{Result, StellarMapError, StellarSurfaceBrightness};
-use std::f64::consts::TAU;
 
 /// Validate that a stellar map contains finite, non-negative values.
 pub fn validate_stellar_map_values(
@@ -174,9 +173,9 @@ pub fn validate_no_longitude_wrap_artifact(
 }
 
 fn pixel_lon_lat_rad(grid: HealpixGrid, index: HealpixIndex) -> Result<(f64, f64)> {
-    let direction: Direction<Galactic> = grid.pixel_center(index)?;
-    let [x, y, z] = direction.as_array();
-    let lon = y.atan2(x).rem_euclid(TAU);
-    let lat = z.clamp(-1.0, 1.0).asin();
-    Ok((lon, lat))
+    let direction = grid.pixel_center_spherical::<Galactic>(index)?;
+    Ok((
+        direction.azimuth.to::<Radian>().value(),
+        direction.polar.to::<Radian>().value(),
+    ))
 }

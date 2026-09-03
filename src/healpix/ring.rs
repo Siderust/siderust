@@ -15,7 +15,9 @@
 
 use crate::coordinates::cartesian::Direction;
 use crate::coordinates::frames::ReferenceFrame;
+use crate::coordinates::spherical;
 use crate::healpix::{HealpixError, HealpixGrid, HealpixIndex, HealpixOrdering, Result};
+use crate::qtty::{Degree, Radians};
 use std::f64::consts::{FRAC_PI_2, TAU};
 
 pub(super) fn unit_vector_to_pixel(grid: &HealpixGrid, xyz: [f64; 3]) -> Result<HealpixIndex> {
@@ -139,4 +141,14 @@ where
 {
     let sin_theta = theta.sin();
     Direction::<F>::from_array([sin_theta * phi.cos(), sin_theta * phi.sin(), theta.cos()])
+}
+
+/// Map HEALPix colatitude/longitude radians directly to a canonical spherical direction.
+pub(crate) fn spherical_direction_from_theta_phi<F>(theta: f64, phi: f64) -> spherical::Direction<F>
+where
+    F: ReferenceFrame,
+{
+    let polar = Radians::new(FRAC_PI_2 - theta).to::<Degree>();
+    let azimuth = Radians::new(phi).normalize().to::<Degree>().normalize();
+    spherical::Direction::<F>::new_unchecked(polar, azimuth)
 }
