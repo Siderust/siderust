@@ -112,7 +112,7 @@ pub fn parse_sck(bytes: &[u8]) -> Result<SckKernel, FormatError> {
         ));
     }
     let mut records = Vec::with_capacity(expected);
-    for chunk in payload.chunks_exact(8) {
+    for chunk in payload.as_chunks::<8>().0 {
         records.push(read_f64(chunk));
     }
     Ok(SckKernel { header, records })

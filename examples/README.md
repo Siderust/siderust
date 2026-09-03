@@ -16,6 +16,7 @@ Feature-gated examples list the required feature in the command.
 - `04_all_center_conversions`: supported center shifts and round-trip checks.
 - `13_coordinate_operations`: angular separation, distances, and displacement algebra.
 - `14_nutation_models`: default and custom nutation-model transform paths.
+- `19_horizontal_coordinates`: equatorial ↔ horizontal for spherical/cartesian directions and positions.
 
 ```bash
 cargo run --example 01_basic_coordinates
@@ -24,6 +25,7 @@ cargo run --example 03_all_frames_conversions
 cargo run --example 04_all_center_conversions
 cargo run --example 13_coordinate_operations
 cargo run --example 14_nutation_models
+cargo run --example 19_horizontal_coordinates
 ```
 
 ## Observing Workflows

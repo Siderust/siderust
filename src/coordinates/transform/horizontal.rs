@@ -231,6 +231,16 @@ pub trait TopocentricEquatorialExt<U: LengthUnit> {
         jd_ut1: &JulianDate,
         jd_tt: &JulianDate,
     ) -> Position<Topocentric, Horizontal, U>;
+
+    /// Alias for [`to_horizontal_position`](Self::to_horizontal_position).
+    #[inline]
+    fn to_horizontal(
+        &self,
+        jd_ut1: &JulianDate,
+        jd_tt: &JulianDate,
+    ) -> Position<Topocentric, Horizontal, U> {
+        self.to_horizontal_position(jd_ut1, jd_tt)
+    }
 }
 
 impl<U: LengthUnit> TopocentricEquatorialExt<U> for Position<Topocentric, EquatorialTrueOfDate, U> {
@@ -279,6 +289,16 @@ pub trait TopocentricHorizontalExt<U: LengthUnit> {
         jd_ut1: &JulianDate,
         jd_tt: &JulianDate,
     ) -> Position<Topocentric, EquatorialTrueOfDate, U>;
+
+    /// Alias for [`to_equatorial_position`](Self::to_equatorial_position).
+    #[inline]
+    fn to_equatorial(
+        &self,
+        jd_ut1: &JulianDate,
+        jd_tt: &JulianDate,
+    ) -> Position<Topocentric, EquatorialTrueOfDate, U> {
+        self.to_equatorial_position(jd_ut1, jd_tt)
+    }
 }
 
 impl<U: LengthUnit> TopocentricHorizontalExt<U> for Position<Topocentric, Horizontal, U> {

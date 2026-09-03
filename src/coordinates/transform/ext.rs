@@ -73,12 +73,13 @@
 
 use crate::coordinates::cartesian::{Direction, Position, Vector};
 use crate::coordinates::centers::{Geodetic, ReferenceCenter};
-use crate::coordinates::frames::{ReferenceFrame, ECEF};
+use crate::coordinates::frames::{EquatorialTrueOfDate, Horizontal, ReferenceFrame, ECEF};
 use crate::coordinates::spherical;
 use crate::coordinates::transform::centers::TransformCenter;
 use crate::coordinates::transform::context::{
     AstroContext, DefaultEop, DefaultEphemeris, TransformContext,
 };
+use crate::coordinates::transform::horizontal::FromHorizontal;
 use crate::coordinates::transform::providers::{
     frame_rotation_with, CenterShiftProvider, FrameRotationProvider,
 };
@@ -138,11 +139,7 @@ pub trait DirectionAstroExt<F: ReferenceFrame> {
     /// value.
     ///
     /// [`to_horizontal_precise`]: Self::to_horizontal_precise
-    fn to_horizontal(
-        &self,
-        jd_tt: &JulianDate,
-        site: &Geodetic<ECEF>,
-    ) -> Direction<crate::coordinates::frames::Horizontal>
+    fn to_horizontal(&self, jd_tt: &JulianDate, site: &Geodetic<ECEF>) -> Direction<Horizontal>
     where
         Self: crate::coordinates::transform::horizontal::ToHorizontal,
     {
@@ -162,13 +159,46 @@ pub trait DirectionAstroExt<F: ReferenceFrame> {
         jd_tt: &JulianDate,
         jd_ut1: &JulianDate,
         site: &Geodetic<ECEF>,
-    ) -> Direction<crate::coordinates::frames::Horizontal>
+    ) -> Direction<Horizontal>
     where
         Self: crate::coordinates::transform::horizontal::ToHorizontal,
     {
         crate::coordinates::transform::horizontal::ToHorizontal::to_horizontal(
             self, jd_ut1, jd_tt, site,
         )
+    }
+
+    /// Converts this horizontal direction to equatorial (true of date) using TT only.
+    ///
+    /// UT1 is derived from TT using the context's EOP provider. For sub-second
+    /// precision, prefer [`to_equatorial_precise`] with an explicit UT1 value.
+    ///
+    /// [`to_equatorial_precise`]: Self::to_equatorial_precise
+    fn to_equatorial(
+        &self,
+        jd_tt: &JulianDate,
+        site: &Geodetic<ECEF>,
+    ) -> Direction<EquatorialTrueOfDate>
+    where
+        Self: FromHorizontal,
+    {
+        let ctx: AstroContext<DefaultEphemeris, DefaultEop> = AstroContext::default();
+        let eop = ctx.eop_at_tt(*jd_tt);
+        let jd_ut1 = crate::astro::earth_rotation::jd_ut1_from_tt_eop(*jd_tt, &eop);
+        FromHorizontal::to_equatorial(self, &jd_ut1, jd_tt, site)
+    }
+
+    /// Converts this horizontal direction to equatorial (true of date) with explicit UT1+TT.
+    fn to_equatorial_precise(
+        &self,
+        jd_tt: &JulianDate,
+        jd_ut1: &JulianDate,
+        site: &Geodetic<ECEF>,
+    ) -> Direction<EquatorialTrueOfDate>
+    where
+        Self: FromHorizontal,
+    {
+        FromHorizontal::to_equatorial(self, jd_ut1, jd_tt, site)
     }
 }
 
@@ -218,6 +248,44 @@ pub trait SphericalDirectionAstroExt<F: ReferenceFrame> {
     where
         Ctx: TransformContext,
         (): FrameRotationProvider<F, F2>;
+
+    /// Converts this spherical direction to horizontal coordinates using TT only.
+    fn to_horizontal(
+        &self,
+        jd_tt: &JulianDate,
+        site: &Geodetic<ECEF>,
+    ) -> spherical::Direction<Horizontal>
+    where
+        Direction<F>: crate::coordinates::transform::horizontal::ToHorizontal;
+
+    /// Converts this spherical direction to horizontal coordinates with explicit UT1+TT.
+    fn to_horizontal_precise(
+        &self,
+        jd_tt: &JulianDate,
+        jd_ut1: &JulianDate,
+        site: &Geodetic<ECEF>,
+    ) -> spherical::Direction<Horizontal>
+    where
+        Direction<F>: crate::coordinates::transform::horizontal::ToHorizontal;
+
+    /// Converts this horizontal spherical direction to equatorial (true of date) using TT only.
+    fn to_equatorial(
+        &self,
+        jd_tt: &JulianDate,
+        site: &Geodetic<ECEF>,
+    ) -> spherical::Direction<EquatorialTrueOfDate>
+    where
+        Direction<F>: FromHorizontal;
+
+    /// Converts this horizontal spherical direction to equatorial (true of date) with explicit UT1+TT.
+    fn to_equatorial_precise(
+        &self,
+        jd_tt: &JulianDate,
+        jd_ut1: &JulianDate,
+        site: &Geodetic<ECEF>,
+    ) -> spherical::Direction<EquatorialTrueOfDate>
+    where
+        Direction<F>: FromHorizontal;
 }
 
 impl<F: ReferenceFrame> SphericalDirectionAstroExt<F> for spherical::Direction<F> {
@@ -241,6 +309,60 @@ impl<F: ReferenceFrame> SphericalDirectionAstroExt<F> for spherical::Direction<F
         let cart: Direction<F> = self.to_cartesian();
         let cart_f2: Direction<F2> = cart.to_frame_with(jd, ctx);
         spherical::Direction::from_cartesian(&cart_f2)
+    }
+
+    fn to_horizontal(
+        &self,
+        jd_tt: &JulianDate,
+        site: &Geodetic<ECEF>,
+    ) -> spherical::Direction<Horizontal>
+    where
+        Direction<F>: crate::coordinates::transform::horizontal::ToHorizontal,
+    {
+        let cart = self.to_cartesian();
+        let horiz_cart = cart.to_horizontal(jd_tt, site);
+        spherical::Direction::from_cartesian(&horiz_cart)
+    }
+
+    fn to_horizontal_precise(
+        &self,
+        jd_tt: &JulianDate,
+        jd_ut1: &JulianDate,
+        site: &Geodetic<ECEF>,
+    ) -> spherical::Direction<Horizontal>
+    where
+        Direction<F>: crate::coordinates::transform::horizontal::ToHorizontal,
+    {
+        let cart = self.to_cartesian();
+        let horiz_cart = cart.to_horizontal_precise(jd_tt, jd_ut1, site);
+        spherical::Direction::from_cartesian(&horiz_cart)
+    }
+
+    fn to_equatorial(
+        &self,
+        jd_tt: &JulianDate,
+        site: &Geodetic<ECEF>,
+    ) -> spherical::Direction<EquatorialTrueOfDate>
+    where
+        Direction<F>: FromHorizontal,
+    {
+        let cart = self.to_cartesian();
+        let equ_cart = DirectionAstroExt::to_equatorial(&cart, jd_tt, site);
+        spherical::Direction::from_cartesian(&equ_cart)
+    }
+
+    fn to_equatorial_precise(
+        &self,
+        jd_tt: &JulianDate,
+        jd_ut1: &JulianDate,
+        site: &Geodetic<ECEF>,
+    ) -> spherical::Direction<EquatorialTrueOfDate>
+    where
+        Direction<F>: FromHorizontal,
+    {
+        let cart = self.to_cartesian();
+        let equ_cart = DirectionAstroExt::to_equatorial_precise(&cart, jd_tt, jd_ut1, site);
+        spherical::Direction::from_cartesian(&equ_cart)
     }
 }
 
