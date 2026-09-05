@@ -111,14 +111,21 @@ mod tests {
         }
     }
 
+    fn assert_matches_observatory(
+        actual: &SiderustGeodetict,
+        expected: &observatories::Observatory,
+    ) {
+        assert_eq!(actual.lon_deg, expected.geodetic.lon.value());
+        assert_eq!(actual.lat_deg, expected.geodetic.lat.value());
+        assert_eq!(actual.height_m, expected.geodetic.height.value());
+    }
+
     #[test]
     fn roque_de_los_muchachos_returns_ok() {
         let mut out = uninit_geodetic();
         let s = siderust_observatory_roque_de_los_muchachos(&mut out);
         assert_eq!(s, SiderustStatus::Ok);
-        assert_eq!(out.lon_deg, -17.8925);
-        assert_eq!(out.lat_deg, 28.7543);
-        assert_eq!(out.height_m, 2396.0);
+        assert_matches_observatory(&out, &observatories::ROQUE_DE_LOS_MUCHACHOS);
     }
 
     #[test]
@@ -136,9 +143,7 @@ mod tests {
             siderust_observatory_el_paranal(&mut out),
             SiderustStatus::Ok
         );
-        assert_eq!(out.lon_deg, -70.4043);
-        assert_eq!(out.lat_deg, -24.6272);
-        assert_eq!(out.height_m, 2635.0);
+        assert_matches_observatory(&out, &observatories::EL_PARANAL);
     }
 
     #[test]
@@ -153,9 +158,7 @@ mod tests {
     fn mauna_kea_returns_ok() {
         let mut out = uninit_geodetic();
         assert_eq!(siderust_observatory_mauna_kea(&mut out), SiderustStatus::Ok);
-        assert_eq!(out.lon_deg, -155.4681);
-        assert_eq!(out.lat_deg, 19.8207);
-        assert_eq!(out.height_m, 4207.0);
+        assert_matches_observatory(&out, &observatories::MAUNA_KEA);
     }
 
     #[test]
@@ -170,9 +173,7 @@ mod tests {
     fn la_silla_returns_ok() {
         let mut out = uninit_geodetic();
         assert_eq!(siderust_observatory_la_silla(&mut out), SiderustStatus::Ok);
-        assert_eq!(out.lon_deg, -70.7346);
-        assert_eq!(out.lat_deg, -29.2584);
-        assert_eq!(out.height_m, 2400.0);
+        assert_matches_observatory(&out, &observatories::LA_SILLA_OBSERVATORY);
     }
 
     #[test]
