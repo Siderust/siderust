@@ -6,6 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add `ObservatoryCatalog` with deterministic bundled catalog access and
+  validated runtime loading from `[[observatory]]` TOML records.
+
+### Changed
+
+- Generate the existing named observatory constants from the canonical
+  `data/observatories.toml` source while preserving their public names and
+  scientific values. `Observatory::name` is now `Cow<'static, str>` so the
+  same domain type can safely own names loaded at runtime.
+
 ## [0.11.1] - 2026-09-03
 
 ### Added

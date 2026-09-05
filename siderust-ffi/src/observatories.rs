@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! FFI bindings for observatory constants.
+//! FFI access to observatories generated from Siderust's canonical TOML catalog.
 
 use crate::error::SiderustStatus;
 use crate::types::SiderustGeodetict;
@@ -111,14 +111,21 @@ mod tests {
         }
     }
 
+    fn assert_matches_observatory(
+        actual: &SiderustGeodetict,
+        expected: &observatories::Observatory,
+    ) {
+        assert_eq!(actual.lon_deg, expected.geodetic.lon.value());
+        assert_eq!(actual.lat_deg, expected.geodetic.lat.value());
+        assert_eq!(actual.height_m, expected.geodetic.height.value());
+    }
+
     #[test]
     fn roque_de_los_muchachos_returns_ok() {
         let mut out = uninit_geodetic();
         let s = siderust_observatory_roque_de_los_muchachos(&mut out);
         assert_eq!(s, SiderustStatus::Ok);
-        // La Palma ~-17.9°, ~28.8°
-        assert!((out.lon_deg - (-17.89)).abs() < 1.0);
-        assert!((out.lat_deg - 28.76).abs() < 1.0);
+        assert_matches_observatory(&out, &observatories::ROQUE_DE_LOS_MUCHACHOS);
     }
 
     #[test]
@@ -136,8 +143,7 @@ mod tests {
             siderust_observatory_el_paranal(&mut out),
             SiderustStatus::Ok
         );
-        // Paranal ~-70.4°, ~-24.6°
-        assert!((out.lon_deg - (-70.4)).abs() < 1.0);
+        assert_matches_observatory(&out, &observatories::EL_PARANAL);
     }
 
     #[test]
@@ -152,8 +158,7 @@ mod tests {
     fn mauna_kea_returns_ok() {
         let mut out = uninit_geodetic();
         assert_eq!(siderust_observatory_mauna_kea(&mut out), SiderustStatus::Ok);
-        // Mauna Kea ~-155.5°, ~19.8°
-        assert!((out.lon_deg - (-155.5)).abs() < 1.0);
+        assert_matches_observatory(&out, &observatories::MAUNA_KEA);
     }
 
     #[test]
@@ -168,8 +173,7 @@ mod tests {
     fn la_silla_returns_ok() {
         let mut out = uninit_geodetic();
         assert_eq!(siderust_observatory_la_silla(&mut out), SiderustStatus::Ok);
-        // La Silla ~-70.7°, ~-29.3°
-        assert!(out.lat_deg < 0.0, "La Silla is in the southern hemisphere");
+        assert_matches_observatory(&out, &observatories::LA_SILLA_OBSERVATORY);
     }
 
     #[test]
