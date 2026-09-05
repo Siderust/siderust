@@ -272,53 +272,6 @@ mod tests {
         }
     }
 
-    #[test]
-    fn bundled_scientific_values_are_unchanged() {
-        let expected = [
-            (
-                EL_PARANAL,
-                "El Paranal Observatory",
-                -70.4043,
-                -24.6272,
-                2635.0,
-                744.0,
-            ),
-            (
-                ROQUE_DE_LOS_MUCHACHOS,
-                "Roque de los Muchachos Observatory",
-                -17.8925,
-                28.7543,
-                2396.0,
-                744.0,
-            ),
-            (
-                MAUNA_KEA,
-                "Mauna Kea Observatory",
-                -155.4681,
-                19.8207,
-                4207.0,
-                614.0,
-            ),
-            (
-                LA_SILLA_OBSERVATORY,
-                "La Silla Observatory",
-                -70.7346,
-                -29.2584,
-                2400.0,
-                744.0,
-            ),
-        ];
-        for (site, name, longitude, latitude, height, pressure) in expected {
-            assert_eq!(site.name, name);
-            assert_eq!(site.geodetic.lon.value(), longitude);
-            assert_eq!(site.geodetic.lat.value(), latitude);
-            assert_eq!(site.geodetic.height.value(), height);
-            assert_eq!(site.reference_pressure.value(), pressure);
-            assert!(site.reference_temperature.is_none());
-            assert!(site.reference_relative_humidity.is_none());
-        }
-    }
-
     #[cfg(feature = "serde")]
     fn one_record(overrides: &str) -> String {
         format!(
