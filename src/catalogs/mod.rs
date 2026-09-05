@@ -28,9 +28,8 @@
 //!   query that propagates positions via proper motion.
 //! - [`parse_csv_chunk`] consumes a CSV-style ASCII chunk into a
 //!   `Vec<CatalogRecord>`.
-//! - [`Observatory`] carries site name, geodetic position, and reference
-//!   atmospheric conditions; named constants for major sites live in
-//!   the `observatories` submodule.
+//! - [`Observatory`] is the single site domain model, and
+//!   [`ObservatoryCatalog`] loads bundled or custom TOML records as that type.
 //!
 //! ## References
 //!
@@ -49,7 +48,9 @@ pub mod record;
 
 pub use catalog::LargeStarCatalog;
 pub use ingest::{parse_csv_chunk, CatalogIngestError};
-pub use observatories::Observatory;
+#[cfg(feature = "serde")]
+pub use observatories::ObservatoryCatalogError;
+pub use observatories::{Observatory, ObservatoryCatalog};
 pub use record::{CatalogFilter, CatalogRecord};
 
 #[cfg(test)]

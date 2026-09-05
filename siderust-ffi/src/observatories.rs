@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! FFI bindings for observatory constants.
+//! FFI access to observatories generated from Siderust's canonical TOML catalog.
 
 use crate::error::SiderustStatus;
 use crate::types::SiderustGeodetict;
@@ -116,9 +116,9 @@ mod tests {
         let mut out = uninit_geodetic();
         let s = siderust_observatory_roque_de_los_muchachos(&mut out);
         assert_eq!(s, SiderustStatus::Ok);
-        // La Palma ~-17.9°, ~28.8°
-        assert!((out.lon_deg - (-17.89)).abs() < 1.0);
-        assert!((out.lat_deg - 28.76).abs() < 1.0);
+        assert_eq!(out.lon_deg, -17.8925);
+        assert_eq!(out.lat_deg, 28.7543);
+        assert_eq!(out.height_m, 2396.0);
     }
 
     #[test]
@@ -136,8 +136,9 @@ mod tests {
             siderust_observatory_el_paranal(&mut out),
             SiderustStatus::Ok
         );
-        // Paranal ~-70.4°, ~-24.6°
-        assert!((out.lon_deg - (-70.4)).abs() < 1.0);
+        assert_eq!(out.lon_deg, -70.4043);
+        assert_eq!(out.lat_deg, -24.6272);
+        assert_eq!(out.height_m, 2635.0);
     }
 
     #[test]
@@ -152,8 +153,9 @@ mod tests {
     fn mauna_kea_returns_ok() {
         let mut out = uninit_geodetic();
         assert_eq!(siderust_observatory_mauna_kea(&mut out), SiderustStatus::Ok);
-        // Mauna Kea ~-155.5°, ~19.8°
-        assert!((out.lon_deg - (-155.5)).abs() < 1.0);
+        assert_eq!(out.lon_deg, -155.4681);
+        assert_eq!(out.lat_deg, 19.8207);
+        assert_eq!(out.height_m, 4207.0);
     }
 
     #[test]
@@ -168,8 +170,9 @@ mod tests {
     fn la_silla_returns_ok() {
         let mut out = uninit_geodetic();
         assert_eq!(siderust_observatory_la_silla(&mut out), SiderustStatus::Ok);
-        // La Silla ~-70.7°, ~-29.3°
-        assert!(out.lat_deg < 0.0, "La Silla is in the southern hemisphere");
+        assert_eq!(out.lon_deg, -70.7346);
+        assert_eq!(out.lat_deg, -29.2584);
+        assert_eq!(out.height_m, 2400.0);
     }
 
     #[test]

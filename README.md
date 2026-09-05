@@ -33,7 +33,7 @@ Siderust provides ephemerides, coordinate transforms, time-scale handling, and o
 
 | Feature        | Default | What it enables |
 |----------------|---------|-----------------|
-| `serde`        | ✔       | `Serialize` / `Deserialize` on public types (default) |
+| `serde`        | ✔       | Serialization support and runtime TOML observatory catalogs (default) |
 | *(base)*       |         | VSOP87 + ELP2000-82B analytical ephemerides, full coordinate/altitude API |
 | `atmosphere`   |         | Atmospheric tables and radiative transfer helpers |
 | `photometry`   |         | Photometric passbands and throughput unit (Johnson–Cousins UBVRI) |
@@ -62,7 +62,7 @@ Siderust provides ephemerides, coordinate transforms, time-scale handling, and o
 | **Altitude API**        | Unified `AltitudeProvider` trait for Sun, Moon, stars, and arbitrary ICRS directions; find crossings, culminations, [`altitude_ranges`], [`above_threshold`], and [`below_threshold`] periods.|
 | **Catalogs & Bodies**   | Built‑in Sun→Neptune, asteroids (Ceres, Bennu, Apophis), comets (Halley, Encke, Hale-Bopp), a starter star catalog, typed Gaia DR3 raw/domain ingestion, + helpers for custom datasets. |
 | **Starlight & Photometry** | HEALPix stellar surface-brightness maps, S10 diagnostics, passband-aware Gaia XP sampled-spectrum photon-flux integration, and typed passband-integrated stellar source records. |
-| **Observatories**       | Predefined sites (Roque de los Muchachos, El Paranal, Mauna Kea, La Silla) with `ObserverSite` for topocentric transforms.                                                  |
+| **Observatories**       | TOML-backed built-in and runtime-extensible sites using one typed `Observatory` model.                                                                                       |
 
 Coordinate algebra and reusable conic geometry are provided by [`affn`](https://crates.io/crates/affn); Kepler-equation solving and domain-neutral conic propagation live in [`keplerian`](https://crates.io/crates/keplerian); `siderust` adds astronomy-specific time, frame transforms, ephemeris backends, and body/observer orchestration on top.
 
@@ -302,6 +302,19 @@ cargo run --features runtime-data --example 12_runtime_ephemeris
 cargo run --example 11_serde_serialization --features serde
 ```
 
+## Observatory catalogs
+
+Siderust uses one public `Observatory` model for both bundled sites and custom
+sites loaded at runtime. The bundled scientific values are generated from the
+canonical `data/observatories.toml` catalog and embedded at build time; no data
+file lookup is needed after installation. With the default `serde` feature,
+`ObservatoryCatalog::from_toml` and `ObservatoryCatalog::from_path` accept the
+same `[[observatory]]` representation for user-provided catalogs.
+
+Downstream crates should consume these Siderust records instead of maintaining
+duplicate observatory coordinate registries. Site-specific calibrations remain
+the downstream crate's responsibility.
+
 ## Crate Layout
 
 ```
@@ -324,7 +337,7 @@ cargo run --example 11_serde_serialization --features serde
 │   ├─ geometry/     # AzElRange, Fov, TerrainMask, eclipse, orbit-relative geometry
 │   ├─ context.rs    # MissionContext — runtime aggregation of instruments and sites
 │   └─ site.rs       # Location — ground-station / observing-site metadata
-├─ observatories/ # Predefined observatory locations (Roque, Paranal, Mauna Kea, La Silla)
+├─ catalogs/      # Star catalogs and TOML-backed observatory catalog
 ├─ targets/       # Target<T> with time & ProperMotion
 └─ time           # Re-export of tempoch: JulianDate, MJD, Period<S>, time scales
 ```

@@ -1665,7 +1665,7 @@ checksum = "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba"
 
 [[package]]
 name = "siderust"
-version = "0.11.0"
+version = "0.11.1"
 dependencies = [
  "affn",
  "approx",
@@ -1688,6 +1688,7 @@ dependencies = [
  "siderust-archive",
  "tempoch",
  "thiserror 2.0.18",
+ "toml 0.9.12+spec-1.1.0",
  "wide",
 ]
 
@@ -1710,7 +1711,7 @@ dependencies = [
 
 [[package]]
 name = "siderust-ffi"
-version = "0.11.0"
+version = "0.11.1"
 dependencies = [
  "affn",
  "cbindgen",

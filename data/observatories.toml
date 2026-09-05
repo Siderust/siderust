@@ -1,0 +1,42 @@
+# Canonical Siderust observatory catalog.
+#
+# Add custom catalogs using this same [[observatory]] record representation.
+# Longitude and latitude are WGS84 geodetic degrees, height is WGS84
+# ellipsoidal metres, pressure is hPa, temperature is K, and relative
+# humidity is a dimensionless fraction in [0, 1].
+
+[[observatory]]
+# Coordinates/height: ESO Paranal site documentation.
+# Pressure: established Siderust/NSB reference value for Cerro Paranal.
+name = "El Paranal Observatory"
+longitude_deg = -70.4043
+latitude_deg = -24.6272
+height_m = 2635.0
+reference_pressure_hpa = 744.0
+
+[[observatory]]
+# Coordinates/height: Instituto de Astrofísica de Canarias site documentation.
+# Pressure: established Siderust/NSB reference value for La Palma.
+name = "Roque de los Muchachos Observatory"
+longitude_deg = -17.8925
+latitude_deg = 28.7543
+height_m = 2396.0
+reference_pressure_hpa = 744.0
+
+[[observatory]]
+# Coordinates/height: established Siderust Mauna Kea reference position.
+# Pressure: ISA barometric estimate at the catalog height.
+name = "Mauna Kea Observatory"
+longitude_deg = -155.4681
+latitude_deg = 19.8207
+height_m = 4207.0
+reference_pressure_hpa = 614.0
+
+[[observatory]]
+# Coordinates/height: ESO La Silla site documentation.
+# Pressure: established Siderust reference value for this altitude class.
+name = "La Silla Observatory"
+longitude_deg = -70.7346
+latitude_deg = -29.2584
+height_m = 2400.0
+reference_pressure_hpa = 744.0
