@@ -16,7 +16,9 @@ use std::path::PathBuf;
 fn symbol_for(name: &str) -> Option<&'static str> {
     match name {
         "El Paranal Observatory" => Some("EL_PARANAL"),
+        "CTAO South" => Some("CTAO_SOUTH"),
         "Roque de los Muchachos Observatory" => Some("ROQUE_DE_LOS_MUCHACHOS"),
+        "CTAO North" => Some("CTAO_NORTH"),
         "Mauna Kea Observatory" => Some("MAUNA_KEA"),
         "La Silla Observatory" => Some("LA_SILLA_OBSERVATORY"),
         _ => None,
@@ -79,7 +81,9 @@ fn main() {
 
     for required in [
         "EL_PARANAL",
+        "CTAO_SOUTH",
         "ROQUE_DE_LOS_MUCHACHOS",
+        "CTAO_NORTH",
         "MAUNA_KEA",
         "LA_SILLA_OBSERVATORY",
     ] {

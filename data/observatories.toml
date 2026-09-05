@@ -15,6 +15,20 @@ height_m = 2635.0
 reference_pressure_hpa = 744.0
 
 [[observatory]]
+# Array coordinates: CTAO-South site documentation; DMS converted to decimal degrees.
+# CTA site references use a nominal 2150 m above-sea-level altitude. Because no
+# WGS84 ellipsoidal datum is stated, treat 2150 m as orthometric height H and
+# convert with the EGM96 15' geoid undulation N = +34.6407 m at this position:
+# h(WGS84) = H + N = 2184.6407 m, rounded to 2184.6 m.
+# Pressure: ISA troposphere estimate at H = 2150 m,
+# 1013.25 * (1 - 2.25577e-5 * H)^5.25588 = 780.26 hPa, rounded to 780 hPa.
+name = "CTAO South"
+longitude_deg = -70.31634444444444
+latitude_deg = -24.683427777777776
+height_m = 2184.6
+reference_pressure_hpa = 780.0
+
+[[observatory]]
 # Coordinates/height: Instituto de Astrofísica de Canarias site documentation.
 # Pressure: established Siderust/NSB reference value for La Palma.
 name = "Roque de los Muchachos Observatory"
@@ -22,6 +36,20 @@ longitude_deg = -17.8925
 latitude_deg = 28.7543
 height_m = 2396.0
 reference_pressure_hpa = 744.0
+
+[[observatory]]
+# Array coordinates and nominal 2200 m above-sea-level altitude: CTAO-North
+# site documentation; DMS converted to decimal degrees. Because no WGS84
+# ellipsoidal datum is stated, treat 2200 m as orthometric height H and convert
+# with the EGM96 15' geoid undulation N = +40.2246 m at this position:
+# h(WGS84) = H + N = 2240.2246 m, rounded to 2240.2 m.
+# Pressure: ISA troposphere estimate at H = 2200 m,
+# 1013.25 * (1 - 2.25577e-5 * H)^5.25588 = 775.41 hPa, rounded to 775 hPa.
+name = "CTAO North"
+longitude_deg = -17.892005
+latitude_deg = 28.762164
+height_m = 2240.2
+reference_pressure_hpa = 775.0
 
 [[observatory]]
 # Coordinates/height: established Siderust Mauna Kea reference position.
