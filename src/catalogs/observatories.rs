@@ -68,6 +68,10 @@ use std::borrow::Cow;
 #[cfg(feature = "serde")]
 use std::path::{Path, PathBuf};
 
+#[cfg(feature = "serde")]
+#[path = "observatory_schema.rs"]
+mod observatory_schema;
+
 #[cfg(all(test, feature = "serde"))]
 const BUNDLED_CATALOG_TOML: &str = include_str!("../../data/observatories.toml");
 
@@ -95,6 +99,21 @@ impl Observatory {
     #[inline]
     pub const fn geodetic(&self) -> Geodetic<ECEF> {
         self.geodetic
+    }
+
+    #[cfg(feature = "serde")]
+    fn from_dto(record: observatory_schema::ObservatoryDto) -> Self {
+        Self {
+            name: Cow::Owned(record.name),
+            geodetic: Geodetic::new_raw(
+                Degrees::new(record.longitude_deg),
+                Degrees::new(record.latitude_deg),
+                Meters::new(record.height_m),
+            ),
+            reference_pressure: Hectopascals::new(record.reference_pressure_hpa),
+            reference_temperature: record.reference_temperature_k.map(Kelvins::new),
+            reference_relative_humidity: record.reference_relative_humidity,
+        }
     }
 }
 
@@ -153,24 +172,16 @@ impl ObservatoryCatalog {
     /// default.
     #[cfg(feature = "serde")]
     pub fn from_toml(input: &str) -> Result<Self, ObservatoryCatalogError> {
-        let catalog: CatalogDto = toml::from_str(input)?;
-        let mut observatories = Vec::with_capacity(catalog.observatory.len());
-        for (index, record) in catalog.observatory.into_iter().enumerate() {
-            let observatory = record.into_observatory(index + 1)?;
-            if observatories
-                .iter()
-                .any(|existing: &Observatory| existing.name == observatory.name)
-            {
-                return Err(ObservatoryCatalogError::InvalidField {
-                    record: index + 1,
-                    name: observatory.name.into_owned(),
-                    field: "name",
-                    reason: "duplicate observatory name".into(),
-                });
-            }
-            observatories.push(observatory);
-        }
-        Ok(Self { observatories })
+        let catalog = observatory_schema::parse_catalog(input)?;
+        observatory_schema::validate_catalog(&catalog)
+            .map_err(ObservatoryCatalogError::from_validation)?;
+        Ok(Self {
+            observatories: catalog
+                .observatory
+                .into_iter()
+                .map(Observatory::from_dto)
+                .collect(),
+        })
     }
 
     /// Reads, parses, and validates an external TOML catalog.
@@ -229,136 +240,15 @@ pub enum ObservatoryCatalogError {
 }
 
 #[cfg(feature = "serde")]
-#[derive(serde::Deserialize)]
-#[serde(deny_unknown_fields)]
-struct CatalogDto {
-    observatory: Vec<ObservatoryDto>,
-}
-
-#[cfg(feature = "serde")]
-#[derive(serde::Deserialize)]
-#[serde(deny_unknown_fields)]
-struct ObservatoryDto {
-    name: String,
-    longitude_deg: f64,
-    latitude_deg: f64,
-    height_m: f64,
-    reference_pressure_hpa: f64,
-    reference_temperature_k: Option<f64>,
-    reference_relative_humidity: Option<f64>,
-}
-
-#[cfg(feature = "serde")]
-impl ObservatoryDto {
-    fn into_observatory(self, record: usize) -> Result<Observatory, ObservatoryCatalogError> {
-        let display_name = if self.name.trim().is_empty() {
-            "<empty>".to_owned()
-        } else {
-            self.name.clone()
-        };
-        validate_name(record, &display_name, &self.name)?;
-        validate_range(
-            record,
-            &display_name,
-            "longitude_deg",
-            self.longitude_deg,
-            -180.0,
-            180.0,
-        )?;
-        validate_range(
-            record,
-            &display_name,
-            "latitude_deg",
-            self.latitude_deg,
-            -90.0,
-            90.0,
-        )?;
-        validate_range(
-            record,
-            &display_name,
-            "height_m",
-            self.height_m,
-            -500.0,
-            10_000.0,
-        )?;
-        validate_range(
-            record,
-            &display_name,
-            "reference_pressure_hpa",
-            self.reference_pressure_hpa,
-            f64::MIN_POSITIVE,
-            1_100.0,
-        )?;
-        if let Some(value) = self.reference_temperature_k {
-            validate_range(
-                record,
-                &display_name,
-                "reference_temperature_k",
-                value,
-                f64::MIN_POSITIVE,
-                400.0,
-            )?;
+impl ObservatoryCatalogError {
+    fn from_validation(error: observatory_schema::ValidationError) -> Self {
+        Self::InvalidField {
+            record: error.record,
+            name: error.name,
+            field: error.field,
+            reason: error.reason,
         }
-        if let Some(value) = self.reference_relative_humidity {
-            validate_range(
-                record,
-                &display_name,
-                "reference_relative_humidity",
-                value,
-                0.0,
-                1.0,
-            )?;
-        }
-
-        Ok(Observatory {
-            name: Cow::Owned(self.name),
-            geodetic: Geodetic::new_raw(
-                Degrees::new(self.longitude_deg),
-                Degrees::new(self.latitude_deg),
-                Meters::new(self.height_m),
-            ),
-            reference_pressure: Hectopascals::new(self.reference_pressure_hpa),
-            reference_temperature: self.reference_temperature_k.map(Kelvins::new),
-            reference_relative_humidity: self.reference_relative_humidity,
-        })
     }
-}
-
-#[cfg(feature = "serde")]
-fn validate_name(
-    record: usize,
-    display_name: &str,
-    name: &str,
-) -> Result<(), ObservatoryCatalogError> {
-    if name.trim().is_empty() {
-        return Err(ObservatoryCatalogError::InvalidField {
-            record,
-            name: display_name.to_owned(),
-            field: "name",
-            reason: "must not be empty".into(),
-        });
-    }
-    Ok(())
-}
-
-#[cfg(feature = "serde")]
-fn validate_range(
-    record: usize,
-    name: &str,
-    field: &'static str,
-    value: f64,
-    min: f64,
-    max: f64,
-) -> Result<(), ObservatoryCatalogError> {
-    if !value.is_finite() || value < min || value > max {
-        return Err(ObservatoryCatalogError::InvalidField {
-            record,
-            name: name.to_owned(),
-            field,
-            reason: format!("must be finite and in [{min}, {max}], got {value}"),
-        });
-    }
-    Ok(())
 }
 
 #[cfg(test)]
@@ -492,6 +382,14 @@ mod tests {
             let error = ObservatoryCatalog::from_toml(&one_record(extra)).unwrap_err();
             assert!(error.to_string().contains("reference_"), "{error}");
         }
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn rejects_duplicate_names() {
+        let input = format!("{}{}", one_record(""), one_record(""));
+        let error = ObservatoryCatalog::from_toml(&input).unwrap_err();
+        assert!(error.to_string().contains("duplicate observatory name"));
     }
 
     #[cfg(feature = "serde")]

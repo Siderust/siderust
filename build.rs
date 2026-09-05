@@ -3,61 +3,15 @@
 
 //! Validates the canonical observatory TOML and generates compatibility constants.
 
-use serde::Deserialize;
+#[path = "src/catalogs/observatory_schema.rs"]
+mod observatory_schema;
+
+use observatory_schema::{parse_catalog, validate_catalog, ObservatoryDto};
 use std::collections::HashSet;
 use std::env;
 use std::fmt::Write as _;
 use std::fs;
 use std::path::PathBuf;
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct Catalog {
-    observatory: Vec<Record>,
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct Record {
-    name: String,
-    longitude_deg: f64,
-    latitude_deg: f64,
-    height_m: f64,
-    reference_pressure_hpa: f64,
-    reference_temperature_k: Option<f64>,
-    reference_relative_humidity: Option<f64>,
-}
-
-fn validate(record: &Record) -> Result<(), String> {
-    if record.name.trim().is_empty() {
-        return Err("name must not be empty".into());
-    }
-    validate_range("longitude_deg", record.longitude_deg, -180.0, 180.0)?;
-    validate_range("latitude_deg", record.latitude_deg, -90.0, 90.0)?;
-    validate_range("height_m", record.height_m, -500.0, 10_000.0)?;
-    validate_range(
-        "reference_pressure_hpa",
-        record.reference_pressure_hpa,
-        f64::MIN_POSITIVE,
-        1_100.0,
-    )?;
-    if let Some(value) = record.reference_temperature_k {
-        validate_range("reference_temperature_k", value, f64::MIN_POSITIVE, 400.0)?;
-    }
-    if let Some(value) = record.reference_relative_humidity {
-        validate_range("reference_relative_humidity", value, 0.0, 1.0)?;
-    }
-    Ok(())
-}
-
-fn validate_range(field: &str, value: f64, min: f64, max: f64) -> Result<(), String> {
-    if !value.is_finite() || value < min || value > max {
-        return Err(format!(
-            "{field} must be finite and in [{min}, {max}], got {value}"
-        ));
-    }
-    Ok(())
-}
 
 fn symbol_for(name: &str) -> Option<&'static str> {
     match name {
@@ -76,7 +30,7 @@ fn option_quantity(value: Option<f64>, constructor: &str) -> String {
     )
 }
 
-fn observatory_expression(record: &Record) -> String {
+fn observatory_expression(record: &ObservatoryDto) -> String {
     let temperature = option_quantity(record.reference_temperature_k, "Kelvins");
     let humidity = record
         .reference_relative_humidity
@@ -94,30 +48,20 @@ fn observatory_expression(record: &Record) -> String {
 fn main() {
     const SOURCE: &str = "data/observatories.toml";
     println!("cargo:rerun-if-changed={SOURCE}");
+    println!("cargo:rerun-if-changed=src/catalogs/observatory_schema.rs");
 
     let raw = fs::read_to_string(SOURCE).unwrap_or_else(|error| {
         panic!("failed to read canonical observatory catalog {SOURCE}: {error}")
     });
-    let catalog: Catalog = toml::from_str(&raw)
+    let catalog = parse_catalog(&raw)
+        .unwrap_or_else(|error| panic!("invalid canonical observatory catalog {SOURCE}: {error}"));
+    validate_catalog(&catalog)
         .unwrap_or_else(|error| panic!("invalid canonical observatory catalog {SOURCE}: {error}"));
 
-    let mut names = HashSet::new();
     let mut compatibility_symbols = HashSet::new();
     let mut entries = Vec::new();
     let mut generated = String::from("// @generated from data/observatories.toml; do not edit.\n");
-    for (index, record) in catalog.observatory.iter().enumerate() {
-        validate(record).unwrap_or_else(|error| {
-            panic!(
-                "invalid observatory record {} (`{}`): {error}",
-                index + 1,
-                record.name
-            )
-        });
-        assert!(
-            names.insert(record.name.as_str()),
-            "duplicate observatory name `{}`",
-            record.name
-        );
+    for record in &catalog.observatory {
         let expression = observatory_expression(record);
         if let Some(symbol) = symbol_for(&record.name) {
             compatibility_symbols.insert(symbol);
