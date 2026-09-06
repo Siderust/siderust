@@ -34,6 +34,15 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo check --workspace $CARGO_CI_TARGETS --all-features
 
+  check-no-default-features:
+    name: Check (no default features)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo check -p siderust --lib --no-default-features
+      - run: cargo test -p siderust --test observatory_catalog_no_default --no-default-features
+
   fmt:
     name: Format
     runs-on: ubuntu-latest

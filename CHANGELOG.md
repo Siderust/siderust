@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add `ObservatoryCatalog` with deterministic bundled catalog access and
   validated runtime loading from `[[observatory]]` TOML records.
+- Add `ObservatoryCatalog::extend` so downstream crates can compose the
+  bundled catalog with additional validated records without re-parsing.
 
 ### Changed
 
