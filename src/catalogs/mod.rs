@@ -48,9 +48,7 @@ pub mod record;
 
 pub use catalog::LargeStarCatalog;
 pub use ingest::{parse_csv_chunk, CatalogIngestError};
-#[cfg(feature = "serde")]
-pub use observatories::ObservatoryCatalogError;
-pub use observatories::{Observatory, ObservatoryCatalog};
+pub use observatories::{Observatory, ObservatoryCatalog, ObservatoryCatalogError};
 pub use record::{CatalogFilter, CatalogRecord};
 
 #[cfg(test)]
