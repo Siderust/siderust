@@ -166,6 +166,23 @@ impl ObservatoryCatalog {
             .find(|observatory| observatory.name == name)
     }
 
+    /// Appends every observatory from `other`, preserving relative order.
+    ///
+    /// Duplicate exact names are rejected. Downstream crates can use this to
+    /// compose Siderust's bundled catalog with domain-specific extensions
+    /// without re-implementing TOML parsing or validation.
+    pub fn extend(&mut self, other: Self) -> Result<(), ObservatoryCatalogError> {
+        for observatory in &other.observatories {
+            if self.get(observatory.name.as_ref()).is_some() {
+                return Err(ObservatoryCatalogError::DuplicateName {
+                    name: observatory.name.to_string(),
+                });
+            }
+        }
+        self.observatories.extend(other.observatories);
+        Ok(())
+    }
+
     /// Parses and validates a catalog using `[[observatory]]` TOML records.
     ///
     /// This API is available with the `serde` feature, which is enabled by
@@ -209,11 +226,12 @@ impl<'a> IntoIterator for &'a ObservatoryCatalog {
     }
 }
 
-/// Errors produced while reading, parsing, or validating an observatory catalog.
-#[cfg(feature = "serde")]
+/// Errors produced while reading, parsing, validating, or composing an
+/// observatory catalog.
 #[derive(Debug, thiserror::Error)]
 pub enum ObservatoryCatalogError {
     /// The external catalog file could not be read.
+    #[cfg(feature = "serde")]
     #[error("failed to read observatory catalog `{path}`: {source}")]
     Read {
         /// Path that could not be read.
@@ -223,9 +241,11 @@ pub enum ObservatoryCatalogError {
         source: std::io::Error,
     },
     /// The input is not a valid catalog in the canonical TOML representation.
+    #[cfg(feature = "serde")]
     #[error("invalid observatory catalog TOML: {0}")]
     Toml(#[from] toml::de::Error),
     /// A parsed record contains a scientifically invalid value.
+    #[cfg(feature = "serde")]
     #[error("invalid observatory record {record} (`{name}`), field `{field}`: {reason}")]
     InvalidField {
         /// One-based record number.
@@ -236,6 +256,12 @@ pub enum ObservatoryCatalogError {
         field: &'static str,
         /// Human-readable validation requirement.
         reason: String,
+    },
+    /// An exact observatory name already exists when composing catalogs.
+    #[error("duplicate observatory name `{name}`")]
+    DuplicateName {
+        /// Conflicting exact observatory name.
+        name: String,
     },
 }
 
@@ -373,5 +399,24 @@ mod tests {
         let catalog = ObservatoryCatalog::from_path(&path).unwrap();
         std::fs::remove_file(&path).unwrap();
         assert_eq!(catalog.get("Test Site").unwrap().name, "Test Site");
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn extend_appends_unknown_observatories_and_rejects_duplicates() {
+        let mut catalog = ObservatoryCatalog::builtin();
+        let baseline = catalog.len();
+        let extension = ObservatoryCatalog::from_toml(&one_record("")).unwrap();
+        catalog.extend(extension).unwrap();
+        assert_eq!(catalog.len(), baseline + 1);
+        assert_eq!(catalog.get("Test Site").unwrap().name, "Test Site");
+
+        let duplicate = ObservatoryCatalog::from_toml(
+            "[[observatory]]\nname = \"El Paranal Observatory\"\nlongitude_deg = 1.0\nlatitude_deg = 2.0\nheight_m = 3.0\nreference_pressure_hpa = 900.0\n",
+        )
+        .unwrap();
+        let error = catalog.extend(duplicate).unwrap_err();
+        assert!(error.to_string().contains("duplicate observatory name"));
+        assert!(error.to_string().contains("El Paranal Observatory"));
     }
 }
