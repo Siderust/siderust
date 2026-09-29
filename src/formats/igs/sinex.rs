@@ -11,14 +11,19 @@
 //!
 //! - IERS/IGS SINEX Format Description Version 2.10.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
+use alloc::format;
 use super::{FileLocation, FormatError, ParseMode};
 use affn::cartesian;
 use affn::centers::{AffineCenter, ReferenceCenter};
 use affn::frames::ITRF;
 use qtty::unit::Meter;
-use std::collections::HashMap;
+use hashbrown::HashMap;
+#[cfg(feature = "std")]
 use std::io::{BufRead, BufReader, Read};
-
 /// Earth geocenter marker for SINEX ITRF coordinates.
 ///
 /// # Examples

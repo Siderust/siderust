@@ -3,6 +3,8 @@
 
 //! JSON encoding for OMM, matching Celestrak's flat schema.
 
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
 use qtty::angular::Degrees;
 use qtty::angular::Turn;
 use qtty::angular_rate::AngularRate;

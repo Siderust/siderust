@@ -29,13 +29,18 @@
 //! - Montenbruck, O., Steigenberger, P., & Hauschild, A. (2015). Broadcast
 //!   versus precise ephemerides for GNSS orbit determination. GPS
 //!   Solutions, 19(2), 321-330.
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
+use alloc::format;
 use super::FormatError;
 use affn::cartesian::Displacement;
 use affn::frames::ReferenceFrame;
 use qtty::length::Millimeter;
-use std::collections::HashMap;
+use hashbrown::HashMap;
+#[cfg(feature = "std")]
 use std::io::{BufRead, BufReader, Read, Write};
-
 /// ANTEX local north-east-up component frame.
 ///
 /// Component mapping for Cartesian vectors in this frame is:
@@ -104,7 +109,7 @@ pub fn read_antex<R: Read>(rdr: R) -> Result<AntexCatalog, FormatError> {
             }
             "END OF ANTENNA" => {
                 if let Some(name) = current_antenna.take() {
-                    catalog.insert(name, std::mem::take(&mut current_pcos));
+                    catalog.insert(name, core::mem::take(&mut current_pcos));
                 }
             }
             _ => {}

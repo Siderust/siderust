@@ -14,7 +14,7 @@
 //!
 //! ## Technical scope
 //!
-//! - Dataset is parsed once (lazy [`OnceLock`]) into a typed
+//! - Dataset is parsed once (lazy [`Once`]) into a typed
 //!   [`SampledSpectrum`] with axis [`Nanometer`] and value
 //!   [`Transmittance`].
 //! - The convenience helper [`transmittance_at`] returns a typed
@@ -39,7 +39,7 @@
 //! - Patat, F., et al. (2008). "An Atlas of the Sky Background Spectrum
 //!   over Cerro Paranal". *A&A* 481, 575.
 
-use std::sync::OnceLock;
+use spin::Once;
 
 use crate::atmosphere::{Transmittance, Transmittances};
 use crate::ext_qtty::length::Nanometer;
@@ -52,17 +52,17 @@ const RAW: &str = include_str!("o3trans.dat");
 #[cfg(test)]
 const OZONE_SHA256: &str = "cb06c173f393d6d55e3c39551665abb8f5d6c1a846cd0fd739a15d0155f94502";
 
-static TABLE: OnceLock<SampledSpectrum<Nanometer, Transmittance>> = OnceLock::new();
+static TABLE: Once<SampledSpectrum<Nanometer, Transmittance>> = Once::new();
 
 /// Pre-computed ozone transmittance vs wavelength.
 ///
 /// Returns a `SampledSpectrum` where `xs` is wavelength in nanometres and
 /// `ys` is dimensionless transmittance ∈ [0, 1].
 ///
-/// The table is parsed exactly once (lazy, thread-safe via [`OnceLock`])
+/// The table is parsed exactly once (lazy, thread-safe via [`Once`])
 /// and reused for all subsequent calls.
 pub fn transmission_table() -> &'static SampledSpectrum<Nanometer, Transmittance> {
-    TABLE.get_or_init(|| {
+    TABLE.call_once(|| {
         let provenance = optica::data::Provenance::bundled_file("siderust/data/o3trans.dat")
             .with_notes("Original NSB/darknsb o3trans.dat; wavelengths converted µm→nm.");
         two_column::<Nanometer, Transmittance>(
@@ -103,7 +103,7 @@ mod tests {
     fn table_is_nonempty() {
         let t = transmission_table();
         assert!(!t.is_empty(), "ozone table must have entries");
-        assert!(t.len() >= 2, "OnceLock returns the same instance");
+        assert!(t.len() >= 2, "Once returns the same instance");
     }
 
     #[test]

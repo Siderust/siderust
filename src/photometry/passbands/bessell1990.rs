@@ -90,7 +90,12 @@
 //!   Contributions to the XIV.0 Scientific Meeting of the Spanish
 //!   Astronomical Society. <http://svo2.cab.inta-csic.es/theory/fps/>.
 
-use std::sync::OnceLock;
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::vec;
+use alloc::vec::Vec;
+use alloc::format;
+use spin::Once;
 
 use crate::ext_qtty::length::Nanometer;
 use optica::data::Provenance;
@@ -139,11 +144,11 @@ crate::assert_data_checksum!(
 
 // ── static caches ─────────────────────────────────────────────────────────────
 
-static U_TABLE: OnceLock<SampledSpectrum<Nanometer, Throughput>> = OnceLock::new();
-static B_TABLE: OnceLock<SampledSpectrum<Nanometer, Throughput>> = OnceLock::new();
-static V_TABLE: OnceLock<SampledSpectrum<Nanometer, Throughput>> = OnceLock::new();
-static R_TABLE: OnceLock<SampledSpectrum<Nanometer, Throughput>> = OnceLock::new();
-static I_TABLE: OnceLock<SampledSpectrum<Nanometer, Throughput>> = OnceLock::new();
+static U_TABLE: Once<SampledSpectrum<Nanometer, Throughput>> = Once::new();
+static B_TABLE: Once<SampledSpectrum<Nanometer, Throughput>> = Once::new();
+static V_TABLE: Once<SampledSpectrum<Nanometer, Throughput>> = Once::new();
+static R_TABLE: Once<SampledSpectrum<Nanometer, Throughput>> = Once::new();
+static I_TABLE: Once<SampledSpectrum<Nanometer, Throughput>> = Once::new();
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -178,7 +183,7 @@ fn load(raw: &str, filter_id: &str, dat_path: &str) -> SampledSpectrum<Nanometer
 ///
 /// λ_eff ≈ 366 nm, FWHM ≈ 66 nm (Bessell 1990 Table 1).
 pub fn u() -> &'static SampledSpectrum<Nanometer, Throughput> {
-    U_TABLE.get_or_init(|| {
+    U_TABLE.call_once(|| {
         load(
             RAW_U,
             "Generic/Bessell.U",
@@ -191,7 +196,7 @@ pub fn u() -> &'static SampledSpectrum<Nanometer, Throughput> {
 ///
 /// λ_eff ≈ 438 nm, FWHM ≈ 98 nm (Bessell 1990 Table 1).
 pub fn b() -> &'static SampledSpectrum<Nanometer, Throughput> {
-    B_TABLE.get_or_init(|| {
+    B_TABLE.call_once(|| {
         load(
             RAW_B,
             "Generic/Bessell.B",
@@ -204,7 +209,7 @@ pub fn b() -> &'static SampledSpectrum<Nanometer, Throughput> {
 ///
 /// λ_eff ≈ 545 nm, FWHM ≈ 88 nm (Bessell 1990 Table 1).
 pub fn v() -> &'static SampledSpectrum<Nanometer, Throughput> {
-    V_TABLE.get_or_init(|| {
+    V_TABLE.call_once(|| {
         load(
             RAW_V,
             "Generic/Bessell.V",
@@ -217,7 +222,7 @@ pub fn v() -> &'static SampledSpectrum<Nanometer, Throughput> {
 ///
 /// λ_eff ≈ 641 nm, FWHM ≈ 158 nm (Bessell 1990 Table 1).
 pub fn r() -> &'static SampledSpectrum<Nanometer, Throughput> {
-    R_TABLE.get_or_init(|| {
+    R_TABLE.call_once(|| {
         load(
             RAW_R,
             "Generic/Bessell.R",
@@ -230,7 +235,7 @@ pub fn r() -> &'static SampledSpectrum<Nanometer, Throughput> {
 ///
 /// λ_eff ≈ 798 nm, FWHM ≈ 154 nm (Bessell 1990 Table 1).
 pub fn i() -> &'static SampledSpectrum<Nanometer, Throughput> {
-    I_TABLE.get_or_init(|| {
+    I_TABLE.call_once(|| {
         load(
             RAW_I,
             "Generic/Bessell.I",
@@ -485,7 +490,7 @@ mod tests {
         }
     }
 
-    // ── OnceLock identity test ─────────────────────────────────────────────────
+    // ── Once identity test ─────────────────────────────────────────────────
 
     #[test]
     fn repeated_calls_return_same_pointer() {
@@ -493,7 +498,7 @@ mod tests {
         let b = v() as *const _;
         assert_eq!(
             a, b,
-            "OnceLock must return the same instance on repeated calls"
+            "Once must return the same instance on repeated calls"
         );
     }
 

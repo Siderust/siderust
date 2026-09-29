@@ -29,6 +29,10 @@
 //! - Press, W. H., Teukolsky, S. A., Vetterling, W. T., & Flannery, B. P.
 //!   (2007). *Numerical Recipes in C++*, 3rd ed. Cambridge University Press.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
+use alloc::vec;
+use alloc::vec::Vec;
 use crate::qtty::{Day, Quantity, Unit};
 use crate::time::{Interval, ModifiedJulianDate};
 
@@ -610,7 +614,7 @@ mod tests {
     fn above_threshold_sine_wave() {
         // sin(2π(t+0.05)) > 0 roughly on (−0.05, 0.45) → within [0,1]: (0, ~0.45) and (~0.95, 1)
         // Use a shift to avoid exact zero at t=0
-        let f = |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * (mjd_scalar(t) + 0.05)).sin());
+        let f = |t: Mjd| Radians::new((2.0 * core::f64::consts::PI * (mjd_scalar(t) + 0.05)).sin());
         let periods =
             above_threshold_periods(period(0.0, 1.0), Days::new(0.01), &f, Radians::new(0.0));
 
@@ -653,7 +657,7 @@ mod tests {
     fn in_range_periods_band() {
         // sin(2π(t+0.05)) in range [-0.5, 0.5]
         // The band where |sin| < 0.5 occupies 1/3 of each cycle.
-        let f = |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * (mjd_scalar(t) + 0.05)).sin());
+        let f = |t: Mjd| Radians::new((2.0 * core::f64::consts::PI * (mjd_scalar(t) + 0.05)).sin());
         let periods = in_range_periods(
             period(0.0, 1.0),
             Days::new(0.01),
@@ -722,7 +726,7 @@ mod tests {
     #[test]
     fn multiple_crossings_per_window() {
         // Fast oscillation: sin(20πt) > 0  → 10 positive intervals in [0,1]
-        let f = |t: Mjd| Radians::new((20.0 * std::f64::consts::PI * mjd_scalar(t)).sin());
+        let f = |t: Mjd| Radians::new((20.0 * core::f64::consts::PI * mjd_scalar(t)).sin());
         let periods =
             above_threshold_periods(period(0.0, 1.0), Days::new(0.005), &f, Radians::new(0.0));
         assert!(
@@ -735,7 +739,7 @@ mod tests {
     #[test]
     fn segmented_matches_scan() {
         // Use shifted sine to avoid exact zeros at grid points
-        let f = |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * (mjd_scalar(t) + 0.05)).sin());
+        let f = |t: Mjd| Radians::new((2.0 * core::f64::consts::PI * (mjd_scalar(t) + 0.05)).sin());
 
         // Build key times at 0.1 intervals
         let key_times: Vec<Mjd> = (0..=10).map(|i| mjd(i as f64 * 0.1)).collect();
@@ -848,7 +852,7 @@ mod tests {
         assert_directed_above_matches_scan(
             period(0.0, 1.0),
             Days::new(0.005),
-            |t: Mjd| Radians::new((20.0 * std::f64::consts::PI * (mjd_scalar(t) + 0.01)).sin()),
+            |t: Mjd| Radians::new((20.0 * core::f64::consts::PI * (mjd_scalar(t) + 0.01)).sin()),
             Radians::new(0.0),
         );
     }
@@ -856,7 +860,7 @@ mod tests {
     #[test]
     fn directed_range_matches_scan() {
         let p = period(0.0, 1.0);
-        let f = |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * (mjd_scalar(t) + 0.05)).sin());
+        let f = |t: Mjd| Radians::new((2.0 * core::f64::consts::PI * (mjd_scalar(t) + 0.05)).sin());
         let scan = in_range_periods(
             p,
             Days::new(0.01),

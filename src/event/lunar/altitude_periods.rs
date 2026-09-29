@@ -25,6 +25,7 @@
 //! ## References
 //! None.
 
+use alloc::vec::Vec;
 use crate::bodies::solar_system::Moon;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
@@ -232,7 +233,7 @@ mod tests {
         let mjd: ModifiedJulianDate = crate::J2000.to::<crate::MJD>();
         let alt = moon_altitude_rad(mjd, &site);
         assert!(
-            alt > -std::f64::consts::FRAC_PI_2 * RAD && alt < std::f64::consts::FRAC_PI_2 * RAD
+            alt > -core::f64::consts::FRAC_PI_2 * RAD && alt < core::f64::consts::FRAC_PI_2 * RAD
         );
     }
 

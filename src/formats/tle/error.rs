@@ -7,6 +7,7 @@
 //! parser branch (classic 2LE/3LE, OMM-KVN, OMM-XML, OMM-JSON) as well as
 //! programmatic-construction failures from [`crate::formats::tle::TleBuilder`].
 
+use alloc::string::String;
 /// Errors produced by every parser, writer and builder in `siderust-tle`.
 ///
 /// All public APIs return `Result<_, TleError>`; the crate never depends on

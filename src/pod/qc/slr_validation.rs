@@ -28,6 +28,9 @@
 //!   133-162.
 //! - Pearlman, M. R., Noll, C. E., et al. (2019). The ILRS: Current status
 //!   and future prospects. Journal of Geodesy, 93, 2161-2180.
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::vec::Vec;
 use super::residuals::ResidualStats;
 
 /// One O−C residual at an SLR observation epoch.

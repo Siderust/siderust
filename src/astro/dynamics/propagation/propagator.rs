@@ -24,7 +24,10 @@
 //!
 //! * Hairer, Nørsett, Wanner, *Solving Ordinary Differential Equations I*.
 
-use std::marker::PhantomData;
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::boxed::Box;
+use core::marker::PhantomData;
 
 use principia::{
     self, propagate, rk4_step, AccelerationModel, AdaptiveStepper, Dop853, Dopri5, EventDetector,
@@ -280,7 +283,7 @@ mod tests {
             Position::<GCRS>::new(R, 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, v, 0.0),
         );
-        let period = 2.0 * std::f64::consts::PI * (R.powi(3) / GM_EARTH.value()).sqrt();
+        let period = 2.0 * core::f64::consts::PI * (R.powi(3) / GM_EARTH.value()).sqrt();
         (s0, period)
     }
 

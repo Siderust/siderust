@@ -34,6 +34,8 @@
 //!   DE440 and DE441". *The Astronomical Journal* 161, 105.
 //!   <https://doi.org/10.3847/1538-3881/abd414>
 
+use alloc::vec;
+use alloc::vec::Vec;
 use crate::coordinates::frames::ICRF;
 use crate::ephemeris::EphemerisError;
 use crate::qtty::*;

@@ -8,9 +8,14 @@
 //!
 //! - IGS ORBEX Format Description (draft, 2020).
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
+use alloc::format;
 use super::{FileLocation, FormatError, ParseMode};
+#[cfg(feature = "std")]
 use std::io::{BufRead, BufReader, Read};
-
 /// Single orbit record from an ORBEX `#ORB` block.
 ///
 /// # Examples

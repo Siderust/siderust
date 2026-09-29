@@ -28,6 +28,11 @@
 //!   Specification.
 //! - Montenbruck, O., Steigenberger, P., & Khachikyan, R. (2017). GNSS
 //!   satellite geometry and ephemeris products. GPS Solutions, 21, 101-111.
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
+use alloc::format;
 use affn::cartesian;
 use affn::centers::{AffineCenter, ReferenceCenter};
 use affn::frames::GCRS;
@@ -50,6 +55,7 @@ impl AffineCenter for EarthCenter {}
 
 /// Local type alias for SP3 positions: geocentric, GCRS-framed, km.
 type Position<F = GCRS, U = Kilometer> = cartesian::Position<EarthCenter, F, U>;
+#[cfg(feature = "std")]
 use std::io::{BufRead, BufReader, Read, Write};
 use tempoch::{Time, UTC};
 use thiserror::Error;
@@ -242,8 +248,8 @@ pub fn read_sp3<R: Read>(r: R) -> Result<Sp3Record, Sp3Error> {
 
 fn parse_field<T>(raw: &str, line: usize, what: &str) -> Result<T, Sp3Error>
 where
-    T: std::str::FromStr,
-    <T as std::str::FromStr>::Err: std::fmt::Display,
+    T: core::str::FromStr,
+    <T as core::str::FromStr>::Err: core::fmt::Display,
 {
     raw.parse::<T>().map_err(|e| Sp3Error::Record {
         line,

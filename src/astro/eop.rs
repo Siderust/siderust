@@ -114,7 +114,7 @@ impl core::fmt::Display for EopError {
     }
 }
 
-impl std::error::Error for EopError {}
+impl core::error::Error for EopError {}
 
 /// Trait for providing Earth Orientation Parameters at a given epoch.
 ///
@@ -288,7 +288,7 @@ mod tests {
 
     #[test]
     fn eop_unit_conversions() {
-        let as2rad = std::f64::consts::PI / (180.0 * 3600.0);
+        let as2rad = core::f64::consts::PI / (180.0 * 3600.0);
         let vals = EopValues {
             xp: Arcseconds::new(0.1),
             yp: Arcseconds::new(0.2),

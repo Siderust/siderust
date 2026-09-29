@@ -24,6 +24,10 @@
 //!   Determination. Elsevier Academic Press.
 //! - Vallado, D. A. (2013). Fundamentals of Astrodynamics and Applications
 //!   (4th ed.). Microcosm Press.
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::string::String;
+use alloc::format;
 use crate::astro::dynamics::StateCovariance;
 use crate::astro::dynamics::{OrbitState, Velocity};
 use crate::coordinates::frames::GCRS;
@@ -133,8 +137,8 @@ impl OrbitEkf {
             p_next += q_m;
         }
         self.state = state_pred;
-        self.cov = StateCovariance::from_row_major(std::array::from_fn(|i| {
-            std::array::from_fn(|j| p_next[(i, j)])
+        self.cov = StateCovariance::from_row_major(core::array::from_fn(|i| {
+            core::array::from_fn(|j| p_next[(i, j)])
         }));
     }
 
@@ -182,7 +186,7 @@ impl OrbitEkf {
         for i in 0..6 {
             s += h[i] * ph[(i, 0)];
         }
-        if s.partial_cmp(&0.0) != Some(std::cmp::Ordering::Greater) {
+        if s.partial_cmp(&0.0) != Some(core::cmp::Ordering::Greater) {
             return Err(EkfError::Singular(s));
         }
 
@@ -219,8 +223,8 @@ impl OrbitEkf {
                 p_next[(j, i)] = v;
             }
         }
-        self.cov = StateCovariance::from_row_major(std::array::from_fn(|i| {
-            std::array::from_fn(|j| p_next[(i, j)])
+        self.cov = StateCovariance::from_row_major(core::array::from_fn(|i| {
+            core::array::from_fn(|j| p_next[(i, j)])
         }));
         let nis = innovation * innovation / s;
         Ok(InnovationRecord {

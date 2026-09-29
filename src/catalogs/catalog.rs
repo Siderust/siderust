@@ -7,6 +7,7 @@
 //! (`cone_search`), magnitude/quality filters, and an epoch-aware
 //! query that propagates positions via proper motion.
 
+use alloc::vec::Vec;
 use crate::qtty::Radians;
 
 use super::record::{inside_cone, passes_filter, CatalogFilter, CatalogRecord};

@@ -50,6 +50,9 @@
 //! * Bowring, B.R. (1985), "The geodetic line and the geodetic coordinates",
 //!   *Survey Review*, 28, 276–281.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
+use alloc::sync::Arc;
 use crate::archive::atmosphere::tables::NRLMSISE_TABLE;
 use affn::cartesian::Position;
 
@@ -68,7 +71,7 @@ use super::errors::DynamicsError;
 ///
 /// Implement this trait to plug in any density model into the drag force model.
 /// All implementing types must be [`Send`] + [`Sync`] so they can be shared
-/// across threads via [`std::sync::Arc`].
+/// across threads via [`alloc::sync::Arc`].
 ///
 /// # Error handling
 ///

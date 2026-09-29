@@ -29,10 +29,13 @@
 //!   Format. RFC 8259.
 //! - Fisher, M. (2020). Reproducibility in Data Science. O'Reilly Media.
 
+use alloc::string::String;
+use alloc::vec;
+use alloc::vec::Vec;
 use super::error::PodProductsError;
 use crate::pod::run::manifest::RunManifest;
+#[cfg(feature = "std")]
 use std::io::Write;
-
 /// Writer that serialises a [`RunManifest`] to deterministic JSON.
 ///
 /// # Examples

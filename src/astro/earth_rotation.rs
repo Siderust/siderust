@@ -216,7 +216,7 @@ pub fn try_gmst_with_eop(jd_tt: JulianDate) -> Result<Radians, EopError> {
 mod tests {
     use super::*;
     use crate::astro::eop::EopValues;
-    use std::f64::consts::TAU;
+    use core::f64::consts::TAU;
 
     const JD_J2000: f64 = tempoch::J2000_JD_TT_DAY.value();
 

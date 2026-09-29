@@ -3,6 +3,7 @@
 
 //! Unified error type for the TLE mean-elements propagator.
 
+use alloc::string::{String, ToString};
 use thiserror::Error;
 
 /// Errors produced while constructing or evaluating a [`TlePropagator`](crate::astro::sgp4::TlePropagator).

@@ -7,6 +7,7 @@
 //! only converts labelled crossings into above, below, or in-band intervals
 //! within the same MJD/TT query window.
 
+use alloc::vec::Vec;
 use crate::time::{complement_within, Interval, ModifiedJulianDate};
 
 use super::intervals::{self, LabeledCrossing};

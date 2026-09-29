@@ -23,9 +23,14 @@
 //!
 //! - CCSDS 502.0-B-3: Orbit Data Messages, Blue Book (2019).
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
+use alloc::format;
 use super::FormatError;
+#[cfg(feature = "std")]
 use std::io::{BufRead, BufReader, Read, Write};
-
 /// OPM state vector (Cartesian).
 ///
 /// This struct directly mirrors the CCSDS OPM `X`/`Y`/`Z` and
@@ -174,7 +179,7 @@ pub struct OpmMessage {
 /// ```
 pub fn read_opm<R: Read>(reader: R) -> Result<OpmMessage, FormatError> {
     let buf = BufReader::new(reader);
-    let mut kv: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+    let mut kv: hashbrown::HashMap<String, String> = hashbrown::HashMap::new();
 
     for result in buf.lines() {
         let line = result.map_err(FormatError::Io)?;

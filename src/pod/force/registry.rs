@@ -29,7 +29,10 @@
 //! assert_eq!(composite.len(), 2);
 //! ```
 
-use std::collections::BTreeMap;
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
+use alloc::boxed::Box;
+use alloc::collections::BTreeMap;
 
 use crate::astro::dynamics::density::DensityProvider;
 use crate::astro::dynamics::forces::{

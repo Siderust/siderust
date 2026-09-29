@@ -30,6 +30,10 @@
 //!   Messages, CCSDS 502.0-B-2 / 502.0-B-3.
 //! - International GNSS Service. (2020). SP3-c / SP3-d Orbit Format
 //!   Specification.
+use alloc::string::{String, ToString};
+use alloc::vec;
+use alloc::vec::Vec;
+use alloc::format;
 use crate::astro::dynamics::state::SpacecraftState;
 use crate::astro::dynamics::OrbitState;
 use crate::coordinates::frames::GCRS;
@@ -41,7 +45,9 @@ use affn::cartesian;
 use qtty::time::Microseconds;
 use qtty::unit::Kilometer;
 use qtty::Day;
+#[cfg(feature = "std")]
 use std::io::Write;
+#[cfg(feature = "std")]
 use std::path::Path;
 use tempoch::{Time, UTC};
 

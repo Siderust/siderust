@@ -27,10 +27,12 @@
 //! - Vallado, D. A. (2013). *Fundamentals of Astrodynamics and
 //!   Applications* (4th ed.). Microcosm Press.
 
+use alloc::string::String;
+use alloc::vec::Vec;
 use super::error::PodProductsError;
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "std")]
 use std::io::Write;
-
 /// One residual record in the standard POD column format.
 ///
 /// The column order in the CSV output is:

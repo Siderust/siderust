@@ -33,6 +33,10 @@
 //! All time inputs are typed [`Second`] from `qtty` (the typed time
 //! quantity exposed by both `qtty` and `tempoch`).
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
+use alloc::vec;
+use alloc::vec::Vec;
 use qtty::{KmPerSecondsSquared, Second};
 
 use crate::pod::propagation::pod_error::PodDynamicsError;

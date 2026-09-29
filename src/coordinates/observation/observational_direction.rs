@@ -35,6 +35,7 @@
 //! let geo_again: Astrometric<EquatorialMeanJ2000> = app_dir.to_astrometric(&obs);
 //! ```
 
+use alloc::format;
 use super::ObserverState;
 use crate::astro::aberration::{
     apply_aberration_to_direction_with_velocity, remove_aberration_from_direction_with_velocity,
@@ -261,46 +262,46 @@ impl<F: MutableFrame> Apparent<cartesian::Direction<F>> {
 // Display implementations
 // =============================================================================
 
-impl<D: std::fmt::Display> std::fmt::Display for Astrometric<D> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl<D: core::fmt::Display> core::fmt::Display for Astrometric<D> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "Astrometric({})", self.direction)
     }
 }
 
-impl<D: std::fmt::Display> std::fmt::Display for Apparent<D> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl<D: core::fmt::Display> core::fmt::Display for Apparent<D> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "Apparent({})", self.direction)
     }
 }
 
-impl<D: std::fmt::LowerExp> std::fmt::LowerExp for Astrometric<D> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl<D: core::fmt::LowerExp> core::fmt::LowerExp for Astrometric<D> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "Astrometric(")?;
-        std::fmt::LowerExp::fmt(&self.direction, f)?;
+        core::fmt::LowerExp::fmt(&self.direction, f)?;
         write!(f, ")")
     }
 }
 
-impl<D: std::fmt::LowerExp> std::fmt::LowerExp for Apparent<D> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl<D: core::fmt::LowerExp> core::fmt::LowerExp for Apparent<D> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "Apparent(")?;
-        std::fmt::LowerExp::fmt(&self.direction, f)?;
+        core::fmt::LowerExp::fmt(&self.direction, f)?;
         write!(f, ")")
     }
 }
 
-impl<D: std::fmt::UpperExp> std::fmt::UpperExp for Astrometric<D> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl<D: core::fmt::UpperExp> core::fmt::UpperExp for Astrometric<D> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "Astrometric(")?;
-        std::fmt::UpperExp::fmt(&self.direction, f)?;
+        core::fmt::UpperExp::fmt(&self.direction, f)?;
         write!(f, ")")
     }
 }
 
-impl<D: std::fmt::UpperExp> std::fmt::UpperExp for Apparent<D> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl<D: core::fmt::UpperExp> core::fmt::UpperExp for Apparent<D> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "Apparent(")?;
-        std::fmt::UpperExp::fmt(&self.direction, f)?;
+        core::fmt::UpperExp::fmt(&self.direction, f)?;
         write!(f, ")")
     }
 }

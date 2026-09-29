@@ -41,7 +41,7 @@ use crate::qtty::*;
 use crate::time::JulianDate;
 #[cfg(test)]
 use qtty::time::JULIAN_YEAR;
-use std::fmt;
+use core::fmt;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -61,8 +61,8 @@ pub enum RaProperMotionConvention {
     MuAlphaStar,
 }
 
-impl std::fmt::Display for RaProperMotionConvention {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for RaProperMotionConvention {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Self::MuAlpha => write!(f, "\u{03bc}\u{03b1}"),
             Self::MuAlphaStar => write!(f, "\u{03bc}\u{03b1}\u{2a}"),
@@ -122,7 +122,7 @@ impl fmt::Display for ProperMotionError {
     }
 }
 
-impl std::error::Error for ProperMotionError {}
+impl core::error::Error for ProperMotionError {}
 
 impl RaProperMotionConvention {
     fn to_mu_alpha(
@@ -367,7 +367,7 @@ pub fn propagate_space_motion(
         return Err(ProperMotionError::RightAscensionUndefinedAtPole { dec: dec_deg });
     }
     let new_dec = (p[2] / r_new).asin();
-    let new_ra = p[1].atan2(p[0]).rem_euclid(std::f64::consts::TAU);
+    let new_ra = p[1].atan2(p[0]).rem_euclid(core::f64::consts::TAU);
 
     Ok(position::EquatorialMeanJ2000::<AstronomicalUnit>::new(
         Degrees::new(new_ra.to_degrees()),

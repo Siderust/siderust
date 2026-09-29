@@ -29,6 +29,12 @@
 //!   Determination. Elsevier Academic Press.
 //! - Vallado, D. A. (2013). Fundamentals of Astrodynamics and Applications
 //!   (4th ed.). Microcosm Press.
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::string::String;
+use alloc::vec;
+use alloc::vec::Vec;
+use alloc::format;
 use crate::astro::dynamics::StateCovariance;
 use crate::coordinates::frames::GCRS;
 use affn::matrix3::{FrameMatrix3, SymmetricFrameMatrix3};

@@ -3,9 +3,13 @@
 
 //! Private TOML schema and validation shared by build-time and runtime loading.
 
+use alloc::borrow::ToOwned;
+use alloc::string::String;
+use alloc::vec::Vec;
+use alloc::format;
 use serde::Deserialize;
-use std::collections::HashSet;
-use std::fmt;
+use hashbrown::HashSet;
+use core::fmt;
 
 /// Raw TOML observatory catalog representation.
 #[derive(Debug, Deserialize)]

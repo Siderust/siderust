@@ -42,6 +42,8 @@
 
 #![allow(unreachable_pub)]
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 use crate::time::{JulianDate, TDB};
 use wide::f64x4;
 

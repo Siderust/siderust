@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
 use crate::coordinates::frames::Galactic;
 use crate::healpix::{HealpixError, HealpixGrid, HealpixIndex, HealpixMap};
 use crate::qtty::Radian;

@@ -36,6 +36,8 @@
 //!   §8 (time units)
 //! * IAU 2012 Resolution B2 (redefinition of the astronomical unit)
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
 use crate::qtty::{Quantity, Time, Unit};
 
 // ─────────────────────────────────────────────────────────────────────────────

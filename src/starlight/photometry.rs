@@ -6,6 +6,8 @@
 //! S10 denotes the flux of a tenth-magnitude star, following the traditional
 //! diffuse night-sky-brightness convention used by Leinert et al. (1998).
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 use crate::starlight::ApparentMagnitude;
 
 /// Convert an apparent magnitude to tenth-magnitude-star flux units.

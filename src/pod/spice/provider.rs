@@ -11,8 +11,12 @@
 //! its typed [`affn::cartesian::Position`], so downstream POD code
 //! cannot accidentally mix barycentric and heliocentric vectors.
 
-use std::marker::PhantomData;
-use std::sync::Arc;
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::vec;
+use alloc::format;
+use core::marker::PhantomData;
+use alloc::sync::Arc;
 
 use crate::coordinates::centers::ReferenceCenter;
 use crate::coordinates::frames::ICRS;
@@ -78,8 +82,8 @@ impl<C: ReferenceCenter<Params = ()>> Clone for SpiceEphemerisProvider<C> {
     }
 }
 
-impl<C: ReferenceCenter<Params = ()>> std::fmt::Debug for SpiceEphemerisProvider<C> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl<C: ReferenceCenter<Params = ()>> core::fmt::Debug for SpiceEphemerisProvider<C> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("SpiceEphemerisProvider")
             .field("center_name", &C::center_name())
             .field("center_naif_id", &self.center_naif_id)

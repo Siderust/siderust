@@ -29,6 +29,7 @@
 //! - Press, W. H., Teukolsky, S. A., Vetterling, W. T., & Flannery, B. P.
 //!   (2007). *Numerical Recipes in C++*, 3rd ed. Cambridge University Press.
 
+use alloc::vec::Vec;
 use crate::qtty::*;
 use crate::time::{Interval, ModifiedJulianDate};
 
@@ -360,7 +361,7 @@ mod tests {
     #[test]
     fn fixed_step_finds_sine_crossings() {
         // Shift to avoid exact zeros at grid points
-        let f = |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * (mjd_f64(t) + 0.03)).sin());
+        let f = |t: Mjd| Radians::new((2.0 * core::f64::consts::PI * (mjd_f64(t) + 0.03)).sin());
         let brackets =
             fixed_step_brackets(period(0.0, 1.0), Days::new(0.05), &f, Radians::new(0.0));
         // Shifted sin crosses 0 twice in [0,1] (near 0.47 and 0.97)
@@ -374,7 +375,7 @@ mod tests {
 
     #[test]
     fn adaptive_step_finds_crossings() {
-        let f = |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * (mjd_f64(t) + 0.03)).sin());
+        let f = |t: Mjd| Radians::new((2.0 * core::f64::consts::PI * (mjd_f64(t) + 0.03)).sin());
         let brackets = adaptive_step_brackets(
             period(0.0, 1.0),
             Days::new(0.2),

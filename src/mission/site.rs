@@ -25,6 +25,8 @@
 //! - Wertz, J. R. (2011). *Mission Geometry; Orbit and Constellation
 //!   Design and Management*. §10.
 
+use alloc::string::String;
+use alloc::vec;
 use crate::mission::geometry::{LocalFrame, TerrainMask};
 
 /// Observation site or ground-station location.

@@ -3,6 +3,8 @@
 
 //! Line-of-sight obstruction and occultation-fraction geometry.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 use core::f64::consts::PI;
 
 use affn::cartesian::{Displacement, Position};

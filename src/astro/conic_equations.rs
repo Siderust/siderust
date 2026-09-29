@@ -147,7 +147,7 @@ pub fn calculate_mean_motion_position(
     let trig = OrientationTrig::from_orientation(orientation);
     let dt_days = (julian_date.raw() - orbit.epoch.raw()).value();
     let mean_anomaly_rad =
-        (orbit.mean_motion.value().to_radians() * dt_days).rem_euclid(std::f64::consts::TAU);
+        (orbit.mean_motion.value().to_radians() * dt_days).rem_euclid(core::f64::consts::TAU);
     let mean_anomaly = Radians::new(mean_anomaly_rad);
     let eccentric_anomaly = solve_elliptic_anomaly(mean_anomaly, eccentricity);
     let (true_anomaly, radius) =
@@ -175,7 +175,7 @@ pub fn calculate_conic_position(
             let dt_days = (julian_date.raw() - orbit.epoch.raw()).value();
             let mean_anomaly_raw =
                 orbit.mean_anomaly_at_epoch.to::<Radian>().value() + mean_motion * dt_days;
-            let mean_anomaly = Radians::new(mean_anomaly_raw.rem_euclid(std::f64::consts::TAU));
+            let mean_anomaly = Radians::new(mean_anomaly_raw.rem_euclid(core::f64::consts::TAU));
             let eccentric_anomaly = solve_elliptic_anomaly(mean_anomaly, eccentricity);
             let (true_anomaly, radius) =
                 elliptic_true_anomaly_and_radius(eccentric_anomaly, eccentricity, semi_major_axis);
@@ -236,11 +236,11 @@ pub fn calculate_orbit_position(
     let a = elements.shape().semi_major_axis().value();
     type RadiansPerDay = crate::qtty::angular_rate::AngularRate<Radian, Day>;
     let period_days = heliocentric_period_days(a);
-    let n = RadiansPerDay::new(std::f64::consts::TAU / period_days);
+    let n = RadiansPerDay::new(core::f64::consts::TAU / period_days);
     let dt: Days = julian_date.raw() - elements.epoch.raw();
     let m0_rad = elements.mean_anomaly_at_epoch.to::<Radian>();
     let eccentricity = elements.shape().eccentricity();
-    let mean_anomaly = (m0_rad + (n * dt).to::<Radian>()) % std::f64::consts::TAU;
+    let mean_anomaly = (m0_rad + (n * dt).to::<Radian>()) % core::f64::consts::TAU;
     let eccentric_anomaly = solve_elliptic_anomaly(mean_anomaly, eccentricity);
     let (true_anomaly, radius) =
         elliptic_true_anomaly_and_radius(eccentric_anomaly, eccentricity, a);
@@ -273,7 +273,7 @@ pub fn calculate_orbit_position_with_mu(
     let dt: Days = julian_date.raw() - elements.epoch.raw();
     let m0_rad = elements.mean_anomaly_at_epoch.to::<Radian>();
     let eccentricity = elements.shape().eccentricity();
-    let mean_anomaly = (m0_rad + (n * dt).to::<Radian>()) % std::f64::consts::TAU;
+    let mean_anomaly = (m0_rad + (n * dt).to::<Radian>()) % core::f64::consts::TAU;
     let eccentric_anomaly = solve_elliptic_anomaly(mean_anomaly, eccentricity);
     let (true_anomaly, radius) =
         elliptic_true_anomaly_and_radius(eccentric_anomaly, eccentricity, a_au);
@@ -327,7 +327,7 @@ pub fn calculate_prepared_position(
 ) -> EclipticMeanJ2000<AstronomicalUnit> {
     let dt = (julian_date.raw() - prepared.elements().epoch.raw()).value();
     let mean_anomaly = Radians::new(
-        (prepared.m0_rad() + prepared.mean_motion().value() * dt) % std::f64::consts::TAU,
+        (prepared.m0_rad() + prepared.mean_motion().value() * dt) % core::f64::consts::TAU,
     );
     let eccentricity = prepared.elements().shape().eccentricity();
     let eccentric_anomaly = solve_elliptic_anomaly(mean_anomaly, eccentricity);

@@ -8,11 +8,13 @@
 //! astronomical frame; frame semantics are carried by typed input and output
 //! directions.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
 use crate::coordinates::cartesian::Direction;
 use crate::coordinates::frames::ReferenceFrame;
 use crate::coordinates::spherical;
 use crate::healpix::{HealpixError, HealpixIndex, HealpixOrdering, Nside, Result};
-use std::f64::consts::PI;
+use core::f64::consts::PI;
 
 use super::ring;
 

@@ -3,6 +3,8 @@
 
 //! Keyword-Value-Notation (KVN) encoding for OMM.
 
+use alloc::string::{String, ToString};
+use alloc::format;
 use qtty::angular::Degrees;
 use qtty::angular::Turn;
 use qtty::angular_rate::AngularRate;
@@ -96,7 +98,7 @@ pub fn write(omm: &Omm) -> Result<String, TleError> {
 /// assert_eq!(omm.norad_id.0, 25544);
 /// ```
 pub fn read(input: &str) -> Result<Omm, TleError> {
-    use std::collections::HashMap;
+    use hashbrown::HashMap;
     let mut kv: HashMap<String, String> = HashMap::new();
     for raw_line in input.lines() {
         let line = raw_line.trim();

@@ -3,6 +3,9 @@
 
 //! Field-of-view geometry and instrument metadata.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::string::String;
 use qtty::angular::Radians;
 
 /// Field-of-view geometry attached to an instrument.

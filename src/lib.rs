@@ -120,6 +120,23 @@
 //! ```
 //!
 //! For a runnable tour of the library, see the `examples/` directory.
+//!
+//! ## `std` / `no_std`
+//!
+//! By default the crate enables the `std` and `serde` features. For
+//! `no_std` + `alloc` builds:
+//!
+//! ```toml
+//! siderust = { version = "0.12", default-features = false }
+//! ```
+//!
+//! Filesystem, OS I/O, and `Utc::now` require `std`. Features such as
+//! `runtime-data`, `spice`, and `pod` imply `std`.
+
+#![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(not(feature = "std"), allow(unused_imports))]
+
+extern crate alloc;
 
 pub(crate) use ::qtty as ext_qtty;
 

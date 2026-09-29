@@ -9,6 +9,7 @@
 //! HEALPix pixel, accumulates B- and V-band S10 flux, and normalizes by pixel
 //! area.
 
+use alloc::vec;
 use crate::coordinates::cartesian::Direction;
 use crate::coordinates::frames::Galactic;
 use crate::coordinates::transform::TransformFrame;

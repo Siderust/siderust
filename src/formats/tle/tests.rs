@@ -8,6 +8,9 @@
 //! three OMM encodings.
 
 #[cfg(feature = "serde")]
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::string::ToString;
 use super::omm::json;
 use super::omm::{kvn, xml, Omm};
 use super::parse::{compute_checksum, parse_assumed_decimal_exponent};

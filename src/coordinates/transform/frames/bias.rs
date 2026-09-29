@@ -32,9 +32,11 @@
 //! - Capitaine, N. & Wallace, P. T. (2006). *Astronomical Journal*, 132, 2922.
 //! - SOFA routines `iauBp06`, `iauObl06`.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
 use crate::astro::precession;
 use affn::Rotation3;
-use std::sync::OnceLock;
+use spin::Once;
 
 /// Frame bias rotation matrix from ICRS to mean equator/equinox of J2000.0.
 ///
@@ -49,8 +51,8 @@ use std::sync::OnceLock;
 ///
 /// The off-diagonal signs follow the SOFA convention: `rb[0][1] < 0`.
 fn frame_bias_matrix() -> Rotation3 {
-    static FRAME_BIAS: OnceLock<Rotation3> = OnceLock::new();
-    *FRAME_BIAS.get_or_init(|| precession::precession_matrix_iau2006(crate::J2000))
+    static FRAME_BIAS: Once<Rotation3> = Once::new();
+    *FRAME_BIAS.call_once(|| precession::precession_matrix_iau2006(crate::J2000))
 }
 
 // ── Bias helpers ──────────────────────────────────────────────────────
@@ -75,7 +77,7 @@ pub(crate) fn frame_bias_j2000_to_icrs() -> Rotation3 {
 #[inline]
 pub(crate) fn j2000_obliquity() -> crate::qtty::Radians {
     crate::qtty::Radians::new(
-        precession::J2000_MEAN_OBLIQUITY_ARCSEC * std::f64::consts::PI / 648_000.0,
+        precession::J2000_MEAN_OBLIQUITY_ARCSEC * core::f64::consts::PI / 648_000.0,
     )
 }
 

@@ -3,6 +3,9 @@
 
 //! Raw Gaia DR3 ingestion structs and lightweight CSV parsing.
 
+use alloc::borrow::ToOwned;
+use alloc::string::String;
+use alloc::vec::Vec;
 use super::error::{GaiaDr3Error, Result};
 use super::quality::GaiaDr3QualityFlags;
 

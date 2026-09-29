@@ -60,14 +60,18 @@
 //! - Instituto de Astrofísica de Canarias. *Site characterization of the
 //!   Observatorio del Roque de los Muchachos*.
 
+use alloc::string::{String, ToString};
+use alloc::vec;
+use alloc::vec::Vec;
+use alloc::format;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::qtty::{Degrees, Hectopascals, Kelvins, Meters};
-use std::borrow::Cow;
+use alloc::borrow::{Cow, ToOwned};
 
 #[cfg(feature = "serde")]
+#[cfg(feature = "std")]
 use std::path::{Path, PathBuf};
-
 #[cfg(feature = "serde")]
 #[path = "observatory_schema.rs"]
 mod observatory_schema;
@@ -219,7 +223,7 @@ impl ObservatoryCatalog {
 
 impl<'a> IntoIterator for &'a ObservatoryCatalog {
     type Item = &'a Observatory;
-    type IntoIter = std::slice::Iter<'a, Observatory>;
+    type IntoIter = core::slice::Iter<'a, Observatory>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.observatories.iter()
@@ -281,7 +285,7 @@ impl ObservatoryCatalogError {
 mod tests {
     use super::*;
     #[cfg(feature = "serde")]
-    use std::error::Error as _;
+    use core::error::Error as _;
 
     #[test]
     fn builtin_catalog_is_ordered_and_uses_public_model() {

@@ -35,13 +35,16 @@ jobs:
       - run: cargo check --workspace $CARGO_CI_TARGETS --all-features
 
   check-no-default-features:
-    name: Check (no default features)
+    name: Check (no_std + alloc)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: thumbv7em-none-eabihf
       - run: cargo check -p siderust --lib --no-default-features
-      - run: cargo test -p siderust --test observatory_catalog_no_default --no-default-features
+      - run: cargo check -p siderust --lib --target thumbv7em-none-eabihf --no-default-features
+      - run: cargo test -p siderust --test observatory_catalog_no_default --no-default-features --features std
 
   fmt:
     name: Format

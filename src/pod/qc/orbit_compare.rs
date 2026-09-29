@@ -26,6 +26,9 @@
 //!   Determination. Elsevier Academic Press.
 //! - Vallado, D. A. (2013). Fundamentals of Astrodynamics and Applications
 //!   (4th ed.). Microcosm Press.
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::vec::Vec;
 use crate::astro::dynamics::frames::RTN;
 use crate::astro::dynamics::OrbitState;
 use affn::cartesian::Displacement;

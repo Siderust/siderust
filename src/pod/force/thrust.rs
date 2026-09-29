@@ -14,6 +14,8 @@
 //! Pontryagin, low-thrust optimisation), which lives in future
 //! `siderust-mission-design` / `siderust-low-thrust` crates.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
 use qtty::{force::Newtons, Kilogram, Second};
 use tempoch::{Time, UTC};
 

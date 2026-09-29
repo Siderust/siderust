@@ -97,8 +97,8 @@ pub enum ConicError {
     },
 }
 
-impl std::fmt::Display for ConicError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for ConicError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Self::InvalidEccentricity => write!(f, "invalid eccentricity"),
             Self::InvalidSemiMajorAxis => write!(f, "invalid semi-major axis"),
@@ -131,7 +131,7 @@ impl std::fmt::Display for ConicError {
     }
 }
 
-impl std::error::Error for ConicError {}
+impl core::error::Error for ConicError {}
 
 impl From<ConicValidationError> for ConicError {
     fn from(error: ConicValidationError) -> Self {

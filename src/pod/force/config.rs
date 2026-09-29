@@ -13,6 +13,7 @@
 //! still guaranteeing that the registry-level translation is exhaustive
 //! and unit-typed.
 
+use alloc::vec::Vec;
 use crate::astro::dynamics::forces::ShadowModel;
 use crate::time::JulianDate;
 use qtty::{AreaToMass, DragCoefficient, KmPerSecondsSquared, Second, SrpCoefficient};

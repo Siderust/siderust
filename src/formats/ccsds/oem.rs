@@ -26,9 +26,15 @@
 //!   Messages, CCSDS 502.0-B-2 / 502.0-B-3.
 //! - Vallado, D. A. (2013). Fundamentals of Astrodynamics and Applications
 //!   (4th ed.). Microcosm Press.
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::string::{String, ToString};
+use alloc::vec;
+use alloc::vec::Vec;
+use alloc::format;
 use super::FormatError;
+#[cfg(feature = "std")]
 use std::io::Write;
-
 /// A spacecraft state as stored in a CCSDS OEM file.
 ///
 /// The reference frame and time system are metadata-level: they are recorded
@@ -258,7 +264,7 @@ pub fn read_oem<R: std::io::Read>(mut r: R) -> Result<OemFile, FormatError> {
                         ref_frame,
                         time_system,
                         center_name,
-                    } = std::mem::take(mb);
+                    } = core::mem::take(mb);
                     let need = |o: Option<String>, name: &str| -> Result<String, FormatError> {
                         o.ok_or_else(|| {
                             FormatError::Format(format!(
@@ -292,7 +298,7 @@ pub fn read_oem<R: std::io::Read>(mut r: R) -> Result<OemFile, FormatError> {
             }
             State::Data(seg) => {
                 if line == "META_START" {
-                    let done = std::mem::replace(
+                    let done = core::mem::replace(
                         seg,
                         OemSegment {
                             metadata: seg.metadata.clone(),
@@ -313,7 +319,7 @@ pub fn read_oem<R: std::io::Read>(mut r: R) -> Result<OemFile, FormatError> {
                 if line == "COVARIANCE_STOP" || line == "MAN_STOP" {
                     // Re-enter the most recent Data segment.
                     if let Some(last) = segments.last_mut() {
-                        let resumed = std::mem::replace(
+                        let resumed = core::mem::replace(
                             last,
                             OemSegment {
                                 metadata: last.metadata.clone(),
@@ -443,7 +449,7 @@ fn iso8601_to_jd(s: &str) -> Option<f64> {
 /// };
 /// let mut buf = Vec::new();
 /// write_oem_xml(&mut buf, &meta, &states).unwrap();
-/// let txt = std::str::from_utf8(&buf).unwrap();
+/// let txt = core::str::from_utf8(&buf).unwrap();
 /// assert!(txt.contains("<oem"));
 /// assert!(txt.contains("EME2000"));
 /// ```

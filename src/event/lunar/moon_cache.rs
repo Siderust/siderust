@@ -46,6 +46,7 @@
 
 #![allow(unreachable_pub, missing_docs)]
 
+use alloc::vec::Vec;
 use crate::astro::earth_rotation::jd_ut1_from_tt_eop;
 use crate::astro::earth_rotation_provider::itrs_to_equatorial_mean_j2000_rotation;
 use crate::astro::nutation::nutation_iau2000b;
@@ -76,7 +77,7 @@ const SEGMENT_DAYS: Days = Days::new(4.0);
 /// J2000 mean obliquity ε₀ (IAU 2006): 84381.406″ converted to radians.
 /// Used for ecliptic → equatorial rotation (constant for J2000 frame).
 const J2000_OBLIQUITY_RAD: crate::qtty::Quantity<Radian> =
-    crate::qtty::Quantity::<Radian>::new(84381.406 / 3600.0 * std::f64::consts::PI / 180.0);
+    crate::qtty::Quantity::<Radian>::new(84381.406 / 3600.0 * core::f64::consts::PI / 180.0);
 
 /// Nutation cache step in days (2 hours).
 const NUT_STEP_DAYS: Days = Hours::new(2.0).to_const::<Day>();
@@ -466,7 +467,7 @@ impl MoonAltitudeContext {
         let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
         let gast = gast_iau2006(jd_ut1, jd, dpsi, eps0);
         let lst_rad = gast + self.lon_rad;
-        let ha = (lst_rad.value() - ra_rad).rem_euclid(std::f64::consts::TAU);
+        let ha = (lst_rad.value() - ra_rad).rem_euclid(core::f64::consts::TAU);
 
         let sin_alt = dec_rad.sin() * self.lat.sin() + dec_rad.cos() * self.lat.cos() * ha.cos();
 
@@ -717,7 +718,7 @@ mod tests {
     fn find_and_label_crossings_sine_wave() {
         // Test with a known sine wave: sin(2π(t+0.05)) crosses 0 at known times
         let f =
-            |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * (t.raw().value() + 0.05)).sin());
+            |t: Mjd| Radians::new((2.0 * core::f64::consts::PI * (t.raw().value() + 0.05)).sin());
         let period = Interval::new(
             crate::time::ModifiedJulianDate::new((Days::new(0.0)).value()),
             crate::time::ModifiedJulianDate::new((Days::new(1.0)).value()),

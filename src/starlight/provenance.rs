@@ -7,6 +7,7 @@
 //! catalogue, release, photometric model, generation time, and generator identity
 //! needed to reproduce or audit a generated starlight map.
 
+use alloc::string::String;
 /// Provenance metadata for generated stellar maps.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StellarMapProvenance {

@@ -6,6 +6,8 @@
 #[path = "src/catalogs/observatory_schema.rs"]
 mod observatory_schema;
 
+extern crate alloc;
+
 use observatory_schema::{parse_catalog, validate_catalog, ObservatoryDto};
 use std::collections::HashSet;
 use std::env;

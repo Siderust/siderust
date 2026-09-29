@@ -36,6 +36,8 @@
 //! * IERS Conventions (2010), Chapter 5
 //! * SOFA Earth-rotation cookbook (`iauC2t06a` and friends)
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 use crate::astro::cio;
 use crate::astro::earth_rotation::{jd_ut1_from_tt_eop, try_jd_utc_from_tt};
 use crate::astro::eop::{EopProvider, EopValues};

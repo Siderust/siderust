@@ -13,12 +13,14 @@
 //!   Astrophysical Journal, 622, 759.
 //! - HEALPix Primer, section on RING and NESTED pixel numbering schemes.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 use crate::coordinates::cartesian::Direction;
 use crate::coordinates::frames::ReferenceFrame;
 use crate::coordinates::spherical;
 use crate::healpix::{HealpixError, HealpixGrid, HealpixIndex, HealpixOrdering, Result};
 use crate::qtty::{Degree, Radians};
-use std::f64::consts::{FRAC_PI_2, TAU};
+use core::f64::consts::{FRAC_PI_2, TAU};
 
 pub(super) fn unit_vector_to_pixel(grid: &HealpixGrid, xyz: [f64; 3]) -> Result<HealpixIndex> {
     let [x, y, z] = xyz;

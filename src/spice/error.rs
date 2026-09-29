@@ -3,6 +3,7 @@
 
 //! High-level SPICE context errors.
 
+use alloc::string::String;
 use thiserror::Error;
 
 use crate::formats::spice::SpiceError;

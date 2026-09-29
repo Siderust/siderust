@@ -36,6 +36,9 @@
 //!   single-frequency GPS users.
 //!   *IEEE Transactions on Aerospace and Electronic Systems*, 23(3), 325–331.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
+use alloc::string::{String, ToString};
 use crate::astro::dynamics::forces::OMEGA_EARTH_RAD_S;
 use crate::astro::dynamics::{Position, Velocity};
 use crate::coordinates::frames::GCRS;
@@ -130,7 +133,7 @@ pub enum IonoModel {
 /// ```
 /// use siderust::pod::observation::gnss_obs::TropModel;
 ///
-/// let _saas = TropModel::Saastamoinen { elevation_rad: std::f64::consts::FRAC_PI_2 };
+/// let _saas = TropModel::Saastamoinen { elevation_rad: core::f64::consts::FRAC_PI_2 };
 /// let _none = TropModel::None;
 /// ```
 #[derive(Debug, Clone, Copy)]
@@ -173,19 +176,19 @@ fn klobuchar_m(p: &KlobucharParams) -> f64 {
     let psi = 0.0137 / (e + 0.11) - 0.022;
 
     // Sub-ionospheric latitude (semi-circles), clamped to ±0.416 sc
-    let phi_i = (p.receiver_lat_sc + psi * (p.azimuth_sc * std::f64::consts::PI).cos())
+    let phi_i = (p.receiver_lat_sc + psi * (p.azimuth_sc * core::f64::consts::PI).cos())
         .clamp(-0.416, 0.416);
 
     // Sub-ionospheric longitude (semi-circles)
-    let cos_phi = (phi_i * std::f64::consts::PI).cos();
+    let cos_phi = (phi_i * core::f64::consts::PI).cos();
     let lambda_i = if cos_phi.abs() > 1e-9 {
-        p.receiver_lon_sc + psi * (p.azimuth_sc * std::f64::consts::PI).sin() / cos_phi
+        p.receiver_lon_sc + psi * (p.azimuth_sc * core::f64::consts::PI).sin() / cos_phi
     } else {
         p.receiver_lon_sc
     };
 
     // Geomagnetic latitude (semi-circles)
-    let phi_m = phi_i + 0.064 * ((lambda_i - 1.617) * std::f64::consts::PI).cos();
+    let phi_m = phi_i + 0.064 * ((lambda_i - 1.617) * core::f64::consts::PI).cos();
 
     // Local time (seconds)
     let mut t = 4.32e4 * lambda_i + p.utc_seconds;
@@ -209,10 +212,10 @@ fn klobuchar_m(p: &KlobucharParams) -> f64 {
     let obliquity = 1.0 + 16.0 * (0.53 - e).powi(3);
 
     // Phase argument
-    let x = 2.0 * std::f64::consts::PI * (t - 50_400.0) / period;
+    let x = 2.0 * core::f64::consts::PI * (t - 50_400.0) / period;
 
     // Vertical delay (seconds)
-    let i_v = if x.abs() < std::f64::consts::FRAC_PI_2 {
+    let i_v = if x.abs() < core::f64::consts::FRAC_PI_2 {
         5.0e-9 + amp * x.cos()
     } else {
         5.0e-9
@@ -599,7 +602,7 @@ mod tests {
             .residual(&state, &NullProviderBundle)
             .unwrap();
         let r_trop = make(TropModel::Saastamoinen {
-            elevation_rad: std::f64::consts::FRAC_PI_2,
+            elevation_rad: core::f64::consts::FRAC_PI_2,
         })
         .residual(&state, &NullProviderBundle)
         .unwrap();
@@ -616,7 +619,7 @@ mod tests {
 
     #[test]
     fn saastamoinen_zenith_approx_2p4m() {
-        let d = saastamoinen_m(std::f64::consts::FRAC_PI_2);
+        let d = saastamoinen_m(core::f64::consts::FRAC_PI_2);
         // Zenith delay ~2.4 m for standard atmosphere
         assert!(d > 2.0 && d < 3.0, "zenith trop={d:.3}m");
     }

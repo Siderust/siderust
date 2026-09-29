@@ -34,6 +34,8 @@
 //! - Press, W. H., Teukolsky, S. A., Vetterling, W. T., & Flannery, B. P.
 //!   (2007). *Numerical Recipes in C++*, 3rd ed. Cambridge University Press.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 use crate::qtty::{Days, Quantity, Unit};
 use crate::time::{Interval, TimeInstant};
 
@@ -204,8 +206,8 @@ where
     }
 
     if fa.abs() < fb.abs() {
-        std::mem::swap(&mut a, &mut b);
-        std::mem::swap(&mut fa, &mut fb);
+        core::mem::swap(&mut a, &mut b);
+        core::mem::swap(&mut fa, &mut fb);
     }
 
     let mut c = a;
@@ -369,7 +371,7 @@ mod tests {
             Radians::new(day_f64(t).sin())
         })
         .expect("should find π");
-        assert!((root - Days::new(std::f64::consts::PI)).abs() < Days::new(1e-10));
+        assert!((root - Days::new(core::f64::consts::PI)).abs() < Days::new(1e-10));
     }
 
     #[test]
@@ -440,7 +442,7 @@ mod tests {
             Days::new(1e-3),
         )
         .expect("relaxed");
-        assert!((root.raw() - Days::new(std::f64::consts::PI)).abs() < Days::new(2e-3));
+        assert!((root.raw() - Days::new(core::f64::consts::PI)).abs() < Days::new(2e-3));
     }
 
     #[test]
@@ -467,7 +469,7 @@ mod tests {
             Radians::new(day_f64(t).sin())
         })
         .expect("π");
-        assert!((root - Days::new(std::f64::consts::PI)).abs() < Days::new(1e-8));
+        assert!((root - Days::new(core::f64::consts::PI)).abs() < Days::new(1e-8));
     }
 
     #[test]

@@ -21,6 +21,7 @@
 //! ## References
 //! None.
 
+use alloc::string::ToString;
 use crate::qtty::*;
 use crate::time::ModifiedJulianDate;
 
@@ -37,8 +38,8 @@ pub enum CrossingDirection {
     Setting,
 }
 
-impl std::fmt::Display for CrossingDirection {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for CrossingDirection {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Self::Rising => write!(f, "Rising"),
             Self::Setting => write!(f, "Setting"),
@@ -55,8 +56,8 @@ pub struct CrossingEvent {
     pub direction: CrossingDirection,
 }
 
-impl std::fmt::Display for CrossingEvent {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for CrossingEvent {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "{} at {}", self.direction, self.mjd)
     }
 }
@@ -74,8 +75,8 @@ pub enum CulminationKind {
     Min,
 }
 
-impl std::fmt::Display for CulminationKind {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for CulminationKind {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Self::Max => write!(f, "Upper Transit"),
             Self::Min => write!(f, "Lower Transit"),
@@ -94,8 +95,8 @@ pub struct CulminationEvent {
     pub kind: CulminationKind,
 }
 
-impl std::fmt::Display for CulminationEvent {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for CulminationEvent {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "{} at {} (alt: {})", self.kind, self.mjd, self.altitude)
     }
 }

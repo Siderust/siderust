@@ -53,6 +53,9 @@
 
 #![allow(clippy::needless_range_loop)]
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
+use alloc::vec::Vec;
 use crate::coordinates::{cartesian::Position, centers::Geocentric, frames::EclipticMeanJ2000};
 use wide::f64x4;
 
@@ -68,7 +71,7 @@ use crate::qtty::Radians;
 use crate::qtty::{Arcseconds, Kilometers, LengthUnit, Radian};
 use crate::time::JulianDate;
 use elp_data::*;
-use std::f64::consts::FRAC_PI_2;
+use core::f64::consts::FRAC_PI_2;
 
 // ====================
 // Helpers
@@ -800,7 +803,7 @@ impl Moon {
 mod tests {
     use super::*;
     use crate::qtty::{Days, Degrees, Kilometer, KM};
-    use std::f64::consts::PI;
+    use core::f64::consts::PI;
 
     // ===========================================================================
     // HELPERS

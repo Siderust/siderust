@@ -7,6 +7,9 @@
 //! `W m^-2 nm^-1`. Photon-flux integration converts to SI internally and
 //! returns integrated photon flux in `photons m^-2 s^-1`.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::vec::Vec;
 use super::error::{GaiaDr3Error, Result};
 use crate::qtty::velocity::C;
 use crate::qtty::Nanometers;

@@ -43,6 +43,10 @@
 //! None — this is test infrastructure with no domain-specific
 //! algorithm.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::string::String;
+use alloc::format;
 use crate::coordinates::{cartesian, centers::ReferenceCenter, frames::ReferenceFrame, spherical};
 use crate::qtty::{Degrees, LengthUnit, Quantity};
 use core::f64;
@@ -57,7 +61,7 @@ pub(crate) fn __assert_cartesian_eq<C, F, U>(
     C: ReferenceCenter,
     F: ReferenceFrame,
     U: LengthUnit,
-    Quantity<U>: std::cmp::PartialOrd + std::fmt::Display,
+    Quantity<U>: core::cmp::PartialOrd + core::fmt::Display,
 {
     let dx = (a.x() - b.x()).abs();
     let dy = (a.y() - b.y()).abs();
@@ -87,7 +91,7 @@ pub(crate) fn __assert_spherical_eq<C, F, U>(
     C: ReferenceCenter,
     F: ReferenceFrame,
     U: LengthUnit,
-    Quantity<U>: std::cmp::PartialOrd + std::fmt::Display,
+    Quantity<U>: core::cmp::PartialOrd + core::fmt::Display,
 {
     let d1 = a.distance;
     let d2 = b.distance;

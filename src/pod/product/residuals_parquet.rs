@@ -25,6 +25,8 @@
 //! - Apache Software Foundation. (2024). Apache Parquet Format Specification.
 //!   <https://parquet.apache.org/docs/file-format/>
 
+use alloc::string::ToString;
+use alloc::vec::Vec;
 use super::error::PodProductsError;
 use super::residuals_csv::ResidualRecord;
 use parquet::{
@@ -32,8 +34,9 @@ use parquet::{
     file::{properties::WriterProperties, writer::SerializedFileWriter},
     schema::parser::parse_message_type,
 };
+#[cfg(feature = "std")]
 use std::io::{Seek, Write};
-use std::sync::Arc;
+use alloc::sync::Arc;
 
 /// Parquet writer for POD residuals.
 ///

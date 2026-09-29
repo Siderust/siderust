@@ -19,6 +19,8 @@
 //! [`crate::astro::dynamics::forces::J2`], or any `AccelerationModel` whose
 //! analytic partials are wired up.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
 use crate::astro::dynamics::{DynamicsContext, OrbitState};
 use principia::{propagate_stm, rk4_propagate};
 use qtty::Second;

@@ -47,13 +47,15 @@
 //! let horizontal: Direction<Horizontal> = equatorial.to_horizontal(&jd_ut1, &jd_tt, &site);
 //! ```
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 use crate::astro::{nutation, sidereal};
 use crate::coordinates::cartesian::{Direction, Position};
 use crate::coordinates::centers::{Geodetic, Topocentric};
 use crate::coordinates::frames::{EquatorialTrueOfDate, Horizontal, ECEF};
 use crate::qtty::{Degrees, LengthUnit, Radians};
 use crate::time::JulianDate;
-use std::f64::consts::TAU;
+use core::f64::consts::TAU;
 
 // =============================================================================
 // ToHorizontal Trait

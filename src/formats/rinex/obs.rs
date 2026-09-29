@@ -29,11 +29,19 @@
 //!   Independent Exchange Format, Version 3.05.
 //! - Misra, P., & Enge, P. (2012). Global Positioning System: Signals,
 //!   Measurements, and Performance (2nd ed.). Ganga-Jamuna Press.
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::string::{String, ToString};
+use alloc::vec;
+use alloc::vec::Vec;
+use alloc::format;
+use alloc::collections::BTreeSet;
 use super::FormatError;
 use chrono::{DateTime, Datelike, NaiveDate, Timelike, Utc as ChronoUtc};
 use qtty::length::Meters;
 use qtty::time::Seconds;
-use std::collections::HashMap;
+use hashbrown::HashMap;
+#[cfg(feature = "std")]
 use std::io::{BufRead, BufReader, Read, Write};
 use tempoch::{Time, UTC};
 
@@ -380,10 +388,10 @@ G01  20124000.000         123457000.000
             assert_eq!(
                 a.satellites
                     .keys()
-                    .collect::<std::collections::BTreeSet<_>>(),
+                    .collect::<alloc::collections::BTreeSet<_>>(),
                 b.satellites
                     .keys()
-                    .collect::<std::collections::BTreeSet<_>>()
+                    .collect::<alloc::collections::BTreeSet<_>>()
             );
             for (sat, vals_a) in &a.satellites {
                 let vals_b = &b.satellites[sat];

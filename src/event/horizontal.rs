@@ -47,6 +47,8 @@
 //!   quantities". *Astronomy and Astrophysics* 412, 567–586.
 //!   <https://doi.org/10.1051/0004-6361:20031539>
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 use crate::astro::apparent::CorrectionPolicy;
 use crate::astro::earth_rotation::jd_ut1_from_tt_eop;
 use crate::astro::nutation::{nutation_iau2000b, NutationModel};
@@ -198,7 +200,7 @@ where
     let lst = gast + site.lon.to::<Radian>();
     let ha = (lst - ra.to::<Radian>())
         .value()
-        .rem_euclid(std::f64::consts::TAU);
+        .rem_euclid(core::f64::consts::TAU);
     let ha = Radians::new(ha);
 
     // Convert equatorial to horizontal using standard spherical trig

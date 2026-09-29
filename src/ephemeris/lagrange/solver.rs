@@ -23,6 +23,8 @@
 //! - Koon, W. S., Lo, M. W., Marsden, J. E., Ross, S. D. (2011). *Dynamical Systems,
 //!   the Three-Body Problem and Space Mission Design*.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
 use super::SunEarthLagrangePoint;
 use crate::coordinates::cartesian::Position;
 use crate::coordinates::centers::Barycentric;
@@ -30,7 +32,7 @@ use crate::coordinates::frames::EclipticMeanJ2000;
 use crate::ephemeris::{DynEphemeris, Ephemeris, EphemerisError};
 use crate::qtty::{Kilometer, Kilometers, GM_EARTH, GM_MOON, GM_SUN};
 use crate::time::JulianDate;
-use std::fmt;
+use core::fmt;
 
 const MAX_ITERS: usize = 50;
 const STEP_TOL_KM: f64 = 1.0e-6;
@@ -114,7 +116,7 @@ impl fmt::Display for SolverError {
     }
 }
 
-impl std::error::Error for SolverError {}
+impl core::error::Error for SolverError {}
 
 impl From<EphemerisError> for SolverError {
     fn from(value: EphemerisError) -> Self {
@@ -165,7 +167,7 @@ pub fn solve_sun_earth_lagrange_with_config<Eph: Ephemeris>(
     jd: JulianDate,
     config: SolverConfig,
 ) -> Result<SolverSolution, SolverError> {
-    let sampler = StaticSampler::<Eph>(std::marker::PhantomData);
+    let sampler = StaticSampler::<Eph>(core::marker::PhantomData);
     solve_with_sampler(&sampler, point, jd, config, None)
 }
 
@@ -234,7 +236,7 @@ trait Sampler {
     fn moon_geo(&self, jd: JulianDate) -> Result<Vec3, EphemerisError>;
 }
 
-struct StaticSampler<Eph>(std::marker::PhantomData<Eph>);
+struct StaticSampler<Eph>(core::marker::PhantomData<Eph>);
 
 impl<Eph: Ephemeris> Sampler for StaticSampler<Eph> {
     fn sun(&self, jd: JulianDate) -> Result<Vec3, EphemerisError> {

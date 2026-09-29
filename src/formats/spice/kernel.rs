@@ -18,9 +18,15 @@
 //! scientific API should prefer the `pod` feature's `SpiceEphemerisProvider`, which
 //! lift epochs, centers, frames, and units into typed `tempoch`/`affn`/`qtty` abstractions.
 
-use std::collections::{HashMap, VecDeque};
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::vec;
+use alloc::vec::Vec;
+use alloc::format;
+use alloc::collections::VecDeque;
+use hashbrown::HashMap;
+#[cfg(feature = "std")]
 use std::path::Path;
-
 use crate::formats::spice::daf::Daf;
 
 use super::error::SpiceError;
@@ -73,8 +79,8 @@ pub struct SpkKernel {
     by_target: HashMap<i32, Vec<usize>>,
 }
 
-impl std::fmt::Debug for SpkKernel {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Debug for SpkKernel {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("SpkKernel")
             .field("bytes_len", &self.bytes.len())
             .field("segment_count", &self.segments.len())
@@ -84,7 +90,9 @@ impl std::fmt::Debug for SpkKernel {
 
 impl SpkKernel {
     /// Open and parse a DAF/SPK kernel from a filesystem path.
-    pub fn open(path: impl AsRef<Path>) -> Result<Self, SpiceError> {
+    #[cfg(feature = "std")]
+#[cfg(feature = "std")]
+pub fn open(path: impl AsRef<Path>) -> Result<Self, SpiceError> {
         let bytes = std::fs::read(path)?;
         Self::from_bytes(bytes)
     }
@@ -251,7 +259,7 @@ impl SpkKernel {
                     if epoch < s.start_tdb_seconds || epoch > s.end_tdb_seconds {
                         continue;
                     }
-                    if let std::collections::hash_map::Entry::Vacant(e) = visited.entry(s.center) {
+                    if let hashbrown::hash_map::Entry::Vacant(e) = visited.entry(s.center) {
                         e.insert((node, i, true));
                         queue.push_back(s.center);
                     }
@@ -265,7 +273,7 @@ impl SpkKernel {
                 if epoch < s.start_tdb_seconds || epoch > s.end_tdb_seconds {
                     continue;
                 }
-                if let std::collections::hash_map::Entry::Vacant(e) = visited.entry(s.target) {
+                if let hashbrown::hash_map::Entry::Vacant(e) = visited.entry(s.target) {
                     e.insert((node, i, false));
                     queue.push_back(s.target);
                 }
@@ -304,7 +312,7 @@ impl SpkKernel {
     }
 
     fn has_chain_ignoring_epoch(&self, target: i32, center: i32) -> bool {
-        let mut visited = std::collections::HashSet::new();
+        let mut visited = hashbrown::HashSet::new();
         let mut queue = VecDeque::new();
         queue.push_back(target);
         visited.insert(target);

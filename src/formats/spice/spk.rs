@@ -7,6 +7,12 @@
 //! This is a runtime-capable version of the parser; build-time JPL extraction
 //! lives in `siderust-archive/generators/jpl/`.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::string::ToString;
+use alloc::vec;
+use alloc::vec::Vec;
+use alloc::format;
 use super::daf::{Daf, Summary};
 use super::SpiceError;
 

@@ -10,6 +10,7 @@ pub mod relativity;
 pub mod srp;
 pub mod third_body;
 
+use alloc::boxed::Box;
 use crate::qtty::{AstronomicalUnit, InverseSeconds, Kilometer, Kilometers, Pascals, Unit};
 
 pub use crate::astro::dynamics::density::{ExponentialAtmosphere, Nrlmsise00LiteApprox};

@@ -24,6 +24,9 @@
 //!
 //! Night-related solar types (twilight thresholds, etc.).
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::format;
 use crate::qtty::Degrees;
 
 /// Common twilight types.
@@ -41,8 +44,8 @@ pub enum Twilight {
     ApparentHorizon,
 }
 
-impl std::fmt::Display for Twilight {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for Twilight {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Self::Civil => write!(f, "Civil"),
             Self::Nautical => write!(f, "Nautical"),

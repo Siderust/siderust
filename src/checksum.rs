@@ -81,6 +81,8 @@
 //! - NIST Cryptographic Algorithm Validation Program (CAVS). SHA-256
 //!   test vectors. <https://csrc.nist.gov/projects/cryptographic-algorithm-validation-program>.
 
+use alloc::string::String;
+use alloc::vec::Vec;
 // ── const-evaluable SHA-256 ──────────────────────────────────────────────────
 
 const K: [u32; 64] = [

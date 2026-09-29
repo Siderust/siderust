@@ -8,6 +8,11 @@
 //! It implements [`DynEphemeris`](super::DynEphemeris) (instance-based,
 //! object-safe).
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::vec;
+use alloc::vec::Vec;
+use alloc::format;
 use super::{AuPerDay, DynEphemeris, EphemerisError};
 use crate::archive::ArchiveError;
 use crate::coordinates::{
@@ -20,8 +25,10 @@ use crate::ephemeris::jpl::eval::DynSegmentStack;
 use crate::formats::spice::{self, spk};
 use crate::qtty::{AstronomicalUnit, Kilometer};
 use crate::time::JulianDate;
+#[cfg(feature = "std")]
+#[cfg(feature = "std")]
 use std::path::Path;
-use std::sync::Arc;
+use alloc::sync::Arc;
 
 /// Shared inner data for a runtime-loaded ephemeris.
 struct RuntimeEphemerisInner {
@@ -63,6 +70,7 @@ impl RuntimeEphemeris {
     ///
     /// The file is read entirely into memory, parsed as a DAF/SPK container,
     /// and every supported Sun, EMB, Moon, and optional Earth segment is indexed.
+    #[cfg(feature = "std")]
     pub fn from_bsp(path: impl AsRef<Path>) -> Result<Self, ArchiveError> {
         let file_data = std::fs::read(path.as_ref())?;
         Self::from_bytes(&file_data)
@@ -134,14 +142,17 @@ impl RuntimeEphemeris {
 }
 
 fn spice_error_to_archive(err: spice::SpiceError) -> ArchiveError {
-    match err {
-        spice::SpiceError::Io(e) => ArchiveError::Io(e),
-        other => ArchiveError::Integrity(format!("SPICE parse error: {other}")),
+    #[cfg(feature = "std")]
+    {
+        if let spice::SpiceError::Io(e) = err {
+            return ArchiveError::Io(e);
+        }
     }
+    ArchiveError::Integrity(format!("SPICE parse error: {err}"))
 }
 
-impl std::fmt::Debug for RuntimeEphemeris {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Debug for RuntimeEphemeris {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("RuntimeEphemeris")
             .field("sun_segments", &self.inner.sun.segment_count())
             .field("emb_segments", &self.inner.emb.segment_count())

@@ -27,8 +27,13 @@
 //!   Determination. Elsevier Academic Press.
 //! - Vallado, D. A. (2013). Fundamentals of Astrodynamics and Applications
 //!   (4th ed.). Microcosm Press.
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::string::{String, ToString};
+use alloc::vec;
+use alloc::vec::Vec;
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
+use alloc::collections::BTreeMap;
 
 /// Summary statistics for a single residual stream.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]

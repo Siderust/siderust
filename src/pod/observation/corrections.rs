@@ -32,6 +32,10 @@
 //!   coordinates by means of simultaneous observations.
 //!   *Bulletin géodésique*, 70(1–2), 73–87.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
+use alloc::vec::Vec;
+use alloc::boxed::Box;
 use crate::astro::dynamics::Position;
 use crate::coordinates::frames::GCRS;
 use qtty::Meter;

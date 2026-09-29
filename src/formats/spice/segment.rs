@@ -45,6 +45,11 @@
 //! The polynomial argument is `tau = (et - MID) / RADIUS ∈ [-1, 1]`.
 //! Velocity for Type 2 is `dPos/dtau / RADIUS` (in km/s).
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::vec;
+use alloc::vec::Vec;
+use alloc::format;
 use super::error::SpiceError;
 use crate::formats::spice::daf::{Daf, Summary};
 

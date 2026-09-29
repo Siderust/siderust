@@ -11,6 +11,12 @@
 //! `runtime-data` feature). Build-time JPL extraction lives in
 //! `siderust-archive/generators/jpl/`.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::string::{String, ToString};
+use alloc::vec;
+use alloc::vec::Vec;
+use alloc::format;
 use super::SpiceError;
 
 /// Parsed DAF container.
@@ -108,7 +114,7 @@ impl Daf {
             )));
         }
 
-        let locid = std::str::from_utf8(&data[0..8]).unwrap_or("").trim();
+        let locid = core::str::from_utf8(&data[0..8]).unwrap_or("").trim();
         if !locid.starts_with("DAF") {
             return Err(SpiceError::FormatParse(format!(
                 "Not a DAF file (locator = {:?})",

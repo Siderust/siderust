@@ -8,6 +8,9 @@
 //! generic Chebyshev-first engine or scan+Brent when the analytic model is
 //! unreliable.
 
+use alloc::vec;
+use alloc::vec::Vec;
+use alloc::format;
 use crate::astro::earth_rotation::gmst_default;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
@@ -25,7 +28,7 @@ use super::altitude::sun_altitude_rad;
 
 const GRAZE_EPS: f64 = 1e-3;
 /// Hour-angle rate used for candidate spacing (rad per mean solar day).
-const HA_RATE_RAD_PER_DAY: f64 = std::f64::consts::TAU;
+const HA_RATE_RAD_PER_DAY: f64 = core::f64::consts::TAU;
 
 const BRACKET_RADII: [Days; 5] = [
     Minutes::new(15.0).to_const::<Day>(),
@@ -138,8 +141,8 @@ fn solar_sin_altitude_fast(t: ModifiedJulianDate, ctx: &SolarAltitudeSiteContext
     let cos_dec = (1.0 - sin_dec * sin_dec).sqrt();
 
     // Simplified GMST (Aoki et al. 1982): 4.894961 rad at J2000 + 6.300388 rad/day
-    let gmst = (4.894_961_f64 + 6.300_388_f64 * n).rem_euclid(std::f64::consts::TAU);
-    let ha = (gmst + ctx.lon_rad - ra).rem_euclid(std::f64::consts::TAU);
+    let gmst = (4.894_961_f64 + 6.300_388_f64 * n).rem_euclid(core::f64::consts::TAU);
+    let ha = (gmst + ctx.lon_rad - ra).rem_euclid(core::f64::consts::TAU);
 
     ctx.sin_lat * sin_dec + ctx.cos_lat * cos_dec * ha.cos()
 }
@@ -898,7 +901,7 @@ fn deg_to_rad(deg: f64) -> f64 {
 
 #[inline]
 fn normalize_angle(rad: f64) -> f64 {
-    rad.rem_euclid(std::f64::consts::TAU)
+    rad.rem_euclid(core::f64::consts::TAU)
 }
 
 #[inline]
@@ -950,7 +953,7 @@ pub(crate) fn solar_twilight_profile_impl(
 }
 
 fn sort_dedup_labelled(crossings: &mut Vec<LabeledCrossing>) {
-    crossings.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap_or(std::cmp::Ordering::Equal));
+    crossings.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap_or(core::cmp::Ordering::Equal));
     crossings.dedup_by(|a, b| (a.t.raw() - b.t.raw()).abs() < CROSSING_DEDUPE_EPS);
 }
 

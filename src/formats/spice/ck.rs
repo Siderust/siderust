@@ -18,8 +18,14 @@
 //! - NAIF. *CK Required Reading*.
 //! - NAIF. *DAF Required Reading*.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
+use alloc::string::ToString;
+use alloc::vec;
+use alloc::vec::Vec;
+use alloc::format;
+#[cfg(feature = "std")]
 use std::path::Path;
-
 use super::daf::DafRaw;
 use super::SpiceError;
 
@@ -145,7 +151,9 @@ impl CkKernel {
     }
 
     /// Open a DAF/CK binary kernel from a filesystem path.
-    pub fn open(path: impl AsRef<Path>) -> Result<Self, SpiceError> {
+    #[cfg(feature = "std")]
+#[cfg(feature = "std")]
+pub fn open(path: impl AsRef<Path>) -> Result<Self, SpiceError> {
         let bytes = std::fs::read(path)?;
         Self::from_bytes(bytes)
     }
@@ -362,7 +370,7 @@ mod tests {
     fn interpolate_type1_segment_with_slerp() {
         let kernel = CkKernel::from_bytes(synthetic_ck()).unwrap();
         let quaternion = kernel.rotation(-82_000, 5.0).unwrap();
-        let half = std::f64::consts::FRAC_1_SQRT_2;
+        let half = core::f64::consts::FRAC_1_SQRT_2;
         assert!((quaternion[0] - half).abs() < 1.0e-12);
         assert!((quaternion[1] - half).abs() < 1.0e-12);
     }

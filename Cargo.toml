@@ -21,7 +21,7 @@ broken_intra_doc_links = "deny"
 
 [package]
 name = "siderust"
-version = "0.11.1"
+version = "0.12.0"
 edition = "2021"
 authors = ["VPRamon <vallespuigramon@gmail.com>"]
 description = "High-precision astronomy and satellite mechanics in Rust."
@@ -29,8 +29,8 @@ license = "AGPL-3.0-only"
 readme = "README.md"
 repository = "https://github.com/Siderust/siderust"
 homepage = "https://github.com/Siderust/siderust"
-keywords = ["astronomy", "satellite", "orbital-mechanics", "vsop87", "rust"]
-categories = ["science", "aerospace", "simulation"]
+keywords = ["astronomy", "satellite", "orbital-mechanics", "vsop87", "no-std"]
+categories = ["science", "aerospace", "simulation", "no-std"]
 
 [lib]
 name = "siderust"
@@ -66,16 +66,48 @@ path = "tests/spice_context.rs"
 required-features = ["spice"]
 
 [features]
-default = ["serde"]
+default = ["std", "serde"]
+## Enable the Rust standard library (filesystem, OS I/O, `Utc::now`, etc.).
+## Without `std`, the crate builds as `no_std` + `alloc`.
+std = [
+    "qtty/std",
+    "affn/std",
+    "tempoch/std",
+    "keplerian/std",
+    "optica/std",
+    "principia/std",
+    "cheby/std",
+    "siderust-archive/std",
+    "chrono/std",
+    "chrono/clock",
+    "dep:quick-xml",
+    "serde?/std",
+    "serde_json?/std",
+    "toml?/std",
+    "thiserror/std",
+    "wide/std",
+]
 lagrange-centers = ["serde", "siderust-archive/lagrange"]
-runtime-data = ["siderust-archive/fetch"]
-serde = ["dep:serde", "dep:serde_json", "dep:toml", "qtty/serde", "affn/serde", "tempoch/serde"]
+## Runtime dataset download/cache via `siderust-archive`. Requires `std`.
+runtime-data = ["std", "siderust-archive/fetch"]
+serde = [
+    "dep:serde",
+    "dep:serde_json",
+    "dep:toml",
+    "qtty/serde",
+    "affn/serde",
+    "tempoch/serde",
+    "keplerian/serde",
+    "optica/serde",
+]
 photometry = []
-spice = []
+## SPICE kernel context. Path-based loading requires `std`.
+spice = ["std"]
 atmosphere = []
 doris = []
 ## Precise Orbit Determination (POD) toolkit. Folded from the former `siderust-pod` crate.
-pod = ["serde", "dep:faer", "dep:hex", "dep:sha2"]
+## Requires `std` (faer linalg, filesystem product writers).
+pod = ["std", "serde", "dep:faer", "dep:hex", "dep:sha2"]
 ## Parquet residuals writer in the `pod::product` module.
 pod-parquet = ["pod", "dep:parquet"]
 ## DORIS RINEX observation parser inside `pod::io`.
@@ -84,25 +116,27 @@ pod-doris = ["pod", "doris"]
 bench-internals = []
 
 [dependencies]
-affn = { version = "0.8", features = ["astro"] }
-cheby = { version = "0.4" }
-keplerian = { version = "0.2" }
-optica = { version = "0.2"}
-principia = { version = "0.2.1", features = ["alloc"]}
-qtty = { version = "0.8", features = ["astro", "density", "frequency", "radiometry", "satellite"] }
-tempoch = { version = "0.6"}
-siderust-archive = { version = "0.1", features = ["jpl", "vsop", "elp", "nutation", "gravity", "atmosphere", "pluto", "time"] }
+# Alloc is always enabled: siderust is an orchestration crate built around Vec/String.
+affn = { version = "0.10", default-features = false, features = ["astro", "alloc"] }
+cheby = { version = "0.4.1", git = "https://github.com/Siderust/cheby", branch = "fix/no-std-float-alloc", default-features = false, features = ["alloc", "approx", "calculus"] }
+keplerian = { version = "0.3", default-features = false, features = ["alloc"] }
+optica = { version = "0.3", default-features = false, features = ["alloc"] }
+principia = { version = "0.3", git = "https://github.com/Siderust/principia", branch = "feature/no-std-affn-0.10", default-features = false, features = ["alloc"] }
+qtty = { version = "0.8", default-features = false, features = ["alloc", "astro", "density", "frequency", "radiometry", "satellite"] }
+tempoch = { version = "0.7", default-features = false, features = ["alloc"] }
+siderust-archive = { version = "0.1.5", default-features = false, features = ["jpl", "vsop", "elp", "nutation", "gravity", "atmosphere", "pluto", "time"] }
 
-thiserror = "2"
-approx = "0.5"
-chrono = "0.4"
+thiserror = { version = "2", default-features = false }
+chrono = { version = "0.4", default-features = false, features = ["alloc"] }
 paste = "1.0"
-quick-xml = "0.41"
-serde = { version = "1.0", features = ["derive"], optional = true }
-serde_json = { version = "1.0", optional = true }
-toml = { version = "0.9", optional = true }
-sha2 = { version = "0.11", optional = true }
-wide = "1.4"
+quick-xml = { version = "0.41", default-features = false, optional = true }
+serde = { version = "1.0", default-features = false, features = ["derive", "alloc"], optional = true }
+serde_json = { version = "1.0", default-features = false, features = ["alloc"], optional = true }
+toml = { version = "1.1", default-features = false, features = ["parse", "serde", "display"], optional = true }
+sha2 = { version = "0.11", default-features = false, optional = true }
+wide = { version = "1.7", default-features = false }
+hashbrown = { version = "0.15", default-features = false, features = ["default-hasher", "inline-more"] }
+spin = { version = "0.10", default-features = false, features = ["once"] }
 
 # POD toolkit dependencies (gated on the `pod` feature family)
 faer = { version = "0.24", default-features = false, features = ["std", "linalg"], optional = true }
@@ -110,13 +144,16 @@ hex = { version = "0.4", optional = true }
 parquet = { version = "59", default-features = false, optional = true }
 
 [dev-dependencies]
+approx = "0.5"
 rstest = "0.26"
 criterion = "0.8"
 serde_json = "1.0"
 
 [build-dependencies]
 serde = { version = "1.0", features = ["derive"] }
-toml = "0.9"
+toml = { version = "1.1", default-features = false, features = ["parse", "serde", "display"] }
+hashbrown = { version = "0.15", default-features = false, features = ["default-hasher", "inline-more"] }
+spin = { version = "0.10", default-features = false, features = ["once"] }
 
 [[test]]
 name = "test_event_search"
@@ -171,3 +208,7 @@ harness = false
 
 [lints]
 workspace = true
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

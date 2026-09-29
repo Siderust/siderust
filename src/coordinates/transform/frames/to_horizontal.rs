@@ -28,6 +28,8 @@
 //! - Montenbruck, O. & Pfleger, T. (2000). *Astronomy on the Personal
 //!   Computer*. §4.2.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 use crate::astro::earth_rotation::gmst_from_tt;
 use crate::coordinates::centers::{Geodetic, Topocentric};
 use crate::coordinates::frames::{EquatorialMeanOfDate, Horizontal, ECEF};
@@ -78,7 +80,7 @@ fn equatorial_to_horizontal_angles(
     let lst = gmst + site.lon.to::<Radian>();
 
     let ra_rad: Radians = ra.to::<Radian>();
-    let ha = Quantity::<Radian>::new((lst - ra_rad).value().rem_euclid(std::f64::consts::TAU));
+    let ha = Quantity::<Radian>::new((lst - ra_rad).value().rem_euclid(core::f64::consts::TAU));
     let dec_rad: Radians = dec.to::<Radian>();
 
     let (sin_dec, cos_dec) = dec_rad.sin_cos();
@@ -263,7 +265,7 @@ mod tests {
         let (alt, _az) =
             equatorial_to_horizontal_angles(ra, dec, &site, &SiteTrig::from_site(&site), jd);
 
-        let expected_alt = std::f64::consts::FRAC_PI_2 * RAD;
+        let expected_alt = core::f64::consts::FRAC_PI_2 * RAD;
         assert!(
             (alt - expected_alt).abs() < 1e-6 * RAD,
             "Expected altitude ~90°, got {}",
@@ -288,7 +290,7 @@ mod tests {
         let dec_rad: Radians = dec.to::<Radian>();
 
         // RA wraps around 2π, so compare with modulo
-        let two_pi = 2.0 * std::f64::consts::PI * RAD;
+        let two_pi = 2.0 * core::f64::consts::PI * RAD;
         let ra_diff = (ra_rad - ra_back).abs().wrap_pos();
         let ra_diff = ra_diff.min(two_pi - ra_diff);
 
@@ -413,7 +415,7 @@ mod tests {
 
         let (alt, _az) = equatorial_to_horizontal_angles(ra, dec, &site, &site_trig, jd);
         // On meridian at dec=lat=0 → altitude should be ~90° (zenith)
-        let expected_alt = std::f64::consts::FRAC_PI_2 * RAD;
+        let expected_alt = core::f64::consts::FRAC_PI_2 * RAD;
         assert!(
             (alt - expected_alt).abs() < 1e-6 * RAD,
             "Expected zenith at equator, got alt={}",

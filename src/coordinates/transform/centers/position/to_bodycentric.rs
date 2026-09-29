@@ -37,6 +37,8 @@
 //! let geo: Position<Geocentric, _, _> = bodycentric_pos.to_center(jd);
 //! ```
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
 use crate::astro::eop::EopProvider;
 use crate::astro::nutation::NutationModel;
 use crate::coordinates::cartesian::position::{EclipticMeanJ2000, Position};

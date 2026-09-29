@@ -141,7 +141,7 @@ pub fn gast_iau2006a(jd_ut1: JulianDate, jd_tt: JulianDate) -> Radians {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::f64::consts::TAU;
+    use core::f64::consts::TAU;
 
     #[test]
     fn gmst_iau2006_at_j2000() {

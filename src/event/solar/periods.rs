@@ -6,6 +6,7 @@
 //! Crate-internal API built on the solar daily predictor with local Chebyshev
 //! and scan+Brent fallback.
 
+use alloc::vec::Vec;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::event::altitude::search::InternalSearchConfig;
@@ -198,8 +199,8 @@ mod tests {
         let mjd: ModifiedJulianDate = crate::J2000.to::<crate::MJD>();
         let alt = sun_altitude_rad(mjd, &site);
         assert!(
-            alt > Radians::new(-std::f64::consts::FRAC_PI_2)
-                && alt < Radians::new(std::f64::consts::FRAC_PI_2)
+            alt > Radians::new(-core::f64::consts::FRAC_PI_2)
+                && alt < Radians::new(core::f64::consts::FRAC_PI_2)
         );
     }
 

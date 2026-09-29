@@ -6,8 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-09-30
+
 ### Added
 
+- First-class `no_std` + `alloc` support: `default = ["std", "serde"]`;
+  `--no-default-features` builds as `no_std` + `alloc`. Filesystem / OS I/O,
+  `Utc::now`, `runtime-data`, `spice` path loading, and `pod` require `std`.
+- CI check for host `no_std` and `thumbv7em-none-eabihf` bare-metal builds.
 - Add `ObservatoryCatalog` with deterministic bundled catalog access and
   validated runtime loading from `[[observatory]]` TOML records.
 - Add `ObservatoryCatalog::extend` so downstream crates can compose the
@@ -15,6 +21,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Bump orchestration dependencies to the `no_std`-capable ecosystem:
+  `affn` 0.10, `keplerian` 0.3, `optica` 0.3, `tempoch` 0.7,
+  `siderust-archive` 0.1.5, `principia` 0.3, `cheby` 0.4.1.
+- Forward `std` / serde features to those crates with `default-features = false`.
+- Replace `std::collections::HashMap` with `hashbrown` and use `spin::Once` for
+  lazy tables so core astronomy works without `std`.
+- Gate I/O-heavy format modules (`ccsds`, `igs`, `ilrs`, `rinex`, `iers`, `vlbi`)
+  and Path-based SPICE/BSP helpers behind the `std` feature.
+- Move `approx` to dev-dependencies; bump `toml` to 1.1 and `wide` to 1.7.
 - Generate the existing named observatory constants from the canonical
   `data/observatories.toml` source while preserving their public names and
   scientific values. `Observatory::name` is now `Cow<'static, str>` so the

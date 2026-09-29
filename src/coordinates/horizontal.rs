@@ -65,6 +65,9 @@
 //! `Direction<Horizontal>` and `Position<Topocentric, Horizontal, U>`
 //! coordinates.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::string::ToString;
 use crate::coordinates::centers::Topocentric;
 use crate::coordinates::frames::Horizontal;
 use crate::qtty::{Degrees, LengthUnit, DEG};
@@ -151,8 +154,8 @@ impl HorizontalConvention {
     };
 }
 
-impl std::fmt::Display for HorizontalConvention {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for HorizontalConvention {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let origin = match self.origin {
             AzimuthOrigin::North => "North",
             AzimuthOrigin::South => "South",

@@ -24,6 +24,8 @@
 //! - Murray, C. A. (1983). *Vectorial Astrometry*. §3.2.
 //! - IAU SOFA Tools for Earth Attitude (2023): <https://www.iausofa.org>.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
 use crate::coordinates::cartesian::Velocity;
 use crate::coordinates::frames::{self, MutableFrame};
 use crate::coordinates::transform::frames::bias;

@@ -46,6 +46,9 @@ pub mod ingest;
 pub mod observatories;
 pub mod record;
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::vec::Vec;
 pub use catalog::LargeStarCatalog;
 pub use ingest::{parse_csv_chunk, CatalogIngestError};
 pub use observatories::{Observatory, ObservatoryCatalog, ObservatoryCatalogError};

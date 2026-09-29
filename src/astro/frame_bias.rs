@@ -69,7 +69,7 @@ const FRAME_BIAS_DALPHA0_ARCSEC: f64 = -0.0146;
 const FRAME_BIAS_XI0_ARCSEC: f64 = -0.0166170;
 const FRAME_BIAS_ETA0_ARCSEC: f64 = -0.0068192;
 
-const ARCSEC_TO_RAD: f64 = std::f64::consts::PI / 648_000.0;
+const ARCSEC_TO_RAD: f64 = core::f64::consts::PI / 648_000.0;
 
 #[inline]
 fn frame_bias_gcrs_to_eme2000() -> Rotation3 {

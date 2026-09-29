@@ -13,6 +13,8 @@
 //! `use crate::astro::dynamics::units::{GravitationalParameter, GM_EARTH, ...};`
 //! paths continue to compile without change.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
 pub use crate::ext_qtty::dynamics::{
     GravitationalParameter, GravitationalParameterUnit, GM_EARTH, GM_MOON, GM_SUN,
 };

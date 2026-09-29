@@ -6,7 +6,7 @@
 use super::ordering::HealpixOrdering;
 
 /// Result alias for HEALPix operations.
-pub type Result<T> = std::result::Result<T, HealpixError>;
+pub type Result<T> = core::result::Result<T, HealpixError>;
 
 /// Error type for HEALPix grid, index, and map operations.
 #[derive(Debug, thiserror::Error, Clone, PartialEq)]

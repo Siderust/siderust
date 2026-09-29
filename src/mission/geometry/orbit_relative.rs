@@ -3,6 +3,8 @@
 
 //! Orbit-relative geometry helpers: beta angle, local solar time, LTAN.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 use core::f64::consts::TAU;
 
 use affn::cartesian::{Direction, Position, Velocity};

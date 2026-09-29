@@ -5,6 +5,7 @@
 //!
 //! Defines [`AltitudeProvider`] and implementations for celestial targets.
 
+use alloc::vec::Vec;
 use crate::bodies::solar_system;
 use crate::bodies::Star;
 use crate::coordinates::centers::Geodetic;

@@ -3,6 +3,8 @@
 
 //! Built-in Earth gravity-field providers.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
 use principia::{GravityFieldProvider, PrincipiaError};
 
 use crate::astro::dynamics::units::GravitationalParameter;

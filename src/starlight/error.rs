@@ -6,7 +6,7 @@
 use crate::healpix::HealpixError;
 
 /// Result alias for starlight map operations.
-pub type Result<T> = std::result::Result<T, StellarMapError>;
+pub type Result<T> = core::result::Result<T, StellarMapError>;
 
 /// Error type for stellar surface-brightness map construction and validation.
 #[derive(Debug, thiserror::Error)]

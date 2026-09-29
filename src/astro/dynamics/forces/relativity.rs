@@ -3,6 +3,8 @@
 
 //! First-order post-Newtonian Schwarzschild correction.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
 use principia::{AccelerationModel, PrincipiaError};
 
 use crate::astro::dynamics::context::DynamicsContext;

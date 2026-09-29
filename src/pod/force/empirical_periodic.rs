@@ -28,6 +28,8 @@
 //! a_GCRS(t) = R_{GCRS←RTN}(state) · [a_R, a_T, a_N]
 //! ```
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 use crate::astro::dynamics::context::DynamicsContext;
 use crate::astro::dynamics::forces::AccelerationModel;
 use crate::astro::dynamics::frames::{LocalOrbitalFrame, RTN};

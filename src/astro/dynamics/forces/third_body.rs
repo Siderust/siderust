@@ -3,7 +3,11 @@
 
 //! Third-body perturbation force model.
 
-use std::sync::Arc;
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
+use alloc::vec::Vec;
+use alloc::boxed::Box;
+use alloc::sync::Arc;
 
 use affn::cartesian::Displacement;
 use principia::{AccelerationModel, PrincipiaError};
@@ -216,7 +220,7 @@ impl AccelerationModel<DynamicsContext, TT, Geocentric, GCRS> for ThirdBody {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
+    use alloc::sync::Arc;
 
     use super::*;
     use crate::astro::dynamics::context::DynamicsContextBuilder;

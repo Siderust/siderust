@@ -3,6 +3,7 @@
 
 //! Error type for the observation-model crate.
 
+use alloc::string::{String, ToString};
 /// Unified error type for all observation-model failures.
 ///
 /// # Examples

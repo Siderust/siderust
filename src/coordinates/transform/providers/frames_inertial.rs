@@ -17,6 +17,8 @@
 //! - **ICRF ≡ ICRS**: identity alias.
 //! - **GCRS ≈ ICRS**: treated as identity (no aberration modelling).
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 use super::*;
 use crate::coordinates::transform::frames::bias;
 

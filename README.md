@@ -33,20 +33,22 @@ Siderust provides ephemerides, coordinate transforms, time-scale handling, and o
 
 | Feature        | Default | What it enables |
 |----------------|---------|-----------------|
+| `std`          | ✔       | Standard library (filesystem, OS I/O, `Utc::now`); implies heap via always-on `alloc` |
 | `serde`        | ✔       | Serialization support and runtime TOML observatory catalogs (default) |
 | *(base)*       |         | VSOP87 + ELP2000-82B analytical ephemerides, full coordinate/altitude API |
 | `atmosphere`   |         | Atmospheric tables and radiative transfer helpers |
 | `photometry`   |         | Photometric passbands and throughput unit (Johnson–Cousins UBVRI) |
-| `spice`        |         | High-level SPICE kernel context (`SpiceContext`, `KernelSet`) |
-| `pod`          |         | Precise Orbit Determination toolkit (WLS, EKF, force models, I/O) |
+| `spice`        |         | High-level SPICE kernel context (`SpiceContext`, `KernelSet`); implies `std` |
+| `pod`          |         | Precise Orbit Determination toolkit (WLS, EKF, force models, I/O); implies `std` |
 | `pod-parquet`  |         | Parquet residuals writer (implies `pod`) |
 | `pod-doris`    |         | DORIS RINEX observation parser (implies `pod`) |
-| `runtime-data` |         | Runtime dataset-loading helpers via `siderust-archive` |
+| `runtime-data` |         | Runtime dataset-loading helpers via `siderust-archive`; implies `std` |
 
-> **Note:** `no_std` and `f128` quad‑precision are **not** supported today.
-> The crate depends on `std`‑only libraries such as `chrono`.
-> Sub‑crates `qtty` and `qtty-core` do offer `no_std` support independently.
-> C ABI bindings live in the separate `siderust-ffi` crate rather than a `siderust` feature flag.
+> **`no_std`:** use `default-features = false` for `no_std` + `alloc`. Byte-oriented
+> parsers (TLE, SCK, SPICE SPK from `&[u8]`) and analytical ephemerides remain
+> available; filesystem/I/O format helpers and POD require `std`.
+> C ABI bindings live in the separate `siderust-ffi` crate.
+> `f128` quad-precision is not supported.
 
 ---
 

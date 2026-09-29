@@ -27,6 +27,8 @@
 //! - Capitaine, N. & Wallace, P. T. (2006). *Astronomical Journal*, 132, 2922.
 //! - SOFA routines `iauObl06`, `iauBp06`, `iauIcrs2g`, `iauG2icrs`.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 use crate::coordinates::cartesian::Direction;
 use crate::coordinates::frames::{self, MutableFrame};
 use crate::coordinates::transform::frames::{bias, galactic};

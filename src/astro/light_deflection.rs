@@ -40,6 +40,8 @@
 //! * SOFA routines `iauLdsun`, `iauLd`
 //! * Klioner, S. A. (2003), AJ 125, 1580
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 use affn::cartesian::Displacement;
 use affn::frames::ReferenceFrame;
 
@@ -313,7 +315,7 @@ mod tests {
     #[test]
     fn deflection_at_ninety_deg_is_milliarcseconds() {
         // At 90° elongation and 1 AU: Δθ = (2GM/c²R) ≈ 0.00407″
-        let angle = Radians::new(std::f64::consts::FRAC_PI_2);
+        let angle = Radians::new(core::f64::consts::FRAC_PI_2);
         let defl = solar_deflection_magnitude(angle, AstronomicalUnits::new(1.0));
         let expected = Radians::new(SOLAR_SCHWARZSCHILD_AU)
             .to::<Arcsecond>()
@@ -399,7 +401,7 @@ mod tests {
             .value();
 
         let scalar_deflection = solar_deflection_magnitude(
-            Radians::new(std::f64::consts::FRAC_PI_2),
+            Radians::new(core::f64::consts::FRAC_PI_2),
             AstronomicalUnits::new(1.0),
         )
         .value();

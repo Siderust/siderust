@@ -11,6 +11,10 @@
 //! All public setters take **typed** quantities; there is no `f64`-only
 //! entry point for fields that have a typed representation.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::string::{String, ToString};
+use alloc::format;
 use chrono::{Datelike, Timelike};
 use qtty::angular::Degrees;
 use qtty::angular::Turn;

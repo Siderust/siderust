@@ -24,11 +24,16 @@
 //!
 //! - IDS/CDDIS, *RINEX 3 DORIS Format Description*, rev. 14, 2023.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
 use super::FormatError;
+#[cfg(feature = "std")]
 use std::io::Read;
 #[cfg(feature = "doris")]
+#[cfg(feature = "std")]
 use std::io::{BufRead, BufReader};
-
 /// Header of a RINEX-DORIS file.
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct DorisHeader {

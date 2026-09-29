@@ -24,6 +24,7 @@
 //! ## References
 //! None.
 
+use alloc::string::ToString;
 use crate::astro::apparent::CorrectionPolicy;
 use crate::event::altitude::{CrossingDirection, SearchOpts};
 use crate::qtty::*;
@@ -50,8 +51,8 @@ pub struct AzimuthCrossingEvent {
     pub direction: CrossingDirection,
 }
 
-impl std::fmt::Display for AzimuthCrossingEvent {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for AzimuthCrossingEvent {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "Azimuth {} at {}", self.direction, self.mjd)
     }
 }
@@ -69,8 +70,8 @@ pub enum AzimuthExtremumKind {
     Min,
 }
 
-impl std::fmt::Display for AzimuthExtremumKind {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for AzimuthExtremumKind {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Self::Max => write!(f, "Max Azimuth"),
             Self::Min => write!(f, "Min Azimuth"),
@@ -89,8 +90,8 @@ pub struct AzimuthExtremum {
     pub kind: AzimuthExtremumKind,
 }
 
-impl std::fmt::Display for AzimuthExtremum {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for AzimuthExtremum {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "{} at {} (az: {})", self.kind, self.mjd, self.azimuth)
     }
 }

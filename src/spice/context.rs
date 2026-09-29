@@ -3,8 +3,14 @@
 
 //! High-level SPICE kernel context.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::string::{String, ToString};
+use alloc::vec;
+use alloc::vec::Vec;
+use alloc::format;
+#[cfg(feature = "std")]
 use std::path::Path;
-
 use affn::cartesian::{Position, Velocity};
 use qtty::unit::Kilometer;
 use qtty::{KmPerSecond, Quantity};
@@ -67,7 +73,7 @@ impl SpiceContext {
     ) -> Result<(), SpiceContextError> {
         let alias = alias.into();
         let locator = if bytes.len() >= 8 {
-            std::str::from_utf8(&bytes[0..8])
+            core::str::from_utf8(&bytes[0..8])
                 .unwrap_or("")
                 .trim()
                 .to_ascii_uppercase()
@@ -94,7 +100,7 @@ impl SpiceContext {
                 ),
             });
         } else {
-            let text = std::str::from_utf8(&bytes).map_err(|_| {
+            let text = core::str::from_utf8(&bytes).map_err(|_| {
                 SpiceContextError::Kernel(SpiceError::FormatParse(format!(
                     "'{alias}': not a recognised DAF binary kernel and not valid UTF-8 text"
                 )))

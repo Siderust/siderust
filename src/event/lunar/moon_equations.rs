@@ -28,6 +28,7 @@
 //! ## References
 //! - Meeus, J. (1998). *Astronomical Algorithms*, 2nd ed., Willmann‑Bell.
 
+use alloc::vec::Vec;
 use crate::bodies::solar_system::Moon;
 
 use crate::coordinates::transform::context::DefaultEphemeris;

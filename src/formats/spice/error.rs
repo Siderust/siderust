@@ -3,6 +3,8 @@
 
 //! Unified error type for SPICE kernel operations.
 
+use alloc::string::{String, ToString};
+use alloc::format;
 use thiserror::Error;
 
 /// Errors produced by SPK kernel operations.
@@ -35,6 +37,7 @@ use thiserror::Error;
 pub enum SpiceError {
     /// I/O error reading a kernel file from disk.
     #[error("SPICE kernel I/O error: {0}")]
+    #[cfg(feature = "std")]
     Io(#[from] std::io::Error),
 
     /// The underlying DAF/SPK parser rejected the file.
@@ -126,10 +129,13 @@ pub enum SpiceError {
 
 impl From<crate::archive::ArchiveError> for SpiceError {
     fn from(err: crate::archive::ArchiveError) -> Self {
-        match err {
-            crate::archive::ArchiveError::Io(e) => SpiceError::Io(e),
-            other => SpiceError::FormatParse(format!("{other}")),
+        #[cfg(feature = "std")]
+        {
+            if let crate::archive::ArchiveError::Io(e) = err {
+                return SpiceError::Io(e);
+            }
         }
+        SpiceError::FormatParse(format!("{err}"))
     }
 }
 
@@ -139,7 +145,9 @@ mod tests {
     use crate::archive::ArchiveError;
 
     #[test]
+    #[cfg(feature = "std")]
     fn archive_io_error_converts_to_spice_io() {
+        #[cfg(feature = "std")]
         let err = SpiceError::from(ArchiveError::Io(std::io::Error::new(
             std::io::ErrorKind::NotFound,
             "missing kernel",

@@ -32,6 +32,8 @@
 //! - JPL Small‑Body Database. <https://ssd.jpl.nasa.gov/tools/sbdb_query.html>
 //! - Meeus, J. (1998). *Astronomical Algorithms* (2nd ed.). Willmann‑Bell.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
 use crate::astro::orbit::KeplerianOrbit;
 use crate::qtty::{AstronomicalUnits, Degrees, Kilometers, Years};
 

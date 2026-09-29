@@ -59,6 +59,8 @@
 //! - Krisciunas, K., & Schaefer, B. E. (1991). "A model of the brightness
 //!   of moonlight." *PASP*, 103(667), 1033–1039.  doi:10.1086/132900
 
+use alloc::vec::Vec;
+use alloc::format;
 use crate::coordinates::cartesian;
 use crate::coordinates::centers::*;
 use crate::coordinates::frames;
@@ -66,8 +68,8 @@ use crate::ephemeris::Ephemeris;
 use crate::event::search::intervals;
 use crate::qtty::*;
 use crate::time::{Interval, JulianDate, ModifiedJulianDate};
-use std::f64::consts::PI;
-use std::marker::PhantomData;
+use core::f64::consts::PI;
+use core::marker::PhantomData;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -188,8 +190,8 @@ impl MoonPhaseLabel {
     }
 }
 
-impl std::fmt::Display for MoonPhaseLabel {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for MoonPhaseLabel {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Self::NewMoon => write!(f, "New Moon"),
             Self::WaxingCrescent => write!(f, "Waxing Crescent"),
@@ -261,8 +263,8 @@ impl PhaseKind {
     ];
 }
 
-impl std::fmt::Display for PhaseKind {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for PhaseKind {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Self::NewMoon => write!(f, "New Moon"),
             Self::FirstQuarter => write!(f, "First Quarter"),
@@ -287,8 +289,8 @@ pub struct PhaseEvent {
     pub kind: PhaseKind,
 }
 
-impl std::fmt::Display for PhaseEvent {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for PhaseEvent {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "{} at {}", self.kind, self.mjd)
     }
 }
@@ -315,8 +317,8 @@ pub struct MoonPhaseGeometry {
     pub waxing: bool,
 }
 
-impl std::fmt::Display for MoonPhaseGeometry {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for MoonPhaseGeometry {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let phase_dir = if self.waxing { "waxing" } else { "waning" };
         write!(
             f,

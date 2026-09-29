@@ -27,7 +27,8 @@
 //! - Vallado, D. A. (2013). *Fundamentals of Astrodynamics and
 //!   Applications*, 4th ed. §1.2 (mission analysis context).
 
-use std::collections::HashMap;
+use alloc::string::String;
+use hashbrown::HashMap;
 
 use crate::mission::geometry::Instrument;
 use crate::mission::site::Location;

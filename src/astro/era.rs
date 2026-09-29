@@ -45,7 +45,7 @@
 
 use crate::qtty::*;
 use crate::time::JulianDate;
-use std::f64::consts::TAU;
+use core::f64::consts::TAU;
 
 const ERFA_DJ00: f64 = 2_451_545.0;
 const ERA0_TURNS: f64 = 0.779_057_273_264_0;
@@ -310,7 +310,7 @@ const EECT00_T1: [ComplementaryTerm; 1] = [ComplementaryTerm {
 }];
 
 const TURN_ARCSEC: f64 = 1_296_000.0;
-const ARCSEC_TO_RAD: f64 = std::f64::consts::PI / (180.0 * 3600.0);
+const ARCSEC_TO_RAD: f64 = core::f64::consts::PI / (180.0 * 3600.0);
 
 fn arcsec_argument(poly: f64) -> f64 {
     poly % TURN_ARCSEC * ARCSEC_TO_RAD

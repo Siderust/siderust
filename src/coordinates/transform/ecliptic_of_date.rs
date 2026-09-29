@@ -50,12 +50,14 @@
 //! let ecliptic: Direction<EclipticTrueOfDate> = equatorial.to_ecliptic_of_date(&jd_tt);
 //! ```
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 use crate::astro::precession;
 use crate::coordinates::cartesian::Direction;
 use crate::coordinates::frames::{EclipticTrueOfDate, EquatorialMeanOfDate, GCRS, ICRS};
 use crate::qtty::{Degrees, Radians};
 use crate::time::JulianDate;
-use std::f64::consts::TAU;
+use core::f64::consts::TAU;
 
 // =============================================================================
 // ToEclipticTrueOfDate Trait
@@ -352,7 +354,7 @@ mod tests {
         let sph_north = ecl_north.to_spherical();
         // Should be at ecliptic north pole (lat = 90° - obliquity)
         let obliquity_rad = 23.439279444444445_f64.to_radians();
-        let expected_lat = std::f64::consts::FRAC_PI_2 - obliquity_rad;
+        let expected_lat = core::f64::consts::FRAC_PI_2 - obliquity_rad;
 
         assert!(
             (Radians::from(sph_north.polar).value() - expected_lat).abs() < 1e-6,

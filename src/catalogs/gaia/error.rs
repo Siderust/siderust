@@ -3,8 +3,9 @@
 
 //! Error types for Gaia DR3 catalogue ingestion and photometry.
 
+use alloc::string::String;
 /// Result alias for Gaia DR3 catalogue operations.
-pub type Result<T> = std::result::Result<T, GaiaDr3Error>;
+pub type Result<T> = core::result::Result<T, GaiaDr3Error>;
 
 /// Errors produced while validating Gaia DR3 raw rows or spectra.
 #[derive(Debug, thiserror::Error, PartialEq)]

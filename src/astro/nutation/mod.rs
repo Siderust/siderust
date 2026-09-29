@@ -52,7 +52,7 @@ use crate::astro::precession::mean_obliquity_iau2006;
 use crate::qtty::*;
 use crate::time::JulianDate;
 use affn::Rotation3;
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 mod iau2000a;
 mod iau2000b;
@@ -222,34 +222,34 @@ fn delaunay_arguments(t: f64) -> [f64; 5] {
     let l = (485868.249036 + 1717915923.2178 * t + 31.8792 * t2 + 0.051635 * t3
         - 0.000_244_70 * t4)
         .rem_euclid(1_296_000.0)
-        * std::f64::consts::PI
+        * core::f64::consts::PI
         / 648_000.0;
 
     // l': Mean anomaly of the Sun (IERS 2003)
     let lp = (1287104.793048 + 129596581.0481 * t - 0.5532 * t2 + 0.000_136 * t3
         - 0.000_011_49 * t4)
         .rem_euclid(1_296_000.0)
-        * std::f64::consts::PI
+        * core::f64::consts::PI
         / 648_000.0;
 
     // F: Mean argument of latitude of the Moon (IERS 2003)
     let f = (335779.526232 + 1739527262.8478 * t - 12.7512 * t2 - 0.001037 * t3
         + 0.000_000_417 * t4)
         .rem_euclid(1_296_000.0)
-        * std::f64::consts::PI
+        * core::f64::consts::PI
         / 648_000.0;
 
     // D: Mean elongation of the Moon from the Sun (IERS 2003)
     let d = (1072260.703692 + 1602961601.2090 * t - 6.3706 * t2 + 0.006593 * t3
         - 0.000_031_69 * t4)
         .rem_euclid(1_296_000.0)
-        * std::f64::consts::PI
+        * core::f64::consts::PI
         / 648_000.0;
 
     // Ω: Mean longitude of ascending node (IERS 2003)
     let om = (450160.398036 - 6962890.5431 * t + 7.4722 * t2 + 0.007702 * t3 - 0.000_059_39 * t4)
         .rem_euclid(1_296_000.0)
-        * std::f64::consts::PI
+        * core::f64::consts::PI
         / 648_000.0;
 
     [l, lp, f, d, om]
@@ -311,7 +311,7 @@ pub fn nutation_iau2000b(jd: JulianDate) -> Nutation2000B {
     // Convert from 0.1 μas to radians:
     // 0.1 μas = 0.1e-6 arcsec = 1e-7 arcsec
     // 1 arcsec = π/(180×3600) rad
-    let unit = std::f64::consts::PI / (180.0 * 3600.0 * 1e7);
+    let unit = core::f64::consts::PI / (180.0 * 3600.0 * 1e7);
 
     let dpsi = Radians::new(dpsi_sum * unit);
     let deps = Radians::new(deps_sum * unit);

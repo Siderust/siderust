@@ -8,6 +8,8 @@
 //! not pull in a general XML library — see crate-level rationale in
 //! `lib.rs`.
 
+use alloc::string::{String, ToString};
+use alloc::format;
 use qtty::angular::Degrees;
 use qtty::angular::Turn;
 use qtty::angular_rate::AngularRate;
@@ -98,7 +100,7 @@ pub fn write(omm: &Omm) -> Result<String, TleError> {
 /// assert_eq!(omm2.norad_id, omm.norad_id);
 /// ```
 pub fn read(input: &str) -> Result<Omm, TleError> {
-    use std::collections::HashMap;
+    use hashbrown::HashMap;
     let mut kv: HashMap<String, String> = HashMap::new();
     for tag in TLE_TAGS {
         if let Some(v) = extract_tag(input, tag) {

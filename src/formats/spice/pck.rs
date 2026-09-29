@@ -18,7 +18,12 @@
 //! - NAIF. *PCK Required Reading*.
 //! - NAIF. *Kernel Required Reading*.
 
-use std::collections::HashMap;
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
+use alloc::vec;
+use alloc::vec::Vec;
+use alloc::format;
+use hashbrown::HashMap;
 
 use super::text::{TextKernel, TextValue};
 use super::SpiceError;
@@ -53,8 +58,8 @@ impl BodyOrientation {
 
         mat3_mul(
             mat3_mul(
-                r3(std::f64::consts::FRAC_PI_2 + ra),
-                r1(std::f64::consts::FRAC_PI_2 - dec),
+                r3(core::f64::consts::FRAC_PI_2 + ra),
+                r1(core::f64::consts::FRAC_PI_2 - dec),
             ),
             r3(-w),
         )

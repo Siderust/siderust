@@ -33,6 +33,7 @@
 //! - Press, W. H., Teukolsky, S. A., Vetterling, W. T., & Flannery, B. P.
 //!   (2007). *Numerical Recipes in C++*, 3rd ed. Cambridge University Press.
 
+use alloc::vec::Vec;
 use crate::qtty::*;
 use crate::time::{Interval, ModifiedJulianDate};
 
@@ -461,7 +462,7 @@ mod tests {
     #[test]
     fn find_extrema_sine_wave() {
         // sin(2πt) over [0, 1] has max at t=0.25, min at t=0.75
-        let f = |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * mjd_f64(t)).sin());
+        let f = |t: Mjd| Radians::new((2.0 * core::f64::consts::PI * mjd_f64(t)).sin());
         let extrema: Vec<Extremum<Radian>> = find_extrema(period(0.0, 1.0), Days::new(0.05), &f);
 
         assert_eq!(extrema.len(), 2, "expected 2 extrema, got {:?}", extrema);
@@ -492,7 +493,7 @@ mod tests {
     #[test]
     fn find_extrema_via_derivative_sine() {
         // Shift slightly to avoid derivative sign-change at endpoints
-        let f = |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * mjd_f64(t)).sin());
+        let f = |t: Mjd| Radians::new((2.0 * core::f64::consts::PI * mjd_f64(t)).sin());
         // Use a step that doesn't align with extrema at t=0.25, 0.75
         let extrema: Vec<Extremum<Radian>> =
             find_extrema_via_derivative(period(0.01, 0.99), Days::new(0.035), &f, Days::new(1e-5));
@@ -541,7 +542,7 @@ mod tests {
     #[test]
     fn find_extrema_multiple_oscillations() {
         // sin(6πt) over [0,1] → 3 maxima, 2–3 minima
-        let f = |t: Mjd| Radians::new((6.0 * std::f64::consts::PI * mjd_f64(t)).sin());
+        let f = |t: Mjd| Radians::new((6.0 * core::f64::consts::PI * mjd_f64(t)).sin());
         let extrema: Vec<Extremum<Radian>> = find_extrema(period(0.0, 1.0), Days::new(0.02), &f);
 
         let n_max = extrema

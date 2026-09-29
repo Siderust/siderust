@@ -75,7 +75,11 @@
 //! }
 //! ```
 
-use std::f64::consts::PI;
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
+use alloc::vec::Vec;
+use alloc::boxed::Box;
+use core::f64::consts::PI;
 
 use crate::coordinates::frames;
 use crate::coordinates::spherical;
@@ -141,7 +145,7 @@ pub struct SkyGridCell {
 ///     .with_solid_angle()
 ///     .map(|(_, sr): (_, Steradians)| sr.value())
 ///     .sum();
-/// assert!((total - 2.0 * std::f64::consts::PI).abs() / (2.0 * std::f64::consts::PI) < 0.01);
+/// assert!((total - 2.0 * core::f64::consts::PI).abs() / (2.0 * core::f64::consts::PI) < 0.01);
 /// ```
 #[derive(Debug, Clone)]
 pub struct SkyGrid {

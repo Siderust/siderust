@@ -38,9 +38,11 @@
 //! - International GNSS Service. (2020). SP3-c / SP3-d Orbit Format
 //!   Specification.
 
+use alloc::string::String;
+use alloc::format;
 use chrono::{Datelike, NaiveDate};
+#[cfg(feature = "std")]
 use std::path::PathBuf;
-
 // ─── SP3 type/version markers ───────────────────────────────────────────────
 
 /// SP3 file content type: position-only or position-and-velocity.

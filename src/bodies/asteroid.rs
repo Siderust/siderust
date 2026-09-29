@@ -30,6 +30,8 @@
 //! - JPL Small-Body Database. <https://ssd.jpl.nasa.gov/tools/sbdb_query.html>
 //! - NASA Planetary Fact Sheet. <https://nssdc.gsfc.nasa.gov/planetary/factsheet/>
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
 use crate::astro::orbit::KeplerianOrbit;
 use crate::qtty::{Albedos, AstronomicalUnits, Degrees};
 

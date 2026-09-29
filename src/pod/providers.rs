@@ -11,7 +11,7 @@
 //! callers should prefer [`EphemerisProvider::state_at`], which accepts a
 //! `tempoch` [`Time<TDB>`].
 
-use std::error::Error;
+use core::error::Error;
 
 use qtty::unit::Second;
 use qtty::Quantity;

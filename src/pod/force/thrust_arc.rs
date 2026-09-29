@@ -6,6 +6,10 @@
 //! adjust: a scalar thrust scale and an optional 3-component delta-v at
 //! arc start.
 
+use alloc::string::String;
+use alloc::vec::Vec;
+use alloc::format;
+use alloc::sync::Arc;
 use crate::pod::problem::parameter::{Parameter, ParameterKind};
 
 /// Declarative thrust arc.

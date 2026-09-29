@@ -32,6 +32,7 @@
 //! ## References
 //! None.
 
+use alloc::vec::Vec;
 use super::events;
 use super::types::AzimuthQuery;
 use crate::bodies::solar_system;
@@ -410,14 +411,14 @@ mod tests {
             crate::time::ModifiedJulianDate::new(60000.5), // noon-ish
         );
         assert!(az.value() >= 0.0, "azimuth must be ≥ 0");
-        assert!(az.value() < std::f64::consts::TAU, "azimuth must be < 2π");
+        assert!(az.value() < core::f64::consts::TAU, "azimuth must be < 2π");
     }
 
     #[test]
     fn moon_azimuth_at_returns_valid_range() {
         let az = Moon.azimuth_at(&greenwich(), crate::time::ModifiedJulianDate::new(60000.5));
         assert!(az.value() >= 0.0);
-        assert!(az.value() < std::f64::consts::TAU);
+        assert!(az.value() < core::f64::consts::TAU);
     }
 
     #[test]
@@ -425,7 +426,7 @@ mod tests {
         let sirius = &catalog::SIRIUS;
         let az = sirius.azimuth_at(&greenwich(), crate::time::ModifiedJulianDate::new(60000.5));
         assert!(az.value() >= 0.0);
-        assert!(az.value() < std::f64::consts::TAU);
+        assert!(az.value() < core::f64::consts::TAU);
     }
 
     #[test]
@@ -496,7 +497,7 @@ mod tests {
             .azimuth_at(&greenwich(), crate::time::ModifiedJulianDate::new(60000.5));
         assert!(az.value() >= 0.0, "azimuth must be ≥ 0, got {}", az);
         assert!(
-            az.value() < std::f64::consts::TAU,
+            az.value() < core::f64::consts::TAU,
             "azimuth must be < 2π, got {}",
             az
         );
@@ -524,7 +525,7 @@ mod tests {
             ("Neptune", neptune_az),
         ] {
             assert!(
-                az.value() >= 0.0 && az.value() < std::f64::consts::TAU,
+                az.value() >= 0.0 && az.value() < core::f64::consts::TAU,
                 "{name} azimuth out of range: {az}"
             );
         }

@@ -3,7 +3,10 @@
 
 //! Ordered set of loaded SPICE kernels.
 
-use std::sync::Arc;
+use alloc::string::String;
+use alloc::vec;
+use alloc::vec::Vec;
+use alloc::sync::Arc;
 
 use crate::formats::spice::{
     CkKernel, FrameKernel, IkKernel, LeapSecondKernel, PckKernel, SclkKernel, SpiceError, SpkKernel,

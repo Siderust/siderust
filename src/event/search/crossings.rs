@@ -8,6 +8,9 @@
 //! precise signal, and falls back per segment to scan+Brent when the polynomial
 //! is not trustworthy.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
+use alloc::vec::Vec;
 use cheby::{fit_dyn_from_fn, RootOptions};
 
 use crate::event::altitude::search::{InternalSearchConfig, CROSSING_DEDUPE_EPS};
@@ -456,7 +459,7 @@ fn looser_radius_exhausts_segment(center: f64, radius: f64, start: f64, end: f64
 }
 
 fn sort_dedup_crossings(crossings: &mut Vec<LabeledCrossing>) {
-    crossings.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap_or(std::cmp::Ordering::Equal));
+    crossings.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap_or(core::cmp::Ordering::Equal));
     crossings.dedup_by(|a, b| (a.t.raw() - b.t.raw()).abs() < CROSSING_DEDUPE_EPS);
 }
 
@@ -481,7 +484,7 @@ mod tests {
             },
             ..InternalSearchConfig::default()
         };
-        let signal = |t: Mjd| (2.0 * std::f64::consts::PI * (t.raw().value() + 0.05)).sin();
+        let signal = |t: Mjd| (2.0 * core::f64::consts::PI * (t.raw().value() + 0.05)).sin();
         let (crossings, start_above, diagnostics) =
             find_labelled_crossings(period(0.0, 1.0), Days::new(0.02), &signal, 0.0, opts);
 

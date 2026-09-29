@@ -3,9 +3,28 @@
 
 //! Error types for the astronomy-specific dynamics layer.
 
-use std::fmt;
+use alloc::boxed::Box;
+use alloc::format;
+use alloc::string::{String, ToString};
+use core::fmt;
 
 use principia::{PrincipiaError, PropagationError};
+
+/// Lightweight `core::error::Error` carrier for opaque provider failures.
+#[derive(Debug)]
+struct SimpleMessage(String);
+
+impl fmt::Display for SimpleMessage {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.0)
+    }
+}
+
+impl core::error::Error for SimpleMessage {}
+
+pub(crate) fn msg_err(message: impl Into<String>) -> Box<dyn core::error::Error + Send + Sync> {
+    Box::new(SimpleMessage(message.into()))
+}
 
 /// Errors produced by force models, runtime-context accessors, and astronomy-specific wrappers.
 #[derive(Debug)]
@@ -15,12 +34,12 @@ pub enum DynamicsError {
         /// Human-readable body name (e.g. `"Sun"`, `"Moon"`).
         body: &'static str,
         /// Underlying provider error, if one was returned.
-        source: Option<Box<dyn std::error::Error + Send + Sync>>,
+        source: Option<Box<dyn core::error::Error + Send + Sync>>,
     },
     /// Earth Orientation Parameters (EOP) are required but not available.
     EOPUnavailable {
         /// Underlying provider error, if one was returned.
-        source: Option<Box<dyn std::error::Error + Send + Sync>>,
+        source: Option<Box<dyn core::error::Error + Send + Sync>>,
     },
     /// A geopotential coefficient at degree/order `(n, m)` is not available.
     GravityCoefficientUnavailable {
@@ -45,9 +64,9 @@ pub enum DynamicsError {
         reason: &'static str,
     },
     /// An atmosphere density provider returned an error.
-    AtmosphereProviderError(Box<dyn std::error::Error + Send + Sync>),
+    AtmosphereProviderError(Box<dyn core::error::Error + Send + Sync>),
     /// An opaque provider error not covered by the more specific variants.
-    Provider(Box<dyn std::error::Error + Send + Sync>),
+    Provider(Box<dyn core::error::Error + Send + Sync>),
     /// A gravity field is required but no provider was set in the context.
     GravityFieldUnavailable,
     /// The requested degree/order exceeds what the gravity field provider supports.
@@ -104,9 +123,8 @@ impl From<PrincipiaError> for DynamicsError {
                 Self::GeopotentialDegreeOutOfRange { requested, max }
             }
             PrincipiaError::PartialsUnavailable { model } => {
-                Self::Provider(Box::new(std::io::Error::new(
-                    std::io::ErrorKind::Unsupported,
-                    format!("analytic partials not available for model '{model}'"),
+                Self::Provider(msg_err(format!(
+                    "analytic partials not available for model '{model}'"
                 )))
             }
             PrincipiaError::ContextDataUnavailable { what } => match what {
@@ -116,15 +134,12 @@ impl From<PrincipiaError> for DynamicsError {
                 },
                 "eop" => Self::EOPUnavailable { source: None },
                 "gravity" | "gravity field" => Self::GravityFieldUnavailable,
-                "atmosphere" => Self::AtmosphereProviderError(Box::new(std::io::Error::new(
-                    std::io::ErrorKind::NotFound,
+                "atmosphere" => Self::AtmosphereProviderError(msg_err(
                     "no atmosphere provider in DynamicsContext",
-                ))),
-                other => Self::Provider(Box::new(std::io::Error::other(format!(
-                    "context data unavailable: {other}"
-                )))),
+                )),
+                other => Self::Provider(msg_err(format!("context data unavailable: {other}"))),
             },
-            _ => Self::Provider(Box::new(std::io::Error::other("unmapped principia error"))),
+            _ => Self::Provider(msg_err("unmapped principia error")),
         }
     }
 }
@@ -176,15 +191,15 @@ impl fmt::Display for DynamicsError {
     }
 }
 
-impl std::error::Error for DynamicsError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+impl core::error::Error for DynamicsError {
+    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
         match self {
             Self::EphemerisUnavailable { source, .. } => source
                 .as_ref()
-                .map(|e| e.as_ref() as &(dyn std::error::Error + 'static)),
+                .map(|e| e.as_ref() as &(dyn core::error::Error + 'static)),
             Self::EOPUnavailable { source } => source
                 .as_ref()
-                .map(|e| e.as_ref() as &(dyn std::error::Error + 'static)),
+                .map(|e| e.as_ref() as &(dyn core::error::Error + 'static)),
             Self::AtmosphereProviderError(e) | Self::Provider(e) => Some(e.as_ref()),
             _ => None,
         }
@@ -221,7 +236,7 @@ impl fmt::Display for LocalFrameError {
     }
 }
 
-impl std::error::Error for LocalFrameError {}
+impl core::error::Error for LocalFrameError {}
 
 #[cfg(test)]
 mod tests {
@@ -304,13 +319,13 @@ mod tests {
 
     #[test]
     fn display_atmosphere_provider_error() {
-        let e = DynamicsError::AtmosphereProviderError(Box::new(std::io::Error::other("no atm")));
+        let e = DynamicsError::AtmosphereProviderError(msg_err("no atm"));
         assert!(e.to_string().contains("atmosphere"));
     }
 
     #[test]
     fn display_provider_error() {
-        let e = DynamicsError::Provider(Box::new(std::io::Error::other("fail")));
+        let e = DynamicsError::Provider(msg_err("fail"));
         assert!(e.to_string().contains("provider"));
     }
 
@@ -330,27 +345,27 @@ mod tests {
         assert!(s.contains('8') && s.contains('4'));
     }
 
-    // std::error::Error::source()
+    // core::error::Error::source()
     #[test]
     fn error_source_with_source() {
-        let inner: Box<dyn std::error::Error + Send + Sync> =
-            Box::new(std::io::Error::other("fail"));
+        let inner: Box<dyn core::error::Error + Send + Sync> =
+            msg_err("fail");
         let e = DynamicsError::EOPUnavailable {
             source: Some(inner),
         };
-        assert!(std::error::Error::source(&e).is_some());
+        assert!(core::error::Error::source(&e).is_some());
     }
 
     #[test]
     fn error_source_without_source() {
         let e = DynamicsError::GravityFieldUnavailable;
-        assert!(std::error::Error::source(&e).is_none());
+        assert!(core::error::Error::source(&e).is_none());
     }
 
     #[test]
     fn error_source_atmosphere_has_source() {
-        let e = DynamicsError::AtmosphereProviderError(Box::new(std::io::Error::other("atm")));
-        assert!(std::error::Error::source(&e).is_some());
+        let e = DynamicsError::AtmosphereProviderError(msg_err("atm"));
+        assert!(core::error::Error::source(&e).is_some());
     }
 
     // From<PropagationError>
@@ -515,7 +530,7 @@ mod tests {
 
     #[test]
     fn into_principia_atmosphere_provider() {
-        let e = DynamicsError::AtmosphereProviderError(Box::new(std::io::Error::other("no atm")));
+        let e = DynamicsError::AtmosphereProviderError(msg_err("no atm"));
         assert!(matches!(
             e.into_principia(),
             PrincipiaError::ContextDataUnavailable { what: "atmosphere" }
@@ -524,7 +539,7 @@ mod tests {
 
     #[test]
     fn into_principia_provider() {
-        let e = DynamicsError::Provider(Box::new(std::io::Error::other("fail")));
+        let e = DynamicsError::Provider(msg_err("fail"));
         assert!(matches!(
             e.into_principia(),
             PrincipiaError::ContextDataUnavailable { what: "provider" }
@@ -586,6 +601,6 @@ mod tests {
     #[test]
     fn local_frame_error_is_std_error() {
         let e = LocalFrameError::ZeroPositionMagnitude;
-        assert!(std::error::Error::source(&e).is_none());
+        assert!(core::error::Error::source(&e).is_none());
     }
 }

@@ -22,6 +22,9 @@
 //! For thrust-direction modelling and the per-step acceleration vector, see
 //! the [`crate::pod::force::thrust`] module.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
+use alloc::vec::Vec;
 use super::thrust::{mass_flow_rate, ManeuverError, ThrustArc, G0_M_PER_S2};
 use qtty::{
     unit::{Meter, Second as SecUnit},

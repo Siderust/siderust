@@ -7,9 +7,14 @@
 //! `EphemerisProvider`
 //! implementations backed by cubic Hermite interpolation.
 
-use std::collections::HashMap;
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::string::{String, ToString};
+use alloc::vec;
+use alloc::vec::Vec;
+use hashbrown::HashMap;
+#[cfg(feature = "std")]
 use std::io::Read;
-
 use affn::cartesian::{Position, Velocity};
 use affn::interpolation::{CubicHermiteTable, HermiteNode, InterpolationError};
 use affn::{ReferenceCenter, ReferenceFrame};
@@ -17,6 +22,7 @@ use qtty::unit::Kilometer;
 use qtty::{Day, KmPerSecond, Quantity};
 use tempoch::{Time, TDB};
 
+#[cfg(feature = "std")]
 use crate::formats::ccsds::oem::read_oem;
 use crate::formats::FormatError;
 #[cfg(feature = "pod")]
@@ -185,16 +191,29 @@ pub enum TabulatedEphemerisError {
     InvalidEpoch(String),
     /// Interpolation failed.
     #[error("interpolation failed: {0}")]
-    Interpolation(#[from] InterpolationError),
+    Interpolation(InterpolationError),
     /// OEM parsing or conversion failed.
     #[error("OEM conversion failed: {0}")]
-    Format(#[from] FormatError),
+    Format(FormatError),
+}
+
+impl From<InterpolationError> for TabulatedEphemerisError {
+    fn from(value: InterpolationError) -> Self {
+        Self::Interpolation(value)
+    }
+}
+
+impl From<FormatError> for TabulatedEphemerisError {
+    fn from(value: FormatError) -> Self {
+        Self::Format(value)
+    }
 }
 
 /// Reads a TDB CCSDS OEM file into a typed tabulated ephemeris.
 ///
 /// All OEM segments must declare `TIME_SYSTEM = TDB`. Position and velocity
 /// fields are interpreted with the CCSDS OEM conventional units: km and km/s.
+#[cfg(feature = "std")]
 pub fn read_oem_tdb_ephemeris<C, F, R>(
     body_naif_id: i32,
     reader: R,
@@ -234,6 +253,7 @@ where
     Ok(TabulatedEphemeris::new(body_naif_id, states)?)
 }
 
+#[cfg(feature = "std")]
 fn jd_to_time_tdb(jd: f64) -> Result<Time<TDB>, TabulatedEphemerisError> {
     tempoch::JulianDate::<TDB>::try_new(Day::new(jd))
         .map(Into::into)

@@ -53,7 +53,7 @@ use crate::qtty::*;
 use crate::targets::CoordinateWithPM;
 use crate::time::JulianDate;
 
-use std::borrow::Cow;
+use alloc::borrow::Cow;
 
 /// Represents a **Star** characterized by its distance, mass, radius, luminosity and position in the sky.
 #[derive(Clone, Debug)]

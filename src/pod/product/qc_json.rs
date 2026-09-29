@@ -26,9 +26,11 @@
 //!   Language (YAML) Version 1.2.2.
 //! - Bray, T. (2017). The JavaScript Object Notation (JSON) Data
 //!   Interchange Format. RFC 8259.
+use alloc::string::String;
+use alloc::vec::Vec;
 use serde::Serialize;
+#[cfg(feature = "std")]
 use std::io::Write;
-
 /// Top-level shape of `qc.json`.
 ///
 /// # Examples

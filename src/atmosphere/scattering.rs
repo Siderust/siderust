@@ -31,6 +31,8 @@
 //! - Hansen, J. E., & Travis, L. D. (1974). "Light scattering in
 //!   planetary atmospheres". *Space Science Reviews* 16, 527.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
 use crate::atmosphere::rayleigh::rayleigh_phase;
 use crate::ext_qtty::{Dimensionless, Quantity, Unit};
 use crate::qtty::unit::{Degree, Nanometer};

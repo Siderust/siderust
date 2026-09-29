@@ -7,6 +7,10 @@
 //! [`principia::DynamicsState<TT, C, F>`]. `siderust` fixes the propagated time
 //! scale to [`TT`] while leaving center and frame typed.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::string::String;
+use alloc::format;
 use crate::coordinates::cartesian;
 use crate::coordinates::centers::Geocentric;
 use crate::coordinates::frames::GCRS;

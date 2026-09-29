@@ -1,7 +1,9 @@
 //! Dataset reference with content hashing for run manifests.
 
+use alloc::string::String;
+use alloc::format;
+#[cfg(feature = "std")]
 use std::path::{Path, PathBuf};
-
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 

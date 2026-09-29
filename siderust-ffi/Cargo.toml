@@ -1,6 +1,6 @@
 [package]
 name = "siderust-ffi"
-version = "0.11.1"
+version = "0.12.0"
 edition = "2021"
 authors = ["VPRamon <vallespuigramon@gmail.com>"]
 description = "C FFI bindings for siderust, high-precision astronomy library."
@@ -19,14 +19,16 @@ runtime-data = ["siderust/runtime-data", "dep:siderust-archive", "siderust-archi
 
 
 [dependencies]
-siderust    = { version = "0.11.1", path = ".." }
-siderust-archive = { version = "0.1", optional = true, features = ["jpl"] }
-keplerian   = "0.2"
-principia   = { version = "0.2", features = ["alloc"] }
-qtty        = "0.8"
-tempoch     = "0.6"
+siderust    = { version = "0.12.0", path = "..", default-features = false, features = ["std"] }
+siderust-archive = { version = "0.1.5", optional = true, default-features = false, features = ["jpl", "std"] }
+keplerian   = { version = "0.3", default-features = false, features = ["std", "alloc"] }
+principia   = { version = "0.3", git = "https://github.com/Siderust/principia", branch = "feature/no-std-affn-0.10", default-features = false, features = ["alloc", "std"] }
+qtty        = { version = "0.8", default-features = false, features = ["std", "alloc"] }
+tempoch     = { version = "0.7", default-features = false, features = ["std", "alloc"] }
+# tempoch-ffi 0.7 is tagged upstream but not yet on crates.io; 0.6.6 is ABI-compatible
+# for the `TempochPeriodMjd` re-export used by the generated C header.
 tempoch-ffi = "0.6.6"
-affn        = { version = "0.8", features = ["astro"] }
+affn        = { version = "0.10", default-features = false, features = ["astro", "std", "alloc"] }
 serde_json  = { version = "1.0", optional = true }
 tokio       = { version = "1.39", features = ["rt"], optional = true }
 

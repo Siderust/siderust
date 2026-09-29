@@ -27,6 +27,7 @@
 //! ## References
 //! None.
 
+use alloc::vec::Vec;
 use super::provider::AltitudeProvider;
 use super::search::{InternalSearchConfig, SearchOpts, DEFAULT_SCAN_STEP, EXTREMA_SCAN_STEP};
 use super::types::{CrossingDirection, CrossingEvent, CulminationEvent, CulminationKind};

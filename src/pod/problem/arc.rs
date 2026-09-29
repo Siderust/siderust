@@ -11,6 +11,11 @@
 //! in. Conversions from UTC inputs happen at the IO boundary.
 
 #[cfg(feature = "serde")]
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::string::String;
+use alloc::format;
+use alloc::sync::Arc;
 use serde::{Deserialize, Serialize};
 
 use qtty::Second;
@@ -60,8 +65,8 @@ impl ArcId {
     }
 }
 
-impl std::fmt::Display for ArcId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for ArcId {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str(&self.0)
     }
 }

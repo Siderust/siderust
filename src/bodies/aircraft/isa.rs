@@ -38,6 +38,8 @@
 //!   7488. International Civil Aviation Organization.
 //! - ICAO (2010). *Annex 2 — Rules of the Air*, 10th edition.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 use crate::qtty::{Kelvins, Meters, Pascals};
 
 // =============================================================================

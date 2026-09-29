@@ -7,6 +7,7 @@
 //! B/V magnitudes, and an optional weighting factor. The builder owns catalogue
 //! filtering and validation policy.
 
+use alloc::string::String;
 use crate::coordinates::cartesian::Direction;
 use crate::coordinates::frames::EquatorialMeanJ2000;
 use crate::starlight::ApparentMagnitude;

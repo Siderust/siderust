@@ -3,6 +3,10 @@
 
 //! Ordered collection of observations grouped by epoch.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::vec::Vec;
+use alloc::boxed::Box;
 use crate::time::JulianDate;
 
 use super::error::PodObservationsError;

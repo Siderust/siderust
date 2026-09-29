@@ -13,6 +13,10 @@ pub mod photometry;
 pub mod quality;
 pub mod raw;
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::vec;
+use alloc::format;
 pub use crate::qtty::Nanometers;
 pub use dr3::{
     GaiaDr3Astrometry, GaiaDr3Photometry, GaiaDr3Source, GaiaSourceId,

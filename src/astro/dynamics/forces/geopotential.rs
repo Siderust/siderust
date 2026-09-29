@@ -3,6 +3,8 @@
 
 //! Spherical-harmonic geopotential acceleration model.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 use principia::gravity::spherical_harmonic_acceleration_raw_km;
 use principia::{AccelerationModel, PrincipiaError};
 
@@ -103,7 +105,7 @@ impl AccelerationModel<DynamicsContext, TT, Geocentric, GCRS> for Geopotential {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
+    use alloc::sync::Arc;
 
     use super::*;
     use crate::astro::dynamics::context::DynamicsContext;

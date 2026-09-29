@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
 use super::*;
 use crate::coordinates::cartesian::Direction;
 use crate::coordinates::frames;
 use crate::coordinates::spherical;
-use std::f64::consts::PI;
+use core::f64::consts::PI;
 
 fn ring_grid(nside: u32) -> HealpixGrid {
     HealpixGrid::ring(Nside::new(nside).expect("valid nside")).expect("valid grid")

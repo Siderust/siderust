@@ -41,7 +41,8 @@
 //! ## References
 //! None.
 
-use std::cell::Cell;
+use alloc::vec::Vec;
+use core::cell::Cell;
 
 use super::provider::AzimuthProvider;
 use super::search::{SearchOpts, DEFAULT_SCAN_STEP, EXTREMA_SCAN_STEP};
@@ -123,12 +124,12 @@ fn make_az_unwrapped_fn<'a, T: AzimuthProvider>(
         let p = prev_raw.get();
         if !p.is_nan() {
             let diff = raw - p;
-            if diff > std::f64::consts::PI {
+            if diff > core::f64::consts::PI {
                 // Apparent upward jump > π → real motion was downward (0°→360° crossing)
-                offset.set(offset.get() - std::f64::consts::TAU);
-            } else if diff < -std::f64::consts::PI {
+                offset.set(offset.get() - core::f64::consts::TAU);
+            } else if diff < -core::f64::consts::PI {
                 // Apparent downward jump > π → real motion was upward (360°→0° crossing)
-                offset.set(offset.get() + std::f64::consts::TAU);
+                offset.set(offset.get() + core::f64::consts::TAU);
             }
         }
         prev_raw.set(raw);

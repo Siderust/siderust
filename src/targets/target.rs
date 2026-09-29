@@ -35,6 +35,7 @@
 //! - Urban, S. E., & Seidelmann, P. K. (2013). *Explanatory Supplement to the
 //!   Astronomical Almanac*, 3rd ed., §3.5. University Science Books.
 
+use alloc::format;
 use crate::astro::proper_motion::ProperMotion;
 use crate::time::JulianDate;
 

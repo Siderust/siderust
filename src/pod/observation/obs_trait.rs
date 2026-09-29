@@ -3,6 +3,8 @@
 
 //! Core observation trait, type aliases, and residual types.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
 use crate::astro::dynamics::OrbitState;
 use crate::coordinates::centers::Geocentric;
 use crate::coordinates::frames::GCRS;

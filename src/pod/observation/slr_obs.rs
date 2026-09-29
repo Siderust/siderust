@@ -42,6 +42,9 @@
 //! - Petit, G., & Luzum, B. (Eds.) (2010). *IERS Conventions 2010.*
 //!   IERS Technical Note 36, Chapter 9.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
+use alloc::string::{String, ToString};
 use crate::astro::dynamics::{Position, Velocity};
 use crate::coordinates::frames::GCRS;
 use crate::time::JulianDate;
@@ -148,7 +151,7 @@ fn shapiro_slr_m(r_rx_km: f64, r_sat_km: f64, rho_km: f64) -> f64 {
 ///     station_gcrs_km: Position::<GCRS>::new(6_378.0, 0.0, 0.0),
 ///     sat_pos_gcrs_km: Position::<GCRS>::new(7_000.0, 0.0, 0.0),
 ///     sat_vel_gcrs_km_s: Velocity::<GCRS>::new(0.0, 7.5, 0.0),
-///     elevation_rad: std::f64::consts::FRAC_PI_2,
+///     elevation_rad: core::f64::consts::FRAC_PI_2,
 ///     wavelength_um: 0.532,
 /// };
 /// let residual = obs.residual(&state, &NullProviderBundle).unwrap();
@@ -281,7 +284,7 @@ mod tests {
             station_gcrs_km: sta_pos,
             sat_pos_gcrs_km: sat_pos,
             sat_vel_gcrs_km_s: Velocity::<GCRS>::new(0.0, 7.5, 0.0),
-            elevation_rad: std::f64::consts::FRAC_PI_2,
+            elevation_rad: core::f64::consts::FRAC_PI_2,
             wavelength_um: 0.532,
         };
         let neg_res = obs_probe.residual(&state, &NullProviderBundle).unwrap();
@@ -297,7 +300,7 @@ mod tests {
 
     #[test]
     fn zenith_trop_delay_near_5m_two_way() {
-        let d = 2.0 * marini_murray_one_way_m(std::f64::consts::FRAC_PI_2, 0.532);
+        let d = 2.0 * marini_murray_one_way_m(core::f64::consts::FRAC_PI_2, 0.532);
         // Two-way zenith delay ≈ 4–6 m for standard atmosphere
         assert!(d > 4.0 && d < 6.0, "two-way zenith trop = {d:.3} m");
     }

@@ -3,6 +3,8 @@
 
 //! Azimuth-elevation-range observation result and solver.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Scalar, Transcendental};
 use core::f64::consts::TAU;
 
 use affn::cartesian::{

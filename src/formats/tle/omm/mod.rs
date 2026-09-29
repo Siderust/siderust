@@ -20,6 +20,8 @@ pub mod json;
 pub mod kvn;
 pub mod xml;
 
+use alloc::string::{String, ToString};
+use alloc::format;
 use chrono::{Datelike, TimeZone, Timelike, Utc};
 use qtty::angular::Degrees;
 use qtty::angular::Turn;

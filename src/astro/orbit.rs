@@ -79,11 +79,11 @@ pub struct KeplerianOrbit<U: LengthUnit = AstronomicalUnit> {
     pub epoch: JulianDate,
 }
 
-impl<U: LengthUnit> std::fmt::Display for KeplerianOrbit<U>
+impl<U: LengthUnit> core::fmt::Display for KeplerianOrbit<U>
 where
-    Quantity<U>: std::fmt::Display,
+    Quantity<U>: core::fmt::Display,
 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(
             f,
             "a={}, e={:.6}, i={}, \u{03a9}={}, \u{03c9}={}, M\u{2080}={}, epoch={}",
@@ -331,7 +331,7 @@ impl PreparedOrbit {
         let a = orbit.shape().semi_major_axis().value();
         // Kepler's 3rd law in the AU-day system (heliocentric).
         let period_days = heliocentric_period_days(a);
-        let mean_motion = AngularRate::<Radian, Day>::new(std::f64::consts::TAU / period_days);
+        let mean_motion = AngularRate::<Radian, Day>::new(core::f64::consts::TAU / period_days);
         let m0_rad = orbit.mean_anomaly_at_epoch.to::<Radian>().value();
         let trig = OrientationTrig::from_orientation(orbit.orientation());
         Self {

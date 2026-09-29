@@ -39,7 +39,7 @@
 use crate::astro::orbit::KeplerianOrbit;
 use crate::qtty::{Albedos, Kilograms, Kilometers};
 
-use std::borrow::Cow;
+use alloc::borrow::Cow;
 
 /// Represents a **Satellite** characterized by its mass, radius, optional
 /// Bond albedo, and Keplerian orbit.

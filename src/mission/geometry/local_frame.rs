@@ -3,6 +3,8 @@
 
 //! Local east-north-up (ENU) reference frame at an observer site.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Scalar, Transcendental};
 use affn::cartesian::Direction;
 use affn::frames::ReferenceFrame;
 use qtty::angular::Radians;

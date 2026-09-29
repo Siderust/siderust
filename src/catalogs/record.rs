@@ -8,6 +8,8 @@
 //! radial velocity use typed quantities. Proper-motion components (mas/yr)
 //! remain plain `f64` until a `MilliArcSecondPerYear` unit is added to `qtty`.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 use crate::qtty::{KmPerSeconds, MilliArcseconds, Radians};
 use core::f64::consts::TAU;
 

@@ -11,6 +11,7 @@
 //! cargo bench --features bench-internals --bench moon_altitude
 //! ```
 
+use alloc::vec::Vec;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::event::altitude::search::InternalSearchConfig;

@@ -63,6 +63,10 @@ pub(crate) mod vsop87;
 mod runtime_backend;
 mod vsop87_backend;
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::string::ToString;
+use alloc::boxed::Box;
 pub use pluto::Pluto;
 pub use runtime_backend::RuntimeEphemeris;
 pub use vsop87::VSOP87;
@@ -126,7 +130,7 @@ impl core::fmt::Display for EphemerisError {
     }
 }
 
-impl std::error::Error for EphemerisError {}
+impl core::error::Error for EphemerisError {}
 
 /// Major planets covered by the high-accuracy JPL planet APIs.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -219,8 +223,8 @@ impl core::fmt::Display for PlanetEphemerisError {
     }
 }
 
-impl std::error::Error for PlanetEphemerisError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+impl core::error::Error for PlanetEphemerisError {
+    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
         match self {
             Self::Ephemeris(err) => Some(err),
             Self::UnsupportedPoint { .. } => None,
@@ -587,7 +591,7 @@ mod tests {
 
     #[test]
     fn planet_ephemeris_error_display_and_source() {
-        use std::error::Error;
+        use core::error::Error;
 
         let unsupported = PlanetEphemerisError::UnsupportedPoint {
             planet: MajorPlanet::Mars,

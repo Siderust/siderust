@@ -22,6 +22,8 @@
 //! ## References
 //! - Meeus, J. (1998). *Astronomical Algorithms*, 2nd ed., Ch. 47, Willmann‑Bell.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 use crate::astro::precession;
 use crate::qtty::{Kilometers, Radians};
 use crate::time::JulianDate;
@@ -101,14 +103,14 @@ pub fn moon_position_meeus_ch47(jd_tt: JulianDate) -> MoonMeeusCh47 {
 
     let ecl_lon_rad = (lp + sum_l / 1_000_000.0)
         .to_radians()
-        .rem_euclid(std::f64::consts::TAU);
+        .rem_euclid(core::f64::consts::TAU);
     let ecl_lat_rad = (sum_b / 1_000_000.0).to_radians();
     let dist_km = 385_000.56 + sum_r / 1_000.0;
 
     // EclipticMeanJ2000 → equatorial with IAU 2006 mean obliquity
     let (se, ce) = precession::mean_obliquity_iau2006(jd_tt).sin_cos();
     let ra = (ecl_lon_rad.sin() * ce - ecl_lat_rad.tan() * se).atan2(ecl_lon_rad.cos());
-    let ra_val = ra.rem_euclid(std::f64::consts::TAU);
+    let ra_val = ra.rem_euclid(core::f64::consts::TAU);
     let dec_val = (ecl_lat_rad.sin() * ce + ecl_lat_rad.cos() * se * ecl_lon_rad.sin())
         .clamp(-1.0, 1.0)
         .asin();

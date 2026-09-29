@@ -27,6 +27,12 @@
 //!   Independent Exchange Format, Version 3.05.
 //! - IS-GPS-200. (current revision). Navstar GPS Space Segment / Navigation
 //!   User Interfaces.
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::borrow::ToOwned;
+use alloc::string::String;
+use alloc::vec::Vec;
+use alloc::format;
 use super::{FileLocation, FormatError, ParseMode};
 use chrono::{DateTime, Datelike, NaiveDate, Timelike, Utc as ChronoUtc};
 use qtty::angular::Radians;
@@ -34,8 +40,11 @@ use qtty::angular_rate::AngularRate;
 use qtty::length::Meters;
 use qtty::time::Seconds;
 use qtty::unit::{Radian, Second};
+#[cfg(feature = "std")]
 use std::fs;
+#[cfg(feature = "std")]
 use std::io::Write;
+#[cfg(feature = "std")]
 use std::path::Path;
 use tempoch::{Time, UTC};
 
@@ -495,7 +504,7 @@ fn fmt_d(v: f64) -> String {
 /// let f = parse_rinex_nav(txt).unwrap();
 /// let mut buf = Vec::new();
 /// write_rinex_nav(&mut buf, &f).unwrap();
-/// let f2 = parse_rinex_nav(std::str::from_utf8(&buf).unwrap()).unwrap();
+/// let f2 = parse_rinex_nav(core::str::from_utf8(&buf).unwrap()).unwrap();
 /// assert_eq!(f.gps.len(), f2.gps.len());
 /// ```
 pub fn write_rinex_nav<W: Write>(w: &mut W, file: &RinexNavFile) -> Result<(), FormatError> {
@@ -626,7 +635,7 @@ G01 2024 01 01 00 00 00 1.234567E-04 5.678E-12 0.000E+00\n\
         let f = parse_rinex_nav(txt).unwrap();
         let mut buf = Vec::new();
         write_rinex_nav(&mut buf, &f).unwrap();
-        let f2 = parse_rinex_nav(std::str::from_utf8(&buf).unwrap()).unwrap();
+        let f2 = parse_rinex_nav(core::str::from_utf8(&buf).unwrap()).unwrap();
         assert_eq!(f.gps.len(), f2.gps.len());
         let r = &f.gps[0];
         let r2 = &f2.gps[0];

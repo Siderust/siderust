@@ -3,7 +3,9 @@
 
 //! Cannonball solar radiation pressure acceleration.
 
-use std::marker::PhantomData;
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
+use core::marker::PhantomData;
 
 use affn::cartesian::Displacement;
 use principia::{AccelerationModel, PrincipiaError};
@@ -184,7 +186,7 @@ fn conical_shadow_factor(
         * (theta - rho_s + rho_e);
     let triangle_term = semiperimeter_sq.max(0.0).sqrt() / 2.0;
     let a_overlap = rho_s * rho_s * alpha + rho_e * rho_e * beta - triangle_term;
-    let a_sun = std::f64::consts::PI * rho_s * rho_s;
+    let a_sun = core::f64::consts::PI * rho_s * rho_s;
     (1.0 - a_overlap / a_sun).clamp(0.0, 1.0)
 }
 
@@ -233,7 +235,7 @@ impl<S: EclipseModel> AccelerationModel<DynamicsContext, TT, Geocentric, GCRS>
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
+    use alloc::sync::Arc;
 
     use super::*;
     use crate::astro::dynamics::context::DynamicsContextBuilder;

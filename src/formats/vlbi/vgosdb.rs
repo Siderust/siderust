@@ -24,10 +24,15 @@
 //!
 //! - IVS, *vgosDB Format Description*, v1.1 (2020).
 
+use alloc::string::{String, ToString};
+use alloc::vec;
+use alloc::vec::Vec;
+use alloc::format;
 use super::FormatError;
+#[cfg(feature = "std")]
 use std::io::{BufRead, BufReader, Read};
+#[cfg(feature = "std")]
 use std::path::Path;
-
 /// Header fields recovered from a vgosDB session.
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct VgosDbHeader {

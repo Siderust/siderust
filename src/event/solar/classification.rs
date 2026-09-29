@@ -41,6 +41,8 @@
 //!   "Definitions of Twilight". (Civil/Nautical/Astronomical at
 //!   −6° / −12° / −18° solar altitude.)
 
+use alloc::string::ToString;
+use alloc::format;
 use crate::qtty::{Angular, Deg, Quantity, Unit};
 
 /// Sky condition derived from the Sun's altitude.
@@ -64,8 +66,8 @@ pub enum TwilightPhase {
     Dark,
 }
 
-impl std::fmt::Display for TwilightPhase {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for TwilightPhase {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Self::Day => write!(f, "Day"),
             Self::Civil => write!(f, "Civil twilight"),
@@ -389,7 +391,7 @@ mod tests {
 
     #[test]
     fn hash_works_in_hashset() {
-        use std::collections::HashSet;
+        use hashbrown::HashSet;
         let mut set = HashSet::new();
         set.insert(TwilightPhase::Day);
         set.insert(TwilightPhase::Civil);

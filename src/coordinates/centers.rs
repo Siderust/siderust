@@ -90,7 +90,7 @@
 
 use crate::astro::orbit::KeplerianOrbit;
 use crate::qtty::*;
-use std::fmt::Debug;
+use core::fmt::Debug;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -194,8 +194,8 @@ pub struct SunEarthL5;
 /// let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
 ///
 /// // The site is stored as Topocentric::Params
-/// assert_eq!(std::mem::size_of::<<Topocentric as ReferenceCenter>::Params>(),
-///            std::mem::size_of::<Geodetic<ECEF>>());
+/// assert_eq!(core::mem::size_of::<<Topocentric as ReferenceCenter>::Params>(),
+///            core::mem::size_of::<Geodetic<ECEF>>());
 /// ```
 #[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -551,15 +551,15 @@ mod tests {
 
         // Verify zero size
         assert_eq!(
-            std::mem::size_of::<<Barycentric as ReferenceCenter>::Params>(),
+            core::mem::size_of::<<Barycentric as ReferenceCenter>::Params>(),
             0
         );
         assert_eq!(
-            std::mem::size_of::<<Heliocentric as ReferenceCenter>::Params>(),
+            core::mem::size_of::<<Heliocentric as ReferenceCenter>::Params>(),
             0
         );
         assert_eq!(
-            std::mem::size_of::<<Geocentric as ReferenceCenter>::Params>(),
+            core::mem::size_of::<<Geocentric as ReferenceCenter>::Params>(),
             0
         );
     }
@@ -571,7 +571,7 @@ mod tests {
         let _: <Topocentric as ReferenceCenter>::Params = site;
 
         // Verify non-zero size (stores actual data)
-        assert!(std::mem::size_of::<<Topocentric as ReferenceCenter>::Params>() > 0);
+        assert!(core::mem::size_of::<<Topocentric as ReferenceCenter>::Params>() > 0);
     }
 
     #[test]
@@ -608,7 +608,7 @@ mod tests {
         let _: <Bodycentric as ReferenceCenter>::Params = params;
 
         // Verify non-zero size (stores actual data)
-        assert!(std::mem::size_of::<<Bodycentric as ReferenceCenter>::Params>() > 0);
+        assert!(core::mem::size_of::<<Bodycentric as ReferenceCenter>::Params>() > 0);
     }
 
     #[test]
@@ -673,6 +673,6 @@ mod tests {
     fn center_params_mismatch_error_reexported() {
         // Verify CenterParamsMismatchError is accessible through centers module
         let err = CenterParamsMismatchError { operation: "test" };
-        let _: &dyn std::error::Error = &err;
+        let _: &dyn core::error::Error = &err;
     }
 }

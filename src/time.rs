@@ -51,9 +51,12 @@ pub use tempoch::{
     complement_within, constats, delta_t_seconds, delta_t_seconds_extrapolated, eop,
     ContinuousScale, ConversionError, ConversionTarget, CoordinateScale, EncodedTime,
     FormatForScale, InfallibleConversionTarget, InfallibleFormatForScale, Interval,
-    InvalidIntervalError, PeriodListError, Scale, Time, TimeContext, TimeDataError, TimeInstant,
+    InvalidIntervalError, PeriodListError, Scale, Time, TimeContext, TimeInstant,
     JD, MJD, TAI, TCB, TCG, TDB, TT, UT1, UTC,
 };
+
+#[cfg(feature = "std")]
+pub use tempoch::TimeDataError;
 
 /// Julian year length in days, derived from [`qtty::time::JULIAN_YEAR`].
 #[deprecated(

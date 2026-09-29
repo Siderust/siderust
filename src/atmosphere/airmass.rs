@@ -38,6 +38,8 @@
 //! - Kasten, F., & Young, A. T. (1989). "Revised optical air mass tables
 //!   and approximation formula". *Applied Optics* 28, 4735.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 use crate::qtty::{Airmasses, Radians};
 use core::marker::PhantomData;
 

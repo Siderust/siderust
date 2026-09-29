@@ -58,7 +58,9 @@
 //! - Wallace, P. T., & Capitaine, N. (2006). *A&A* 459, 981 (P03 correction).
 //! - SOFA software collection.
 
-use std::marker::PhantomData;
+use alloc::boxed::Box;
+use alloc::format;
+use core::marker::PhantomData;
 
 use crate::astro::eop::{EopError, EopProvider, EopValues, IersEop};
 use crate::astro::nutation::NutationModel;
@@ -374,11 +376,11 @@ impl<Eop: EopProvider> DynAstroContext<Eop> {
     }
 }
 
-impl<Eop> std::fmt::Debug for DynAstroContext<Eop>
+impl<Eop> core::fmt::Debug for DynAstroContext<Eop>
 where
-    Eop: std::fmt::Debug,
+    Eop: core::fmt::Debug,
 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("DynAstroContext")
             .field("ephemeris", &"<dyn DynEphemeris>")
             .field("eop", &self.eop)

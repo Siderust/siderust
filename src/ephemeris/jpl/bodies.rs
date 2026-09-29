@@ -51,6 +51,9 @@
 //!   DE440 and DE441". *The Astronomical Journal* 161, 105.
 //!   <https://doi.org/10.3847/1538-3881/abd414>
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::vec;
 use super::eval::{jd_tt_to_spice_et_seconds, DynSegmentStack};
 
 use crate::coordinates::{

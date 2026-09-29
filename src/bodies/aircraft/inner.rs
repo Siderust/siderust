@@ -4,13 +4,15 @@
 //! [`Aircraft`] identity record, [`AircraftState`] snapshot, and
 //! [`AircraftTrack`] dead-reckoning provider.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::qtty::unit::{Meter, Second};
 use crate::qtty::{Degrees, Meters, Per, Quantity};
 use crate::targets::Trackable;
 use crate::time::JulianDate;
-use std::borrow::Cow;
+use alloc::borrow::Cow;
 
 /// Scalar velocity in metres per second (ground speed, vertical rate).
 ///
@@ -308,7 +310,7 @@ impl Trackable for AircraftTrack {
     fn track(&self, jd: JulianDate) -> AircraftState {
         // Mean Earth radius (m) — WGS-84 authalic sphere approximation.
         const R_EARTH_M: f64 = 6_371_000.0;
-        const DEG_PER_RAD: f64 = 180.0 / std::f64::consts::PI;
+        const DEG_PER_RAD: f64 = 180.0 / core::f64::consts::PI;
 
         // Elapsed time in seconds.  Raw JD arithmetic is acceptable here
         // because this is a private math kernel that produces typed output.
@@ -408,7 +410,7 @@ mod tests {
         let s1 = track.track(t1);
 
         // Expected lon increment: 6000 / 6_371_000 * (180/PI) ≈ 0.03386°
-        let expected_dlon = 6_000.0 / 6_371_000.0 * (180.0 / std::f64::consts::PI);
+        let expected_dlon = 6_000.0 / 6_371_000.0 * (180.0 / core::f64::consts::PI);
         assert!(
             (s1.position.lon.value() - expected_dlon).abs() < 1e-6,
             "lon = {}",
@@ -447,7 +449,7 @@ mod tests {
         let s1 = track.track(t1);
 
         // 200 * 120 = 24 000 m north; 5 * 120 = 600 m climb.
-        let expected_dlat = 24_000.0 / 6_371_000.0 * (180.0 / std::f64::consts::PI);
+        let expected_dlat = 24_000.0 / 6_371_000.0 * (180.0 / core::f64::consts::PI);
         assert!((s1.position.lat.value() - expected_dlat).abs() < 1e-6);
         assert!(s1.position.lon.value().abs() < 1e-9);
         assert!(

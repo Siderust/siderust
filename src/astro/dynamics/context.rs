@@ -33,7 +33,8 @@
 //! assert!(ctx.require_ephemeris().is_err());
 //! ```
 
-use std::sync::Arc;
+use alloc::boxed::Box;
+use alloc::sync::Arc;
 
 use crate::astro::eop::EopValues;
 use crate::ephemeris::DynEphemeris;
@@ -248,10 +249,9 @@ impl DynamicsContext {
         &self,
     ) -> Result<&Arc<dyn DensityProvider + Send + Sync>, DynamicsError> {
         self.atmosphere.as_ref().ok_or_else(|| {
-            DynamicsError::AtmosphereProviderError(Box::new(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
+            DynamicsError::AtmosphereProviderError(crate::astro::dynamics::errors::msg_err(
                 "no atmosphere provider in DynamicsContext",
-            )))
+            ))
         })
     }
 

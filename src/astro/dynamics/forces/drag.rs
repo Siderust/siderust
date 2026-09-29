@@ -3,6 +3,8 @@
 
 //! Cannonball atmospheric drag acceleration.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
 use affn::cartesian::Vector;
 use principia::{AccelerationModel, PrincipiaError};
 
@@ -113,7 +115,7 @@ pub type ExponentialDrag = DragForce;
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
+    use alloc::sync::Arc;
 
     use super::*;
     use crate::astro::dynamics::context::DynamicsContextBuilder;

@@ -22,6 +22,8 @@
 //! - Sun, J. (2021). *The 1090 MHz Riddle*, 2nd ed. TU Delft Open. §4.2–4.3.
 //! - RTCA (2009). *DO-260B*, §2.2.3.2.6.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 use crate::formats::{FileLocation, FormatError};
 use crate::qtty::Degrees;
 
@@ -46,9 +48,9 @@ fn nl(lat: f64) -> f64 {
         return 1.0;
     }
     let cos_lat = lat.to_radians().cos();
-    let numer = 1.0 - (std::f64::consts::PI / (2.0 * NZ)).cos();
+    let numer = 1.0 - (core::f64::consts::PI / (2.0 * NZ)).cos();
     let arg = 1.0 - numer / (cos_lat * cos_lat);
-    let n = (2.0 * std::f64::consts::PI / arg.acos()).floor();
+    let n = (2.0 * core::f64::consts::PI / arg.acos()).floor();
     // Cap at 59: at lat=0 the formula evaluates to exactly 60.
     n.clamp(1.0, 59.0)
 }

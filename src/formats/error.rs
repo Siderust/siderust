@@ -3,7 +3,8 @@
 
 //! Shared error types for [`crate::formats`].
 
-use std::path::PathBuf;
+use alloc::format;
+use alloc::string::String;
 use thiserror::Error;
 
 /// Location inside an input artefact, used by structured diagnostics.
@@ -24,7 +25,7 @@ use thiserror::Error;
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct FileLocation {
     /// Filesystem path, when known.
-    pub path: Option<PathBuf>,
+    pub path: Option<alloc::string::String>,
     /// 1-based line number, when known.
     pub line: Option<usize>,
     /// 1-based column number, when known.
@@ -41,7 +42,7 @@ impl FileLocation {
     /// let loc = FileLocation::new(None, Some(1), None);
     /// assert!(loc.path.is_none());
     /// ```
-    pub fn new(path: Option<PathBuf>, line: Option<usize>, column: Option<usize>) -> Self {
+    pub fn new(path: Option<alloc::string::String>, line: Option<usize>, column: Option<usize>) -> Self {
         Self { path, line, column }
     }
 
@@ -63,12 +64,12 @@ impl FileLocation {
     }
 }
 
-impl std::fmt::Display for FileLocation {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for FileLocation {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match (&self.path, self.line, self.column) {
-            (Some(p), Some(l), Some(c)) => write!(f, "{}:{}:{}", p.display(), l, c),
-            (Some(p), Some(l), None) => write!(f, "{}:{}", p.display(), l),
-            (Some(p), None, _) => write!(f, "{}", p.display()),
+            (Some(p), Some(l), Some(c)) => write!(f, "{}:{}:{}", p, l, c),
+            (Some(p), Some(l), None) => write!(f, "{}:{}", p, l),
+            (Some(p), None, _) => write!(f, "{}", p),
             (None, Some(l), Some(c)) => write!(f, "<input>:{}:{}", l, c),
             (None, Some(l), None) => write!(f, "<input>:{}", l),
             (None, None, _) => write!(f, "<input>"),
@@ -121,6 +122,7 @@ pub enum ParseMode {
 #[derive(Debug, Error)]
 pub enum FormatError {
     /// Underlying IO failure.
+    #[cfg(feature = "std")]
     #[error("io: {0}")]
     Io(#[from] std::io::Error),
     /// Malformed or unsupported file content (free-form).

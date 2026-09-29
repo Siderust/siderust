@@ -48,43 +48,43 @@ use crate::time::JulianDate;
 /// Mercury mean longitude (IERS 2003), radians.
 #[inline]
 fn fa_mercury(t: f64) -> f64 {
-    (4.402608842 + 2608.7903141574 * t) % std::f64::consts::TAU
+    (4.402608842 + 2608.7903141574 * t) % core::f64::consts::TAU
 }
 
 /// Venus mean longitude (IERS 2003), radians.
 #[inline]
 fn fa_venus(t: f64) -> f64 {
-    (3.176146697 + 1021.3285546211 * t) % std::f64::consts::TAU
+    (3.176146697 + 1021.3285546211 * t) % core::f64::consts::TAU
 }
 
 /// Earth mean longitude (IERS 2003), radians.
 #[inline]
 fn fa_earth(t: f64) -> f64 {
-    (1.753470314 + 628.3075849991 * t) % std::f64::consts::TAU
+    (1.753470314 + 628.3075849991 * t) % core::f64::consts::TAU
 }
 
 /// Mars mean longitude (IERS 2003), radians.
 #[inline]
 fn fa_mars(t: f64) -> f64 {
-    (6.203480913 + 334.0612426700 * t) % std::f64::consts::TAU
+    (6.203480913 + 334.0612426700 * t) % core::f64::consts::TAU
 }
 
 /// Jupiter mean longitude (IERS 2003), radians.
 #[inline]
 fn fa_jupiter(t: f64) -> f64 {
-    (0.599546497 + 52.9690962641 * t) % std::f64::consts::TAU
+    (0.599546497 + 52.9690962641 * t) % core::f64::consts::TAU
 }
 
 /// Saturn mean longitude (IERS 2003), radians.
 #[inline]
 fn fa_saturn(t: f64) -> f64 {
-    (0.874016757 + 21.3299104960 * t) % std::f64::consts::TAU
+    (0.874016757 + 21.3299104960 * t) % core::f64::consts::TAU
 }
 
 /// Uranus mean longitude (IERS 2003), radians.
 #[inline]
 fn fa_uranus(t: f64) -> f64 {
-    (5.481293872 + 7.4781598567 * t) % std::f64::consts::TAU
+    (5.481293872 + 7.4781598567 * t) % core::f64::consts::TAU
 }
 
 /// General accumulated precession in longitude (IERS 2003), radians.
@@ -97,7 +97,7 @@ fn fa_pa(t: f64) -> f64 {
 //  Fundamental arguments, luni-solar (IERS 2003 / MHB2000 mix)
 // ═══════════════════════════════════════════════════════════════════════════
 
-const AS2R: f64 = std::f64::consts::PI / (180.0 * 3600.0);
+const AS2R: f64 = core::f64::consts::PI / (180.0 * 3600.0);
 const TURNAS: f64 = 1_296_000.0;
 
 /// Moon mean anomaly l (IERS 2003), radians.
@@ -165,31 +165,31 @@ fn fa_om_iers03(t: f64) -> f64 {
 /// Moon mean anomaly (MHB2000), radians.
 #[inline]
 fn fa_l_mhb(t: f64) -> f64 {
-    (2.35555598 + 8328.6914269554 * t) % std::f64::consts::TAU
+    (2.35555598 + 8328.6914269554 * t) % core::f64::consts::TAU
 }
 
 /// Moon argument of latitude (MHB2000), radians.
 #[inline]
 fn fa_f_mhb(t: f64) -> f64 {
-    (1.627905234 + 8433.466158131 * t) % std::f64::consts::TAU
+    (1.627905234 + 8433.466158131 * t) % core::f64::consts::TAU
 }
 
 /// Moon elongation (MHB2000), radians.
 #[inline]
 fn fa_d_mhb_pl(t: f64) -> f64 {
-    (5.198466741 + 7771.3771468121 * t) % std::f64::consts::TAU
+    (5.198466741 + 7771.3771468121 * t) % core::f64::consts::TAU
 }
 
 /// Moon ascending node (MHB2000), radians.
 #[inline]
 fn fa_om_mhb(t: f64) -> f64 {
-    (2.18243920 - 33.757045 * t) % std::f64::consts::TAU
+    (2.18243920 - 33.757045 * t) % core::f64::consts::TAU
 }
 
 /// Neptune mean longitude (MHB2000), radians.
 #[inline]
 fn fa_neptune_mhb(t: f64) -> f64 {
-    (5.321159000 + 3.8127774000 * t) % std::f64::consts::TAU
+    (5.321159000 + 3.8127774000 * t) % core::f64::consts::TAU
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -238,7 +238,7 @@ pub(crate) fn nutation_iau2000a_raw(jd: JulianDate) -> (f64, f64) {
 
     for row in NUT00A_LS.iter().rev() {
         let arg = (row[0] * el + row[1] * elp + row[2] * f + row[3] * d + row[4] * om)
-            % std::f64::consts::TAU;
+            % core::f64::consts::TAU;
         let (sarg, carg) = arg.sin_cos();
         dp += (row[5] + row[6] * t) * sarg + row[7] * carg;
         de += (row[8] + row[9] * t) * carg + row[10] * sarg;
@@ -280,7 +280,7 @@ pub(crate) fn nutation_iau2000a_raw(jd: JulianDate) -> (f64, f64) {
             + f64::from(row[10]) * alur
             + f64::from(row[11]) * alne
             + f64::from(row[12]) * apa)
-            % std::f64::consts::TAU;
+            % core::f64::consts::TAU;
         let (sarg, carg) = arg.sin_cos();
         dp += f64::from(row[13]) * sarg + f64::from(row[14]) * carg;
         de += f64::from(row[15]) * sarg + f64::from(row[16]) * carg;
@@ -347,7 +347,7 @@ mod tests {
         let deps_diff = (n2a.deps - n2b.deps).value().abs();
 
         // IAU 2000B is accurate to ~1 mas relative to 2000A
-        let one_mas = std::f64::consts::PI / (180.0 * 3600.0 * 1000.0);
+        let one_mas = core::f64::consts::PI / (180.0 * 3600.0 * 1000.0);
         assert!(
             dpsi_diff < one_mas,
             "Δψ diff = {:.3e} rad > 1 mas ({:.3e})",
@@ -372,7 +372,7 @@ mod tests {
         let dpsi_diff = (n2a.dpsi - n2b.dpsi).value().abs();
         let deps_diff = (n2a.deps - n2b.deps).value().abs();
 
-        let one_mas = std::f64::consts::PI / (180.0 * 3600.0 * 1000.0);
+        let one_mas = core::f64::consts::PI / (180.0 * 3600.0 * 1000.0);
         assert!(
             dpsi_diff < one_mas,
             "Δψ diff at J2020 = {:.3e} rad > 1 mas",
@@ -395,7 +395,7 @@ mod tests {
         let sofa_dpsi: f64 = -7.996558234083069e-05; // rad
         let sofa_deps: f64 = -8.251412879483328e-06; // rad
 
-        let one_uas = std::f64::consts::PI / (180.0 * 3600.0 * 1e6); // 1 µas in rad
+        let one_uas = core::f64::consts::PI / (180.0 * 3600.0 * 1e6); // 1 µas in rad
         let dpsi_diff = (n.dpsi.value() - sofa_dpsi).abs();
         let deps_diff = (n.deps.value() - sofa_deps).abs();
 

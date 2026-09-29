@@ -3,6 +3,11 @@
 
 //! Runtime SPK kernel stacks for body-center and barycenter states.
 
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::string::ToString;
+use alloc::vec;
+use alloc::vec::Vec;
 use super::spk::{self, IndexedSegmentData};
 use super::SpiceError;
 use crate::coordinates::frames::ICRF;
@@ -11,8 +16,8 @@ use crate::ephemeris::{EphemerisError, MajorPlanet, PlanetPoint};
 use crate::qtty::{Kilometer, Kilometers};
 use crate::time::JulianDate;
 use affn::Displacement;
+#[cfg(feature = "std")]
 use std::path::Path;
-
 const SSB_ID: i32 = 0;
 const EMB_ID: i32 = 3;
 const EARTH_ID: i32 = 399;
@@ -56,8 +61,8 @@ impl core::fmt::Display for SpkKernelError {
     }
 }
 
-impl std::error::Error for SpkKernelError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+impl core::error::Error for SpkKernelError {
+    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
         match self {
             Self::Ephemeris(err) => Some(err),
             _ => None,
@@ -134,7 +139,8 @@ pub struct SpkKernelSet {
 
 impl SpkKernelSet {
     /// Parse and stack one or more BSP/SPK files.
-    pub fn from_paths<I, P>(paths: I) -> Result<Self, SpiceError>
+    #[cfg(feature = "std")]
+pub fn from_paths<I, P>(paths: I) -> Result<Self, SpiceError>
     where
         I: IntoIterator<Item = P>,
         P: AsRef<Path>,
