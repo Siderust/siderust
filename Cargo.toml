@@ -100,7 +100,7 @@ serde = [
     "keplerian/serde",
     "optica/serde",
 ]
-photometry = []
+photometry = ["qtty/photometry"]
 ## SPICE kernel context. Path-based loading requires `std`.
 spice = ["std"]
 atmosphere = []
