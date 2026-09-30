@@ -16,7 +16,7 @@
 //! No `anyhow` is used; every variant is an explicit case so consumers can
 //! pattern-match.
 
-use alloc::string::{String, ToString};
+use alloc::string::String;
 use thiserror::Error;
 
 /// Top-level error type for `siderust::pod::propagation`.

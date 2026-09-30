@@ -27,7 +27,6 @@
 //! ## References
 //! None.
 
-use alloc::vec::Vec;
 use super::provider::AltitudeProvider;
 use super::search::{InternalSearchConfig, SearchOpts, DEFAULT_SCAN_STEP, EXTREMA_SCAN_STEP};
 use super::types::{CrossingDirection, CrossingEvent, CulminationEvent, CulminationKind};
@@ -37,6 +36,7 @@ use crate::coordinates::frames::ECEF;
 use crate::event::search::{extrema, intervals, periods as threshold_periods};
 use crate::qtty::*;
 use crate::time::{Interval, ModifiedJulianDate};
+use alloc::vec::Vec;
 
 // ---------------------------------------------------------------------------
 // Internal: build altitude function from trait

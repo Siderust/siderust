@@ -6,7 +6,6 @@
 //! Crate-internal API built on the solar daily predictor with local Chebyshev
 //! and scan+Brent fallback.
 
-use alloc::vec::Vec;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::event::altitude::search::InternalSearchConfig;
@@ -14,6 +13,7 @@ use crate::event::altitude::CrossingEvent;
 use crate::event::search::periods as threshold_periods;
 use crate::qtty::*;
 use crate::time::{Interval, ModifiedJulianDate};
+use alloc::vec::Vec;
 
 use super::altitude::sun_altitude_rad;
 use super::daily_events::solar_daily_crossing_events_impl;

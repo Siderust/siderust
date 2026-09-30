@@ -6,10 +6,9 @@
 //! (sorted keys, no incidental ordering) so two identical runs produce
 //! byte-identical manifests.
 
-use alloc::string::String;
-use alloc::vec;
-use alloc::vec::Vec;
 use super::dataset::DatasetRef;
+use alloc::string::String;
+use alloc::vec::Vec;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};

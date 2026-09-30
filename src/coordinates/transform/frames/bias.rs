@@ -32,9 +32,9 @@
 //! - Capitaine, N. & Wallace, P. T. (2006). *Astronomical Journal*, 132, 2922.
 //! - SOFA routines `iauBp06`, `iauObl06`.
 
+use crate::astro::precession;
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar};
-use crate::astro::precession;
 use affn::Rotation3;
 use spin::Once;
 

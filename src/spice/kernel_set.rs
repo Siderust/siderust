@@ -4,9 +4,8 @@
 //! Ordered set of loaded SPICE kernels.
 
 use alloc::string::String;
-use alloc::vec;
-use alloc::vec::Vec;
 use alloc::sync::Arc;
+use alloc::vec::Vec;
 
 use crate::formats::spice::{
     CkKernel, FrameKernel, IkKernel, LeapSecondKernel, PckKernel, SclkKernel, SpiceError, SpkKernel,

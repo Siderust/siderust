@@ -20,9 +20,9 @@
 //! and re-raises any upstream [`crate::astro::dynamics::errors::DynamicsError`]
 //! through the crate-local [`DynamicsError`].
 
+use crate::astro::dynamics::{DynamicsContext, OrbitState};
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar};
-use crate::astro::dynamics::{DynamicsContext, OrbitState};
 use principia::{dop853_propagate, dopri5_propagate, rk4_propagate};
 use qtty::{IntegratorTolerances, Second};
 

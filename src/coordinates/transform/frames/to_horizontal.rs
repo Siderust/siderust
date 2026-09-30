@@ -28,13 +28,13 @@
 //! - Montenbruck, O. & Pfleger, T. (2000). *Astronomy on the Personal
 //!   Computer*. §4.2.
 
-#[cfg(not(feature = "std"))]
-use crate::qtty::{Real, Scalar, Transcendental};
 use crate::astro::earth_rotation::gmst_from_tt;
 use crate::coordinates::centers::{Geodetic, Topocentric};
 use crate::coordinates::frames::{EquatorialMeanOfDate, Horizontal, ECEF};
 use crate::coordinates::{cartesian, spherical};
 use crate::qtty::{Deg, Degrees, LengthUnit, Quantity, Radian, Radians};
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 use crate::time::JulianDate;
 
 /// Precomputed trigonometric values for an observer's latitude.

@@ -3,8 +3,8 @@
 
 //! Keyword-Value-Notation (KVN) encoding for OMM.
 
-use alloc::string::{String, ToString};
 use alloc::format;
+use alloc::string::{String, ToString};
 use qtty::angular::Degrees;
 use qtty::angular::Turn;
 use qtty::angular_rate::AngularRate;

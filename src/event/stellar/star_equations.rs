@@ -31,7 +31,6 @@
 
 #![allow(dead_code, unreachable_pub)]
 
-use alloc::vec::Vec;
 use crate::astro::earth_rotation::jd_ut1_from_tt_eop;
 use crate::astro::nutation::nutation_iau2000b;
 use crate::astro::precession;
@@ -44,6 +43,7 @@ use crate::coordinates::transform::AstroContext;
 use crate::qtty::*;
 use crate::time::JulianDate;
 use crate::time::{Interval, ModifiedJulianDate};
+use alloc::vec::Vec;
 
 // ---------------------------------------------------------------------------
 // Constants

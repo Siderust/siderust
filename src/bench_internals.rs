@@ -11,7 +11,6 @@
 //! cargo bench --features bench-internals --bench moon_altitude
 //! ```
 
-use alloc::vec::Vec;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::event::altitude::search::InternalSearchConfig;
@@ -19,6 +18,7 @@ use crate::event::altitude::{CrossingEvent, SearchOpts};
 use crate::event::search::intervals::LabeledCrossing;
 use crate::qtty::*;
 use crate::time::{Interval, ModifiedJulianDate};
+use alloc::vec::Vec;
 
 // Re-export the diagnostics struct so bench binaries can inspect it.
 pub use crate::event::solar::daily_events::SolarDailyDiagnostics;

@@ -17,10 +17,10 @@
 //! - **ICRF ≡ ICRS**: identity alias.
 //! - **GCRS ≈ ICRS**: treated as identity (no aberration modelling).
 
-#[cfg(not(feature = "std"))]
-use crate::qtty::{Real, Scalar, Transcendental};
 use super::*;
 use crate::coordinates::transform::frames::bias;
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 
 macro_rules! impl_alias_frame_rotations {
     ($alias:ty, $base:ty; $($target:ty),+ $(,)?) => {

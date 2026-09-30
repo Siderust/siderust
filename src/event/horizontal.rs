@@ -47,8 +47,6 @@
 //!   quantities". *Astronomy and Astrophysics* 412, 567–586.
 //!   <https://doi.org/10.1051/0004-6361:20031539>
 
-#[cfg(not(feature = "std"))]
-use crate::qtty::{Real, Scalar, Transcendental};
 use crate::astro::apparent::CorrectionPolicy;
 use crate::astro::earth_rotation::jd_ut1_from_tt_eop;
 use crate::astro::nutation::{nutation_iau2000b, NutationModel};
@@ -60,6 +58,8 @@ use crate::coordinates::transform::centers::position::to_topocentric::to_topocen
 use crate::coordinates::transform::{AstroContext, TransformContext};
 use crate::coordinates::{cartesian, centers::*, frames, spherical};
 use crate::qtty::{AstronomicalUnits, Degree, LengthUnit, Meter, Quantity, Radian, Radians};
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 use crate::time::JulianDate;
 
 // =============================================================================

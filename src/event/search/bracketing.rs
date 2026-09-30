@@ -29,9 +29,9 @@
 //! - Press, W. H., Teukolsky, S. A., Vetterling, W. T., & Flannery, B. P.
 //!   (2007). *Numerical Recipes in C++*, 3rd ed. Cambridge University Press.
 
-use alloc::vec::Vec;
 use crate::qtty::*;
 use crate::time::{Interval, ModifiedJulianDate};
+use alloc::vec::Vec;
 
 use super::extrema::{self, ExtremumKind};
 

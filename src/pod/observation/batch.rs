@@ -5,9 +5,9 @@
 
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar};
-use alloc::vec::Vec;
-use alloc::boxed::Box;
 use crate::time::JulianDate;
+use alloc::boxed::Box;
+use alloc::vec::Vec;
 
 use super::error::PodObservationsError;
 use crate::pod::observation::obs_trait::{AnyObservation, CartesianState, ObsResidual};

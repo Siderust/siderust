@@ -24,10 +24,9 @@
 //!
 //! Night-related solar types (twilight thresholds, etc.).
 
+use crate::qtty::Degrees;
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar};
-use alloc::format;
-use crate::qtty::Degrees;
 
 /// Common twilight types.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

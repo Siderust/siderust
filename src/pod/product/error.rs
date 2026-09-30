@@ -14,7 +14,6 @@
 //!   (2nd ed.). O'Reilly Media.
 
 use alloc::string::String;
-use alloc::format;
 use thiserror::Error;
 
 /// Unified error returned by all writers in `siderust::pod::product`.

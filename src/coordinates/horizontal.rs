@@ -65,12 +65,11 @@
 //! `Direction<Horizontal>` and `Position<Topocentric, Horizontal, U>`
 //! coordinates.
 
-#[cfg(not(feature = "std"))]
-use crate::qtty::{Real, Scalar};
-use alloc::string::ToString;
 use crate::coordinates::centers::Topocentric;
 use crate::coordinates::frames::Horizontal;
 use crate::qtty::{Degrees, LengthUnit, DEG};
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
 use affn::spherical;
 
 // =============================================================================

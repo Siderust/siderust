@@ -37,25 +37,30 @@ pub(crate) const CHECKSUM: &str =
 
 #[must_use]
 pub(crate) fn records_l1() -> &'static [f64] {
-    L1.call_once(|| parse_records(sck_data::L1_BYTES)).as_slice()
+    L1.call_once(|| parse_records(sck_data::L1_BYTES))
+        .as_slice()
 }
 
 #[must_use]
 pub(crate) fn records_l2() -> &'static [f64] {
-    L2.call_once(|| parse_records(sck_data::L2_BYTES)).as_slice()
+    L2.call_once(|| parse_records(sck_data::L2_BYTES))
+        .as_slice()
 }
 
 #[must_use]
 pub(crate) fn records_l3() -> &'static [f64] {
-    L3.call_once(|| parse_records(sck_data::L3_BYTES)).as_slice()
+    L3.call_once(|| parse_records(sck_data::L3_BYTES))
+        .as_slice()
 }
 
 #[must_use]
 pub(crate) fn records_l4() -> &'static [f64] {
-    L4.call_once(|| parse_records(sck_data::L4_BYTES)).as_slice()
+    L4.call_once(|| parse_records(sck_data::L4_BYTES))
+        .as_slice()
 }
 
 #[must_use]
 pub(crate) fn records_l5() -> &'static [f64] {
-    L5.call_once(|| parse_records(sck_data::L5_BYTES)).as_slice()
+    L5.call_once(|| parse_records(sck_data::L5_BYTES))
+        .as_slice()
 }

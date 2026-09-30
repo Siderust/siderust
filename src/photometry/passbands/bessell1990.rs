@@ -92,8 +92,6 @@
 
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar};
-use alloc::vec;
-use alloc::vec::Vec;
 use alloc::format;
 use spin::Once;
 
@@ -496,10 +494,7 @@ mod tests {
     fn repeated_calls_return_same_pointer() {
         let a = v() as *const _;
         let b = v() as *const _;
-        assert_eq!(
-            a, b,
-            "Once must return the same instance on repeated calls"
-        );
+        assert_eq!(a, b, "Once must return the same instance on repeated calls");
     }
 
     // ── integration smoke test ─────────────────────────────────────────────────

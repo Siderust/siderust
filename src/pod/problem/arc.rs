@@ -14,8 +14,6 @@
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar};
 use alloc::string::String;
-use alloc::format;
-use alloc::sync::Arc;
 use serde::{Deserialize, Serialize};
 
 use qtty::Second;

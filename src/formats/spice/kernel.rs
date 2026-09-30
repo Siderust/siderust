@@ -18,16 +18,14 @@
 //! scientific API should prefer the `pod` feature's `SpiceEphemerisProvider`, which
 //! lift epochs, centers, frames, and units into typed `tempoch`/`affn`/`qtty` abstractions.
 
+use crate::formats::spice::daf::Daf;
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar};
-use alloc::vec;
-use alloc::vec::Vec;
-use alloc::format;
 use alloc::collections::VecDeque;
+use alloc::vec::Vec;
 use hashbrown::HashMap;
 #[cfg(feature = "std")]
 use std::path::Path;
-use crate::formats::spice::daf::Daf;
 
 use super::error::SpiceError;
 use super::segment::{segment_for_summary, SpkSegment};
@@ -91,8 +89,8 @@ impl core::fmt::Debug for SpkKernel {
 impl SpkKernel {
     /// Open and parse a DAF/SPK kernel from a filesystem path.
     #[cfg(feature = "std")]
-#[cfg(feature = "std")]
-pub fn open(path: impl AsRef<Path>) -> Result<Self, SpiceError> {
+    #[cfg(feature = "std")]
+    pub fn open(path: impl AsRef<Path>) -> Result<Self, SpiceError> {
         let bytes = std::fs::read(path)?;
         Self::from_bytes(bytes)
     }

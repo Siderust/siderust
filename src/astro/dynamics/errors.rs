@@ -5,7 +5,7 @@
 
 use alloc::boxed::Box;
 use alloc::format;
-use alloc::string::{String, ToString};
+use alloc::string::String;
 use core::fmt;
 
 use principia::{PrincipiaError, PropagationError};
@@ -122,11 +122,9 @@ impl From<PrincipiaError> for DynamicsError {
             PrincipiaError::GeopotentialDegreeOutOfRange { requested, max } => {
                 Self::GeopotentialDegreeOutOfRange { requested, max }
             }
-            PrincipiaError::PartialsUnavailable { model } => {
-                Self::Provider(msg_err(format!(
-                    "analytic partials not available for model '{model}'"
-                )))
-            }
+            PrincipiaError::PartialsUnavailable { model } => Self::Provider(msg_err(format!(
+                "analytic partials not available for model '{model}'"
+            ))),
             PrincipiaError::ContextDataUnavailable { what } => match what {
                 "ephemeris" => Self::EphemerisUnavailable {
                     body: "(any)",
@@ -348,8 +346,7 @@ mod tests {
     // core::error::Error::source()
     #[test]
     fn error_source_with_source() {
-        let inner: Box<dyn core::error::Error + Send + Sync> =
-            msg_err("fail");
+        let inner: Box<dyn core::error::Error + Send + Sync> = msg_err("fail");
         let e = DynamicsError::EOPUnavailable {
             source: Some(inner),
         };

@@ -44,9 +44,9 @@
 //! - IERS Conventions (2010), §5.5: Nutation matrix.
 //! - Meeus, J. (1998). *Astronomical Algorithms*, 2nd ed., Ch. 27. Willmann-Bell.
 
+use crate::bodies::solar_system::Sun;
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar};
-use crate::bodies::solar_system::Sun;
 
 use crate::astro::nutation::nutation_iau2000b;
 use crate::astro::precession;

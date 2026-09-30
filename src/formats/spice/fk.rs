@@ -18,11 +18,11 @@
 //! - NAIF. *Frames Required Reading*.
 //! - NAIF. *Kernel Required Reading*.
 
-use alloc::string::String;
-use alloc::vec::Vec;
-use alloc::format;
 use super::text::{TextKernel, TextValue};
 use super::SpiceError;
+use alloc::format;
+use alloc::string::String;
+use alloc::vec::Vec;
 
 /// SPICE frame class code.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

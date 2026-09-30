@@ -50,12 +50,12 @@
 //! let ecliptic: Direction<EclipticTrueOfDate> = equatorial.to_ecliptic_of_date(&jd_tt);
 //! ```
 
-#[cfg(not(feature = "std"))]
-use crate::qtty::{Real, Scalar, Transcendental};
 use crate::astro::precession;
 use crate::coordinates::cartesian::Direction;
 use crate::coordinates::frames::{EclipticTrueOfDate, EquatorialMeanOfDate, GCRS, ICRS};
 use crate::qtty::{Degrees, Radians};
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 use crate::time::JulianDate;
 use core::f64::consts::TAU;
 

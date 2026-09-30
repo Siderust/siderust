@@ -14,9 +14,9 @@
 //! `siderust::coordinates::transform::providers::frames_teme` once Earth
 //! Orientation Parameters are supplied.
 
+use crate::coordinates::cartesian::{position, velocity};
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar};
-use crate::coordinates::cartesian::{position, velocity};
 use qtty::length::Kilometer;
 use qtty::time::Second;
 use qtty::Per;

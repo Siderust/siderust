@@ -28,10 +28,10 @@
 //!   release documentation.
 //! - IERS Conventions Centre. (2010). IERS Conventions (2010). Verlag des
 //!   Bundesamts fur Kartographie und Geodasie.
+use super::FormatError;
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar};
 use alloc::vec::Vec;
-use super::FormatError;
 use qtty::angular::{Arcseconds, MilliArcseconds};
 use qtty::time::Seconds;
 use qtty::Day;

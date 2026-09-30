@@ -34,15 +34,15 @@
 //! - Pearlman, M. R., Degnan, J. J., & Bosworth, J. M. (2002). The
 //!   International Laser Ranging Service. Advances in Space Research,
 //!   30(2), 135–143.
+use super::{FileLocation, FormatError, ParseMode};
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar};
-use alloc::string::{String, ToString};
-use alloc::vec::Vec;
-use alloc::format;
-use super::{FileLocation, FormatError, ParseMode};
 use affn::cartesian;
 use affn::centers::{AffineCenter, ReferenceCenter};
 use affn::frames::ITRF;
+use alloc::format;
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
 use chrono::{DateTime, NaiveDate, Utc as ChronoUtc};
 use qtty::unit::Kilometer;
 use qtty::Day;
@@ -411,7 +411,11 @@ fn parse_cpf_impl(
                     match (maybe_mjd, maybe_sod, maybe_x, maybe_y, maybe_z) {
                         (Some(m), Some(s), Some(x), Some(y), Some(z)) => (m, s, x, y, z),
                         (None, ..) => {
-                            let loc = FileLocation::new(path.as_ref().map(|p| p.display().to_string()), Some(line_no), None);
+                            let loc = FileLocation::new(
+                                path.as_ref().map(|p| p.display().to_string()),
+                                Some(line_no),
+                                None,
+                            );
                             let err =
                                 FormatError::located("CPF v2 §4.1", loc, "record 10: missing MJD");
                             if mode == ParseMode::Strict {
@@ -420,7 +424,11 @@ fn parse_cpf_impl(
                             continue;
                         }
                         (_, None, ..) => {
-                            let loc = FileLocation::new(path.as_ref().map(|p| p.display().to_string()), Some(line_no), None);
+                            let loc = FileLocation::new(
+                                path.as_ref().map(|p| p.display().to_string()),
+                                Some(line_no),
+                                None,
+                            );
                             let err =
                                 FormatError::located("CPF v2 §4.1", loc, "record 10: missing SOD");
                             if mode == ParseMode::Strict {
@@ -429,7 +437,11 @@ fn parse_cpf_impl(
                             continue;
                         }
                         _ => {
-                            let loc = FileLocation::new(path.as_ref().map(|p| p.display().to_string()), Some(line_no), None);
+                            let loc = FileLocation::new(
+                                path.as_ref().map(|p| p.display().to_string()),
+                                Some(line_no),
+                                None,
+                            );
                             let err = FormatError::located(
                                 "CPF v2 §4.1",
                                 loc,

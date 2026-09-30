@@ -36,13 +36,13 @@
 //!   single-frequency GPS users.
 //!   *IEEE Transactions on Aerospace and Electronic Systems*, 23(3), 325–331.
 
-#[cfg(not(feature = "std"))]
-use crate::qtty::{Real, Scalar, Transcendental};
-use alloc::string::{String, ToString};
 use crate::astro::dynamics::forces::OMEGA_EARTH_RAD_S;
 use crate::astro::dynamics::{Position, Velocity};
 use crate::coordinates::frames::GCRS;
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 use crate::time::JulianDate;
+use alloc::string::String;
 
 use qtty::unit::{Kilometer, Second};
 use qtty::velocity::C;

@@ -24,7 +24,6 @@
 //! ## References
 //! None.
 
-use alloc::string::ToString;
 use crate::astro::apparent::CorrectionPolicy;
 use crate::event::altitude::{CrossingDirection, SearchOpts};
 use crate::qtty::*;

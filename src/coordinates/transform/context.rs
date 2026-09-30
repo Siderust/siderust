@@ -59,7 +59,6 @@
 //! - SOFA software collection.
 
 use alloc::boxed::Box;
-use alloc::format;
 use core::marker::PhantomData;
 
 use crate::astro::eop::{EopError, EopProvider, EopValues, IersEop};

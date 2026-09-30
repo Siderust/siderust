@@ -59,8 +59,6 @@
 //! - Krisciunas, K., & Schaefer, B. E. (1991). "A model of the brightness
 //!   of moonlight." *PASP*, 103(667), 1033–1039.  doi:10.1086/132900
 
-use alloc::vec::Vec;
-use alloc::format;
 use crate::coordinates::cartesian;
 use crate::coordinates::centers::*;
 use crate::coordinates::frames;
@@ -68,6 +66,7 @@ use crate::ephemeris::Ephemeris;
 use crate::event::search::intervals;
 use crate::qtty::*;
 use crate::time::{Interval, JulianDate, ModifiedJulianDate};
+use alloc::vec::Vec;
 use core::f64::consts::PI;
 use core::marker::PhantomData;
 

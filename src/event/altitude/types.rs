@@ -21,7 +21,6 @@
 //! ## References
 //! None.
 
-use alloc::string::ToString;
 use crate::qtty::*;
 use crate::time::ModifiedJulianDate;
 

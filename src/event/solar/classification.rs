@@ -41,8 +41,6 @@
 //!   "Definitions of Twilight". (Civil/Nautical/Astronomical at
 //!   −6° / −12° / −18° solar altitude.)
 
-use alloc::string::ToString;
-use alloc::format;
 use crate::qtty::{Angular, Deg, Quantity, Unit};
 
 /// Sky condition derived from the Sun's altitude.

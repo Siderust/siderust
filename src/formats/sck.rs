@@ -16,8 +16,8 @@
 //! This module is feature-gated under `archive-data` so the default build
 //! does not link the parser unless the consumer opts in.
 
-use alloc::vec::Vec;
 use crate::formats::error::{FileLocation, FormatError};
+use alloc::vec::Vec;
 
 /// Magic bytes identifying a Siderust Chebyshev Kernel v1 file.
 pub const SCK_MAGIC: &[u8; 8] = b"SCKERN01";

@@ -32,7 +32,6 @@
 //! ## References
 //! None.
 
-use alloc::vec::Vec;
 use super::events;
 use super::types::AzimuthQuery;
 use crate::bodies::solar_system;
@@ -43,6 +42,7 @@ use crate::coordinates::spherical::direction;
 use crate::event::altitude::SearchOpts;
 use crate::qtty::*;
 use crate::time::{complement_within, Interval, ModifiedJulianDate};
+use alloc::vec::Vec;
 
 // Imports for planet azimuth support
 use crate::coordinates::transform::Transform;

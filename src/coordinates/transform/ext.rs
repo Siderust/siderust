@@ -71,8 +71,6 @@
 //! let geo_icrs: Position<Geocentric, ICRS, AstronomicalUnit> = pos.to(&jd);
 //! ```
 
-#[cfg(not(feature = "std"))]
-use crate::qtty::{Real, Scalar};
 use crate::coordinates::cartesian::{Direction, Position, Vector};
 use crate::coordinates::centers::{Geodetic, ReferenceCenter};
 use crate::coordinates::frames::{EquatorialTrueOfDate, Horizontal, ReferenceFrame, ECEF};
@@ -86,6 +84,8 @@ use crate::coordinates::transform::providers::{
     frame_rotation_with, CenterShiftProvider, FrameRotationProvider,
 };
 use crate::qtty::{LengthUnit, Unit};
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
 use crate::time::JulianDate;
 use affn::Rotation3;
 

@@ -7,9 +7,9 @@
 //! by its [`HealpixGrid`]. The coordinate frame is carried by the type parameter
 //! `F`, while the stored value type `T` remains domain-specific.
 
-use alloc::vec::Vec;
 use crate::coordinates::frames::ReferenceFrame;
 use crate::healpix::{HealpixError, HealpixGrid, Result};
+use alloc::vec::Vec;
 use core::marker::PhantomData;
 
 /// Complete HEALPix map over a specific reference frame.

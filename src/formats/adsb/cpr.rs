@@ -22,10 +22,10 @@
 //! - Sun, J. (2021). *The 1090 MHz Riddle*, 2nd ed. TU Delft Open. §4.2–4.3.
 //! - RTCA (2009). *DO-260B*, §2.2.3.2.6.
 
-#[cfg(not(feature = "std"))]
-use crate::qtty::{Real, Scalar, Transcendental};
 use crate::formats::{FileLocation, FormatError};
 use crate::qtty::Degrees;
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 
 /// Number of longitude zones at the equator.
 const NZ: f64 = 15.0;

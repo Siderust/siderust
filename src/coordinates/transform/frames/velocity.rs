@@ -24,13 +24,13 @@
 //! - Murray, C. A. (1983). *Vectorial Astrometry*. §3.2.
 //! - IAU SOFA Tools for Earth Attitude (2023): <https://www.iausofa.org>.
 
-#[cfg(not(feature = "std"))]
-use crate::qtty::{Real, Scalar};
 use crate::coordinates::cartesian::Velocity;
 use crate::coordinates::frames::{self, MutableFrame};
 use crate::coordinates::transform::frames::bias;
 use crate::coordinates::transform::TransformFrame;
 use crate::qtty::Unit;
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
 
 /// Identity frame transform for velocities.
 impl<F, U> TransformFrame<Velocity<F, U>> for Velocity<F, U>

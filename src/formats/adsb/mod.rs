@@ -52,14 +52,14 @@
 
 pub mod cpr;
 
-#[cfg(not(feature = "std"))]
-use crate::qtty::{Real, Scalar, Transcendental};
-use alloc::borrow::ToOwned;
-use alloc::string::String;
-use alloc::format;
 use crate::bodies::aircraft::MetersPerSecond;
 use crate::formats::{FileLocation, FormatError};
 use crate::qtty::{Degrees, Meters};
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
+use alloc::borrow::ToOwned;
+use alloc::format;
+use alloc::string::String;
 
 // =============================================================================
 // Raw frame

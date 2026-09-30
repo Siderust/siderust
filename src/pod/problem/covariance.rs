@@ -6,11 +6,10 @@
 //! estimator parameter vector, which mixes state, receiver clocks, biases,
 //! scales, and ambiguities (see [`crate::pod::problem::parameter::ParameterOrdering`]).
 
+use crate::pod::problem::parameter::ParameterOrdering;
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar};
-use alloc::vec;
 use alloc::vec::Vec;
-use crate::pod::problem::parameter::ParameterOrdering;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 

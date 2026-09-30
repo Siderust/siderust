@@ -38,11 +38,11 @@
 //! - Krisciunas, K. (1990). *PASP* 102, 1235.
 //! - Burki, G., et al. (1995). *A&AS* 112, 383.
 
+use crate::ext_qtty::length::Nanometers;
+use crate::qtty::OpticalDepths;
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Scalar, Transcendental};
 use alloc::string::ToString;
-use crate::ext_qtty::length::Nanometers;
-use crate::qtty::OpticalDepths;
 use optica::data::{DataSource, Provenance};
 
 /// Aerosol optical-depth model parameters.

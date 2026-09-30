@@ -31,12 +31,11 @@
 //!   Determination. Elsevier Academic Press.
 //! - Vallado, D. A. (2013). Fundamentals of Astrodynamics and Applications
 //!   (4th ed.). Microcosm Press.
+use super::wls::{NormalEquations, WlsResult, WlsSolverError};
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar};
-use alloc::vec;
-use alloc::vec::Vec;
 use alloc::format;
-use super::wls::{NormalEquations, WlsResult, WlsSolverError};
+use alloc::vec::Vec;
 use thiserror::Error;
 
 /// Convergence options for [`gauss_newton`].

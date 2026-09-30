@@ -33,13 +33,13 @@
 //! * Williams, T. G. (1991). "An optimized algorithm for Pluto", *Mem. Brit.
 //!   Astron. Assoc.* **99** (2), 75–82.
 
-#[cfg(not(feature = "std"))]
-use crate::qtty::{Real, Scalar, Transcendental};
 use crate::archive::pluto::pluto_data::{
     PLUTO_ARGUMENTS, PLUTO_LATITUDE_TERMS, PLUTO_LONGITUDE_TERMS, PLUTO_RADIUS_TERMS,
 };
 use crate::coordinates::{cartesian, centers::Heliocentric, frames::EclipticMeanJ2000, spherical};
 use crate::qtty::{AstronomicalUnit, Degrees, Radian, AU};
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 use crate::time::JulianDate;
 
 /// Marker struct for Pluto ephemeris computations via the Meeus/Williams series.

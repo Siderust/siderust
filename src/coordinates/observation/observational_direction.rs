@@ -35,7 +35,6 @@
 //! let geo_again: Astrometric<EquatorialMeanJ2000> = app_dir.to_astrometric(&obs);
 //! ```
 
-use alloc::format;
 use super::ObserverState;
 use crate::astro::aberration::{
     apply_aberration_to_direction_with_velocity, remove_aberration_from_direction_with_velocity,

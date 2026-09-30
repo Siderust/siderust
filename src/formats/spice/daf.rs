@@ -11,13 +11,12 @@
 //! `runtime-data` feature). Build-time JPL extraction lives in
 //! `siderust-archive/generators/jpl/`.
 
+use super::SpiceError;
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar};
-use alloc::string::{String, ToString};
-use alloc::vec;
-use alloc::vec::Vec;
 use alloc::format;
-use super::SpiceError;
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
 
 /// Parsed DAF container.
 #[derive(Debug)]

@@ -29,18 +29,16 @@
 //!   Independent Exchange Format, Version 3.05.
 //! - Misra, P., & Enge, P. (2012). Global Positioning System: Signals,
 //!   Measurements, and Performance (2nd ed.). Ganga-Jamuna Press.
+use super::FormatError;
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar};
-use alloc::string::{String, ToString};
-use alloc::vec;
-use alloc::vec::Vec;
 use alloc::format;
-use alloc::collections::BTreeSet;
-use super::FormatError;
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
 use chrono::{DateTime, Datelike, NaiveDate, Timelike, Utc as ChronoUtc};
+use hashbrown::HashMap;
 use qtty::length::Meters;
 use qtty::time::Seconds;
-use hashbrown::HashMap;
 #[cfg(feature = "std")]
 use std::io::{BufRead, BufReader, Read, Write};
 use tempoch::{Time, UTC};

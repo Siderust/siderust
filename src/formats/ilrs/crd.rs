@@ -34,12 +34,12 @@
 //!   <https://ilrs.gsfc.nasa.gov/docs/2022/ILRS_CRD_Format_v2.01.pdf>
 //! - Pearlman, M. R., Noll, C. E., et al. (2019). The ILRS: Current status
 //!   and future prospects. Journal of Geodesy, 93, 2161–2180.
+use super::{FileLocation, FormatError, ParseMode};
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar};
+use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use alloc::format;
-use super::{FileLocation, FormatError, ParseMode};
 use chrono::{DateTime, NaiveDate, Utc as ChronoUtc};
 use qtty::length::Meters;
 use qtty::time::Seconds;
@@ -360,7 +360,11 @@ fn parse_crd_impl(
                 ) {
                     (Some(s), Some(t)) => (s, t),
                     (None, _) => {
-                        let loc = FileLocation::new(path.as_ref().map(|p| p.display().to_string()), Some(line_no), None);
+                        let loc = FileLocation::new(
+                            path.as_ref().map(|p| p.display().to_string()),
+                            Some(line_no),
+                            None,
+                        );
                         let err = FormatError::located(
                             "CRD v2 §4.1",
                             loc,
@@ -372,7 +376,11 @@ fn parse_crd_impl(
                         continue;
                     }
                     (_, None) => {
-                        let loc = FileLocation::new(path.as_ref().map(|p| p.display().to_string()), Some(line_no), None);
+                        let loc = FileLocation::new(
+                            path.as_ref().map(|p| p.display().to_string()),
+                            Some(line_no),
+                            None,
+                        );
                         let err = FormatError::located(
                             "CRD v2 §4.1",
                             loc,

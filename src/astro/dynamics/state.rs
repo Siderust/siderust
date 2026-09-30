@@ -7,10 +7,6 @@
 //! [`principia::DynamicsState<TT, C, F>`]. `siderust` fixes the propagated time
 //! scale to [`TT`] while leaving center and frame typed.
 
-#[cfg(not(feature = "std"))]
-use crate::qtty::{Real, Scalar};
-use alloc::string::String;
-use alloc::format;
 use crate::coordinates::cartesian;
 use crate::coordinates::centers::Geocentric;
 use crate::coordinates::frames::GCRS;
@@ -20,7 +16,11 @@ use crate::qtty::{
     AreaToMass, DragCoefficient, Kilograms, KmPerSecond, KmPerSecondSquared, SquareMeters,
     SrpCoefficient,
 };
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
 use crate::time::TT;
+use alloc::format;
+use alloc::string::String;
 use principia::DynamicsState;
 
 /// Geocentric inertial position alias used by most spacecraft APIs.

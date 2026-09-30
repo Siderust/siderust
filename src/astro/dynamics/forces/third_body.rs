@@ -5,9 +5,9 @@
 
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar, Transcendental};
-use alloc::vec::Vec;
 use alloc::boxed::Box;
 use alloc::sync::Arc;
+use alloc::vec::Vec;
 
 use affn::cartesian::Displacement;
 use principia::{AccelerationModel, PrincipiaError};

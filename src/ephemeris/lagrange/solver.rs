@@ -23,14 +23,14 @@
 //! - Koon, W. S., Lo, M. W., Marsden, J. E., Ross, S. D. (2011). *Dynamical Systems,
 //!   the Three-Body Problem and Space Mission Design*.
 
-#[cfg(not(feature = "std"))]
-use crate::qtty::{Real, Scalar};
 use super::SunEarthLagrangePoint;
 use crate::coordinates::cartesian::Position;
 use crate::coordinates::centers::Barycentric;
 use crate::coordinates::frames::EclipticMeanJ2000;
 use crate::ephemeris::{DynEphemeris, Ephemeris, EphemerisError};
 use crate::qtty::{Kilometer, Kilometers, GM_EARTH, GM_MOON, GM_SUN};
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
 use crate::time::JulianDate;
 use core::fmt;
 

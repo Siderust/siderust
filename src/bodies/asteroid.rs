@@ -30,10 +30,10 @@
 //! - JPL Small-Body Database. <https://ssd.jpl.nasa.gov/tools/sbdb_query.html>
 //! - NASA Planetary Fact Sheet. <https://nssdc.gsfc.nasa.gov/planetary/factsheet/>
 
-#[cfg(not(feature = "std"))]
-use crate::qtty::{Real, Scalar};
 use crate::astro::orbit::KeplerianOrbit;
 use crate::qtty::{Albedos, AstronomicalUnits, Degrees};
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
 
 /// Taxonomic class of a small Solar‑System body.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

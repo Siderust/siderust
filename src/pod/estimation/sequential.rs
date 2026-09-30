@@ -24,14 +24,14 @@
 //!   Determination. Elsevier Academic Press.
 //! - Vallado, D. A. (2013). Fundamentals of Astrodynamics and Applications
 //!   (4th ed.). Microcosm Press.
-#[cfg(not(feature = "std"))]
-use crate::qtty::{Real, Scalar};
-use alloc::string::String;
-use alloc::format;
 use crate::astro::dynamics::StateCovariance;
 use crate::astro::dynamics::{OrbitState, Velocity};
 use crate::coordinates::frames::GCRS;
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
 use affn::Displacement;
+use alloc::format;
+use alloc::string::String;
 use faer::Mat;
 use qtty::dynamics::KmPerSeconds;
 use qtty::length::Kilometers;

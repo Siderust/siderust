@@ -7,14 +7,14 @@
 //! Alpha-5, checksum, OMM KVN/XML/JSON) and round-trip parity of the
 //! three OMM encodings.
 
-#[cfg(feature = "serde")]
-#[cfg(not(feature = "std"))]
-use crate::qtty::{Real, Scalar};
-use alloc::string::ToString;
 use super::omm::json;
 use super::omm::{kvn, xml, Omm};
 use super::parse::{compute_checksum, parse_assumed_decimal_exponent};
 use super::*;
+#[cfg(feature = "serde")]
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::string::ToString;
 
 const ISS_NAME: &str = "ISS (ZARYA)";
 const ISS_L1: &str = "1 25544U 98067A   08264.51782528 -.00002182  00000-0 -11606-4 0  2927";

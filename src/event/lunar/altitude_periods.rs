@@ -25,7 +25,6 @@
 //! ## References
 //! None.
 
-use alloc::vec::Vec;
 use crate::bodies::solar_system::Moon;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
@@ -36,6 +35,7 @@ use crate::event::search::intervals;
 use crate::event::search::periods as threshold_periods;
 use crate::qtty::*;
 use crate::time::{Interval, JulianDate, ModifiedJulianDate};
+use alloc::vec::Vec;
 
 use super::moon_cache::MoonAltitudeContext;
 

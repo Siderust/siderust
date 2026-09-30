@@ -14,10 +14,10 @@
 //! `None`. Angles in the input are *degrees* and are converted to radians on
 //! the way in.
 
+use crate::qtty::{KmPerSeconds, MilliArcseconds, Radians};
 use alloc::borrow::ToOwned;
 use alloc::string::String;
 use alloc::vec::Vec;
-use crate::qtty::{KmPerSeconds, MilliArcseconds, Radians};
 
 use super::record::CatalogRecord;
 

@@ -30,11 +30,11 @@
 //! step `ε`; the test in `tests/` calls it twice (with `ε` and `ε/2`) and
 //! checks that the two estimates agree.
 
+use crate::astro::dynamics::{DynamicsContext, OrbitState, StateTransitionMatrix};
+use crate::coordinates::frames::GCRS;
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar};
 use alloc::vec::Vec;
-use crate::astro::dynamics::{DynamicsContext, OrbitState, StateTransitionMatrix};
-use crate::coordinates::frames::GCRS;
 use qtty::Second;
 
 use crate::pod::force::SiderustAccelerationModel;

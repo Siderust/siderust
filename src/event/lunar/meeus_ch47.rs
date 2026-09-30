@@ -22,10 +22,10 @@
 //! ## References
 //! - Meeus, J. (1998). *Astronomical Algorithms*, 2nd ed., Ch. 47, Willmann‑Bell.
 
-#[cfg(not(feature = "std"))]
-use crate::qtty::{Real, Scalar, Transcendental};
 use crate::astro::precession;
 use crate::qtty::{Kilometers, Radians};
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 use crate::time::JulianDate;
 
 /// Geocentric apparent equatorial + ecliptic coordinates of the Moon.

@@ -30,12 +30,12 @@
 //!   satellite geometry and ephemeris products. GPS Solutions, 21, 101-111.
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar};
-use alloc::string::{String, ToString};
-use alloc::vec::Vec;
-use alloc::format;
 use affn::cartesian;
 use affn::centers::{AffineCenter, ReferenceCenter};
 use affn::frames::GCRS;
+use alloc::format;
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
 use chrono::{DateTime, NaiveDate, Utc as ChronoUtc};
 use qtty::time::Microseconds;
 use qtty::unit::Kilometer;

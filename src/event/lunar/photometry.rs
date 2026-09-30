@@ -28,13 +28,13 @@
 //!   (2013). "An advanced scattered moonlight model for Cerro Paranal".
 //!   *A&A* 560, A91. doi:10.1051/0004-6361/201322433
 
-#[cfg(not(feature = "std"))]
-use crate::qtty::{Real, Scalar, Transcendental};
 use crate::qtty::radiometry::{
     WattPerSquareMeterSteradianNanometer, WattsPerSquareMeterSteradianNanometer,
 };
 use crate::qtty::{Albedos, IlluminationFractions};
 use crate::qtty::{Kilometers, Nanometers, Radians};
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 
 /// Mean lunar radius.
 pub const MEAN_MOON_RADIUS: Kilometers = Kilometers::new(1_737.4);

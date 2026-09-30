@@ -33,7 +33,6 @@
 //! assert!(ctx.require_ephemeris().is_err());
 //! ```
 
-use alloc::boxed::Box;
 use alloc::sync::Arc;
 
 use crate::astro::eop::EopValues;

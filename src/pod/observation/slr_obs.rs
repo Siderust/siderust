@@ -42,12 +42,12 @@
 //! - Petit, G., & Luzum, B. (Eds.) (2010). *IERS Conventions 2010.*
 //!   IERS Technical Note 36, Chapter 9.
 
-#[cfg(not(feature = "std"))]
-use crate::qtty::{Real, Scalar, Transcendental};
-use alloc::string::{String, ToString};
 use crate::astro::dynamics::{Position, Velocity};
 use crate::coordinates::frames::GCRS;
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 use crate::time::JulianDate;
+use alloc::string::String;
 
 use qtty::Meter;
 

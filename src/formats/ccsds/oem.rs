@@ -26,13 +26,12 @@
 //!   Messages, CCSDS 502.0-B-2 / 502.0-B-3.
 //! - Vallado, D. A. (2013). Fundamentals of Astrodynamics and Applications
 //!   (4th ed.). Microcosm Press.
+use super::FormatError;
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar};
-use alloc::string::{String, ToString};
-use alloc::vec;
-use alloc::vec::Vec;
 use alloc::format;
-use super::FormatError;
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
 #[cfg(feature = "std")]
 use std::io::Write;
 /// A spacecraft state as stored in a CCSDS OEM file.

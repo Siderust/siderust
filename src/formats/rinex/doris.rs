@@ -24,11 +24,11 @@
 //!
 //! - IDS/CDDIS, *RINEX 3 DORIS Format Description*, rev. 14, 2023.
 
+use super::FormatError;
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar};
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use super::FormatError;
 #[cfg(feature = "std")]
 use std::io::Read;
 #[cfg(feature = "doris")]

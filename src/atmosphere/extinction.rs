@@ -22,10 +22,10 @@
 //! - Bouguer, P. (1729). *Essai d'optique sur la gradation de la lumière*.
 //! - Lambert, J. H. (1760). *Photometria*.
 
-#[cfg(not(feature = "std"))]
-use crate::qtty::{Scalar, Transcendental};
 use crate::atmosphere::Transmittances;
 use crate::qtty::{Airmasses, OpticalDepths};
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Scalar, Transcendental};
 
 /// Slant-path transmission `T = exp(-X · τ)`.
 ///

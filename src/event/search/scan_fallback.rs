@@ -3,13 +3,13 @@
 
 //! Scan+Brent fallback baseline for threshold crossing discovery.
 
-#[cfg(not(feature = "std"))]
-use crate::qtty::{Real, Scalar};
-use alloc::vec::Vec;
 use crate::event::altitude::search::CROSSING_DEDUPE_EPS;
 use crate::event::search::intervals::LabeledCrossing;
 use crate::qtty::{Day, Quantity};
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
 use crate::time::{Interval, ModifiedJulianDate};
+use alloc::vec::Vec;
 
 use super::crossings::{eval_signal, precise_residual_days, SearchDiagnostics, POLY_ZERO_TOL};
 

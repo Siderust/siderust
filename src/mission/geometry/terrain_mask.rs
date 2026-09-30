@@ -5,7 +5,6 @@
 
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar};
-use alloc::vec;
 use alloc::vec::Vec;
 use qtty::angular::Radians;
 use qtty::Quantity;

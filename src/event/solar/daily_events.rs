@@ -8,9 +8,6 @@
 //! generic Chebyshev-first engine or scan+Brent when the analytic model is
 //! unreliable.
 
-use alloc::vec;
-use alloc::vec::Vec;
-use alloc::format;
 use crate::astro::earth_rotation::gmst_default;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
@@ -23,6 +20,8 @@ use crate::event::search::intervals::LabeledCrossing;
 use crate::event::search::scan_fallback;
 use crate::qtty::*;
 use crate::time::{Interval, JulianDate, ModifiedJulianDate};
+use alloc::vec;
+use alloc::vec::Vec;
 
 use super::altitude::sun_altitude_rad;
 

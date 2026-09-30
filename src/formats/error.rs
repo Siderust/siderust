@@ -3,7 +3,6 @@
 
 //! Shared error types for [`crate::formats`].
 
-use alloc::format;
 use alloc::string::String;
 use thiserror::Error;
 
@@ -42,7 +41,11 @@ impl FileLocation {
     /// let loc = FileLocation::new(None, Some(1), None);
     /// assert!(loc.path.is_none());
     /// ```
-    pub fn new(path: Option<alloc::string::String>, line: Option<usize>, column: Option<usize>) -> Self {
+    pub fn new(
+        path: Option<alloc::string::String>,
+        line: Option<usize>,
+        column: Option<usize>,
+    ) -> Self {
         Self { path, line, column }
     }
 

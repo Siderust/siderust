@@ -13,9 +13,9 @@
 //! still guaranteeing that the registry-level translation is exhaustive
 //! and unit-typed.
 
-use alloc::vec::Vec;
 use crate::astro::dynamics::forces::ShadowModel;
 use crate::time::JulianDate;
+use alloc::vec::Vec;
 use qtty::{AreaToMass, DragCoefficient, KmPerSecondsSquared, Second, SrpCoefficient};
 
 use super::empirical_periodic::PeriodicHarmonic;

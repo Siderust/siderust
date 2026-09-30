@@ -65,8 +65,6 @@ mod vsop87_backend;
 
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar};
-use alloc::string::ToString;
-use alloc::boxed::Box;
 pub use pluto::Pluto;
 pub use runtime_backend::RuntimeEphemeris;
 pub use vsop87::VSOP87;

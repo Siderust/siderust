@@ -29,11 +29,10 @@
 //!   (4th ed.). Microcosm Press.
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar};
+use alloc::collections::BTreeMap;
 use alloc::string::{String, ToString};
-use alloc::vec;
 use alloc::vec::Vec;
 use serde::{Deserialize, Serialize};
-use alloc::collections::BTreeMap;
 
 /// Summary statistics for a single residual stream.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]

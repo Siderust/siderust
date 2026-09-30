@@ -55,7 +55,6 @@
 
 mod provider;
 
-use alloc::vec;
 pub use provider::{SpiceEphemerisProvider, SpiceState};
 
 // Re-export the full upstream spice parsing surface.

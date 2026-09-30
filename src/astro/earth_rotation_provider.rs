@@ -36,8 +36,6 @@
 //! * IERS Conventions (2010), Chapter 5
 //! * SOFA Earth-rotation cookbook (`iauC2t06a` and friends)
 
-#[cfg(not(feature = "std"))]
-use crate::qtty::{Real, Scalar, Transcendental};
 use crate::astro::cio;
 use crate::astro::earth_rotation::{jd_ut1_from_tt_eop, try_jd_utc_from_tt};
 use crate::astro::eop::{EopProvider, EopValues};
@@ -47,6 +45,8 @@ use crate::astro::polar_motion::polar_motion_matrix_from_eop;
 use crate::coordinates::frames::{EquatorialMeanJ2000, ICRS};
 use crate::coordinates::transform::context::AstroContext;
 use crate::coordinates::transform::providers::FrameRotationProvider;
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 use crate::time::JulianDate;
 
 /// Apply IERS celestial pole offsets dX, dY to raw IAU 2000B nutation values.

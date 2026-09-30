@@ -3,8 +3,8 @@
 
 //! Unified error type for SPICE kernel operations.
 
-use alloc::string::{String, ToString};
 use alloc::format;
+use alloc::string::String;
 use thiserror::Error;
 
 /// Errors produced by SPK kernel operations.

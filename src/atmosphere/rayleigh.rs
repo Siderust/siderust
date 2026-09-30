@@ -34,13 +34,13 @@
 //!   "On Rayleigh optical depth calculations". *J. Atmos. Oceanic Technol.*
 //!   16, 1854.
 
-#[cfg(not(feature = "std"))]
-use crate::qtty::{Real, Scalar, Transcendental};
 use crate::atmosphere::ScatteringFactor;
 use crate::ext_qtty::pressure::Hectopascals;
 use crate::ext_qtty::Quantity;
 use crate::qtty::unit::Micrometer;
 use crate::qtty::{Kilometers, Nanometers, OpticalDepths, Radians};
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 
 /// Default scale height of the dry-atmosphere column (`8 km`).
 ///

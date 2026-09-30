@@ -34,9 +34,9 @@
 //! - Press, W. H., Teukolsky, S. A., Vetterling, W. T., & Flannery, B. P.
 //!   (2007). *Numerical Recipes in C++*, 3rd ed. Cambridge University Press.
 
+use crate::qtty::{Days, Quantity, Unit};
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar, Transcendental};
-use crate::qtty::{Days, Quantity, Unit};
 use crate::time::{Interval, TimeInstant};
 
 // ---------------------------------------------------------------------------

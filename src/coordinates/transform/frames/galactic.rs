@@ -36,9 +36,9 @@
 //! - Blaauw, A., Gum, C. S., Pawsey, J. L., & Westerhout, G. (1960).
 //!   "The new I.A.U. system of galactic coordinates". *MNRAS* 121, 123.
 
+use super::bias;
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar, Transcendental};
-use super::bias;
 use affn::Rotation3;
 
 /// ICRS → Galactic rotation matrix.

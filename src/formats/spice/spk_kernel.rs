@@ -3,19 +3,18 @@
 
 //! Runtime SPK kernel stacks for body-center and barycenter states.
 
-#[cfg(not(feature = "std"))]
-use crate::qtty::{Real, Scalar};
-use alloc::string::ToString;
-use alloc::vec;
-use alloc::vec::Vec;
 use super::spk::{self, IndexedSegmentData};
 use super::SpiceError;
 use crate::coordinates::frames::ICRF;
 use crate::ephemeris::jpl::eval::{jd_tt_to_spice_et_seconds, DynSegmentDescriptor};
 use crate::ephemeris::{EphemerisError, MajorPlanet, PlanetPoint};
 use crate::qtty::{Kilometer, Kilometers};
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
 use crate::time::JulianDate;
 use affn::Displacement;
+use alloc::string::ToString;
+use alloc::vec::Vec;
 #[cfg(feature = "std")]
 use std::path::Path;
 const SSB_ID: i32 = 0;
@@ -140,7 +139,7 @@ pub struct SpkKernelSet {
 impl SpkKernelSet {
     /// Parse and stack one or more BSP/SPK files.
     #[cfg(feature = "std")]
-pub fn from_paths<I, P>(paths: I) -> Result<Self, SpiceError>
+    pub fn from_paths<I, P>(paths: I) -> Result<Self, SpiceError>
     where
         I: IntoIterator<Item = P>,
         P: AsRef<Path>,

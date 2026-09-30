@@ -3,11 +3,11 @@
 
 //! Frame registry built from FK kernels.
 
+use crate::formats::spice::{FrameClass, FrameKernel, FrameSpec, SpiceError};
+use alloc::format;
 use alloc::string::ToString;
 use alloc::vec;
 use alloc::vec::Vec;
-use alloc::format;
-use crate::formats::spice::{FrameClass, FrameKernel, FrameSpec, SpiceError};
 
 /// Registry of known frames, populated from FK kernels.
 ///

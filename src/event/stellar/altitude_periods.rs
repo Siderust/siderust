@@ -36,7 +36,6 @@
 
 #![allow(dead_code)]
 
-use alloc::vec::Vec;
 use crate::astro::apparent::CorrectionPolicy;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
@@ -44,6 +43,7 @@ use crate::event::search::{intervals, root_finding};
 use crate::qtty::*;
 use crate::time::JulianDate;
 use crate::time::{complement_within, Interval, ModifiedJulianDate};
+use alloc::vec::Vec;
 
 use super::star_equations::{StarAltitudeParams, ThresholdResult};
 

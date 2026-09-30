@@ -23,9 +23,6 @@
 //! - Park, R. S., et al. (2021). "The JPL Planetary and Lunar Ephemerides DE440
 //!   and DE441". *The Astronomical Journal* 161, 105.
 
-#[cfg(not(feature = "std"))]
-use crate::qtty::{Real, Scalar};
-use alloc::vec::Vec;
 use super::solver::{solve_sun_earth_lagrange_dyn_with_config, SolverConfig, SolverError};
 use super::{evaluate_records, SunEarthLagrangePoint};
 use crate::coordinates::cartesian::Position;
@@ -33,7 +30,10 @@ use crate::coordinates::centers::Barycentric;
 use crate::coordinates::frames::EclipticMeanJ2000;
 use crate::ephemeris::DynEphemeris;
 use crate::qtty::{AstronomicalUnit, Kilometer, Meters, Second, Seconds};
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
 use crate::time::JulianDate;
+use alloc::vec::Vec;
 use core::fmt;
 
 const SECONDS_PER_DAY: f64 = crate::qtty::time::SECONDS_PER_DAY;

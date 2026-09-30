@@ -8,11 +8,10 @@
 //!
 //! - CCSDS 503.0-B-2: Tracking Data Message, Blue Book (2007).
 
-use alloc::string::{String, ToString};
-use alloc::vec;
-use alloc::vec::Vec;
-use alloc::format;
 use super::FormatError;
+use alloc::format;
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
 #[cfg(feature = "std")]
 use std::io::{BufRead, BufReader, Read, Write};
 /// TDM observation type.

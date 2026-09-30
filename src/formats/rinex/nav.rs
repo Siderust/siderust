@@ -27,13 +27,13 @@
 //!   Independent Exchange Format, Version 3.05.
 //! - IS-GPS-200. (current revision). Navstar GPS Space Segment / Navigation
 //!   User Interfaces.
+use super::{FileLocation, FormatError, ParseMode};
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar};
 use alloc::borrow::ToOwned;
+use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;
-use alloc::format;
-use super::{FileLocation, FormatError, ParseMode};
 use chrono::{DateTime, Datelike, NaiveDate, Timelike, Utc as ChronoUtc};
 use qtty::angular::Radians;
 use qtty::angular_rate::AngularRate;

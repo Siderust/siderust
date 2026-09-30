@@ -5,7 +5,6 @@
 //!
 //! Defines [`AltitudeProvider`] and implementations for celestial targets.
 
-use alloc::vec::Vec;
 use crate::bodies::solar_system;
 use crate::bodies::Star;
 use crate::coordinates::centers::Geodetic;
@@ -15,6 +14,7 @@ use crate::event::altitude::search::{InternalSearchConfig, SearchOpts};
 use crate::event::altitude::types::{CrossingEvent, CulminationEvent};
 use crate::qtty::*;
 use crate::time::{Interval, ModifiedJulianDate};
+use alloc::vec::Vec;
 
 use crate::coordinates::{cartesian, centers::Geocentric, frames};
 use crate::event::horizontal;

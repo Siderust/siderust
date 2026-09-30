@@ -23,12 +23,11 @@
 //!
 //! - CCSDS 502.0-B-3: Orbit Data Messages, Blue Book (2019).
 
+use super::FormatError;
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar};
-use alloc::string::{String, ToString};
-use alloc::vec::Vec;
 use alloc::format;
-use super::FormatError;
+use alloc::string::{String, ToString};
 #[cfg(feature = "std")]
 use std::io::{BufRead, BufReader, Read, Write};
 /// OPM state vector (Cartesian).

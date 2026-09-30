@@ -118,10 +118,10 @@ bench-internals = []
 [dependencies]
 # Alloc is always enabled: siderust is an orchestration crate built around Vec/String.
 affn = { version = "0.10", default-features = false, features = ["astro", "alloc"] }
-cheby = { version = "0.4.1", git = "https://github.com/Siderust/cheby", branch = "fix/no-std-float-alloc", default-features = false, features = ["alloc", "approx", "calculus"] }
+cheby = { version = "0.4", default-features = false, features = ["alloc", "approx", "calculus"] }
 keplerian = { version = "0.3", default-features = false, features = ["alloc"] }
 optica = { version = "0.3", default-features = false, features = ["alloc"] }
-principia = { version = "0.3", git = "https://github.com/Siderust/principia", branch = "feature/no-std-affn-0.10", default-features = false, features = ["alloc"] }
+principia = { version = "0.3", default-features = false, features = ["alloc"] }
 qtty = { version = "0.8", default-features = false, features = ["alloc", "astro", "density", "frequency", "radiometry", "satellite"] }
 tempoch = { version = "0.7", default-features = false, features = ["alloc"] }
 siderust-archive = { version = "0.1.5", default-features = false, features = ["jpl", "vsop", "elp", "nutation", "gravity", "atmosphere", "pluto", "time"] }

@@ -19,13 +19,13 @@
 //! - NAIF. *SCLK Required Reading*.
 //! - NAIF. *Kernel Required Reading*.
 
-#[cfg(not(feature = "std"))]
-use crate::qtty::{Real, Scalar};
-use alloc::vec;
-use alloc::vec::Vec;
-use alloc::format;
 use super::text::{TextKernel, TextValue};
 use super::SpiceError;
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::format;
+use alloc::vec;
+use alloc::vec::Vec;
 
 /// One coefficient entry for an SCLK Type 1 clock.
 #[derive(Debug, Clone, Copy)]

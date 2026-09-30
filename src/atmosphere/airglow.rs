@@ -29,11 +29,11 @@
 //! - Van Rhijn, P. J. (1921). *Publications of the Astronomical
 //!   Laboratory at Groningen* 31, 1.
 
-#[cfg(not(feature = "std"))]
-use crate::qtty::{Real, Scalar, Transcendental};
 use crate::atmosphere::ScatteringFactor;
 use crate::ext_qtty::Quantity;
 use crate::qtty::{Kilometers, Radians};
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 
 /// Van Rhijn path-length factor for a thin emitting layer at
 /// `emission_height`, evaluated at zenith distance `zenith`.

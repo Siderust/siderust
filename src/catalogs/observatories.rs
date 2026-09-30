@@ -60,14 +60,13 @@
 //! - Instituto de Astrofísica de Canarias. *Site characterization of the
 //!   Observatorio del Roque de los Muchachos*.
 
-use alloc::string::{String, ToString};
-use alloc::vec;
-use alloc::vec::Vec;
-use alloc::format;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::qtty::{Degrees, Hectopascals, Kelvins, Meters};
 use alloc::borrow::{Cow, ToOwned};
+use alloc::string::{String, ToString};
+use alloc::vec;
+use alloc::vec::Vec;
 
 #[cfg(feature = "serde")]
 #[cfg(feature = "std")]

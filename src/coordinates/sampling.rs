@@ -77,7 +77,6 @@
 
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar, Transcendental};
-use alloc::vec::Vec;
 use alloc::boxed::Box;
 use core::f64::consts::PI;
 

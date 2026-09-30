@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-#[cfg(not(feature = "std"))]
-use crate::qtty::{Real, Scalar};
 use super::*;
 use crate::astro::nutation::{Iau2000B, Iau2006A};
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
 
 const EPSILON: f64 = 1e-10;
 const AU_EPS: crate::qtty::AstronomicalUnits = crate::qtty::AstronomicalUnits::new(EPSILON);

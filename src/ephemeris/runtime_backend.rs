@@ -8,11 +8,6 @@
 //! It implements [`DynEphemeris`](super::DynEphemeris) (instance-based,
 //! object-safe).
 
-#[cfg(not(feature = "std"))]
-use crate::qtty::{Real, Scalar};
-use alloc::vec;
-use alloc::vec::Vec;
-use alloc::format;
 use super::{AuPerDay, DynEphemeris, EphemerisError};
 use crate::archive::ArchiveError;
 use crate::coordinates::{
@@ -24,11 +19,15 @@ use crate::ephemeris::jpl::bodies;
 use crate::ephemeris::jpl::eval::DynSegmentStack;
 use crate::formats::spice::{self, spk};
 use crate::qtty::{AstronomicalUnit, Kilometer};
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
 use crate::time::JulianDate;
+use alloc::format;
+use alloc::sync::Arc;
+use alloc::vec::Vec;
 #[cfg(feature = "std")]
 #[cfg(feature = "std")]
 use std::path::Path;
-use alloc::sync::Arc;
 
 /// Shared inner data for a runtime-loaded ephemeris.
 struct RuntimeEphemerisInner {

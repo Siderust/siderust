@@ -19,13 +19,13 @@
 //! - NAIF. *Leapseconds Kernel Required Reading*.
 //! - NAIF. *Kernel Required Reading*.
 
-#[cfg(not(feature = "std"))]
-use crate::qtty::{Real, Scalar};
-use alloc::string::ToString;
-use alloc::vec::Vec;
-use alloc::format;
 use super::text::{TextKernel, TextValue};
 use super::SpiceError;
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
+use alloc::format;
+use alloc::string::ToString;
+use alloc::vec::Vec;
 
 /// Parsed leapseconds kernel.
 #[derive(Debug, Clone)]

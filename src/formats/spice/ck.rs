@@ -18,16 +18,15 @@
 //! - NAIF. *CK Required Reading*.
 //! - NAIF. *DAF Required Reading*.
 
-#[cfg(not(feature = "std"))]
-use crate::qtty::{Real, Scalar, Transcendental};
-use alloc::string::ToString;
-use alloc::vec;
-use alloc::vec::Vec;
-use alloc::format;
-#[cfg(feature = "std")]
-use std::path::Path;
 use super::daf::DafRaw;
 use super::SpiceError;
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
+use alloc::format;
+use alloc::string::ToString;
+use alloc::vec::Vec;
+#[cfg(feature = "std")]
+use std::path::Path;
 
 /// A single CK attitude record (Type 1).
 #[derive(Debug, Clone)]
@@ -152,8 +151,8 @@ impl CkKernel {
 
     /// Open a DAF/CK binary kernel from a filesystem path.
     #[cfg(feature = "std")]
-#[cfg(feature = "std")]
-pub fn open(path: impl AsRef<Path>) -> Result<Self, SpiceError> {
+    #[cfg(feature = "std")]
+    pub fn open(path: impl AsRef<Path>) -> Result<Self, SpiceError> {
         let bytes = std::fs::read(path)?;
         Self::from_bytes(bytes)
     }

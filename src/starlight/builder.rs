@@ -9,7 +9,6 @@
 //! HEALPix pixel, accumulates B- and V-band S10 flux, and normalizes by pixel
 //! area.
 
-use alloc::vec;
 use crate::coordinates::cartesian::Direction;
 use crate::coordinates::frames::Galactic;
 use crate::coordinates::transform::TransformFrame;
@@ -19,6 +18,7 @@ use crate::starlight::{
     StellarCatalogueRecord, StellarMapError, StellarMapProvenance, StellarSurfaceBrightness,
     StellarSurfaceBrightnessMap,
 };
+use alloc::vec;
 
 /// Builder for Galactic stellar surface-brightness HEALPix maps.
 ///

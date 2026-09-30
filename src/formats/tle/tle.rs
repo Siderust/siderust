@@ -3,8 +3,8 @@
 
 //! Core typed record produced by every parser in `siderust-tle`.
 
-use alloc::string::{String, ToString};
 use alloc::format;
+use alloc::string::String;
 use qtty::angular::Degrees;
 use qtty::angular::Turn;
 use qtty::angular_rate::AngularRate;

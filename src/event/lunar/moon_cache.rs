@@ -46,7 +46,6 @@
 
 #![allow(unreachable_pub, missing_docs)]
 
-use alloc::vec::Vec;
 use crate::astro::earth_rotation::jd_ut1_from_tt_eop;
 use crate::astro::earth_rotation_provider::itrs_to_equatorial_mean_j2000_rotation;
 use crate::astro::nutation::nutation_iau2000b;
@@ -59,6 +58,7 @@ use crate::coordinates::transform::AstroContext;
 use crate::ephemeris::Ephemeris;
 use crate::qtty::*;
 use crate::time::JulianDate;
+use alloc::vec::Vec;
 use cheby;
 
 // =============================================================================

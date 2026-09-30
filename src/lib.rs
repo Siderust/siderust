@@ -86,6 +86,14 @@
 //! - `photometry` *(optional)* : Astronomical photometric passbands and throughput unit (`photometry` feature)
 //! - Dataset catalog, manifests, and runtime ephemeris download: [`siderust_archive`] crate
 //!
+//! ## Public dependencies
+//!
+//! Crates whose types form part of Siderust's public API are re-exported so
+//! applications do not need to add matching direct dependencies merely to name
+//! those types: [`affn`], [`chrono`], [`optica`], [`principia`], and [`tempoch`].
+//! Typed quantities are available through Siderust's compatibility-enhanced
+//! [`qtty`] facade.
+//!
 //! ## Error-handling conventions
 //!
 //! `siderust` deliberately uses three distinct error-reporting patterns;
@@ -139,6 +147,15 @@
 extern crate alloc;
 
 pub(crate) use ::qtty as ext_qtty;
+
+// Keep public dependency types reachable through the exact crate instances
+// used to compile Siderust. This follows the same pattern as `affn::qtty` and
+// avoids making consumers declare these crates solely to name API types.
+pub use affn;
+pub use chrono;
+pub use optica;
+pub use principia;
+pub use tempoch;
 
 pub mod astro;
 #[cfg(feature = "atmosphere")]

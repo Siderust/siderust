@@ -43,12 +43,11 @@
 //! None — this is test infrastructure with no domain-specific
 //! algorithm.
 
+use crate::coordinates::{cartesian, centers::ReferenceCenter, frames::ReferenceFrame, spherical};
+use crate::qtty::{Degrees, LengthUnit, Quantity};
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar};
 use alloc::string::String;
-use alloc::format;
-use crate::coordinates::{cartesian, centers::ReferenceCenter, frames::ReferenceFrame, spherical};
-use crate::qtty::{Degrees, LengthUnit, Quantity};
 use core::f64;
 
 #[doc(hidden)]

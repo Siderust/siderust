@@ -53,10 +53,9 @@
 
 #![allow(clippy::needless_range_loop)]
 
+use crate::coordinates::{cartesian::Position, centers::Geocentric, frames::EclipticMeanJ2000};
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar, Transcendental};
-use alloc::vec::Vec;
-use crate::coordinates::{cartesian::Position, centers::Geocentric, frames::EclipticMeanJ2000};
 use wide::f64x4;
 
 use crate::archive::elp::constants::{
@@ -70,8 +69,8 @@ use crate::ephemeris::elp2000::elp_structs::*;
 use crate::qtty::Radians;
 use crate::qtty::{Arcseconds, Kilometers, LengthUnit, Radian};
 use crate::time::JulianDate;
-use elp_data::*;
 use core::f64::consts::FRAC_PI_2;
+use elp_data::*;
 
 // ====================
 // Helpers

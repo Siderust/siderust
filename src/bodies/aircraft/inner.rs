@@ -4,12 +4,12 @@
 //! [`Aircraft`] identity record, [`AircraftState`] snapshot, and
 //! [`AircraftTrack`] dead-reckoning provider.
 
-#[cfg(not(feature = "std"))]
-use crate::qtty::{Real, Scalar, Transcendental};
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::qtty::unit::{Meter, Second};
 use crate::qtty::{Degrees, Meters, Per, Quantity};
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
 use crate::targets::Trackable;
 use crate::time::JulianDate;
 use alloc::borrow::Cow;

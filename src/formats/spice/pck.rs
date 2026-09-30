@@ -20,9 +20,9 @@
 
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar, Transcendental};
+use alloc::format;
 use alloc::vec;
 use alloc::vec::Vec;
-use alloc::format;
 use hashbrown::HashMap;
 
 use super::text::{TextKernel, TextValue};

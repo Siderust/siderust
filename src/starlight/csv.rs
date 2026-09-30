@@ -8,9 +8,9 @@
 //! stores the zero-based HEALPix pixel index and the stellar brightness values
 //! associated with that pixel.
 
-use alloc::string::String;
-use alloc::format;
 use crate::starlight::StellarSurfaceBrightnessMap;
+use alloc::format;
+use alloc::string::String;
 
 /// Serialize a generated stellar surface-brightness map to CSV text.
 ///

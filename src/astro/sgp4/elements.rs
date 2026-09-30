@@ -8,8 +8,8 @@
 //! crate-private representation with radians and revolutions-per-day scalars
 //! for the numerical core.
 
-use alloc::format;
 use crate::formats::tle::TLE;
+use alloc::format;
 use chrono::Datelike;
 
 use super::Sgp4Error;

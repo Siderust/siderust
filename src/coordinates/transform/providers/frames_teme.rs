@@ -16,9 +16,9 @@
 //! The first step is Rz(Δψ cos εA), which removes the approximate
 //! equinox offset.
 
+use super::*;
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Scalar, Transcendental};
-use super::*;
 
 impl FrameRotationProvider<TEME, EquatorialTrueOfDate> for () {
     #[inline]

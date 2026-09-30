@@ -5,8 +5,8 @@
 
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar};
-use alloc::string::{String, ToString};
 use alloc::format;
+use alloc::string::{String, ToString};
 use chrono::{Duration, NaiveDate, TimeZone, Utc};
 use qtty::angular::Degrees;
 use qtty::angular::Turn;

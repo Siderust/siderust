@@ -5,7 +5,6 @@
 
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar};
-use alloc::vec;
 use affn::{ReferenceCenter, ReferenceFrame};
 use qtty::unit::Meter;
 use tempoch::{Time, TDB};

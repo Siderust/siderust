@@ -39,9 +39,9 @@
 use crate::coordinates::spherical::position;
 use crate::qtty::*;
 use crate::time::JulianDate;
+use core::fmt;
 #[cfg(test)]
 use qtty::time::JULIAN_YEAR;
-use core::fmt;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
