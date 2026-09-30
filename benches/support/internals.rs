@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Internal baseline helpers for Criterion benchmarks.
+//! Internal baseline helpers for Criterion benchmarks and comparison tests.
 //!
 //! Enabled with the `bench-internals` feature; not part of the stable API.
 //! Run gated benches with:
