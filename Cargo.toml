@@ -181,6 +181,7 @@ required-features = ["bench-internals"]
 [[bench]]
 name = "star_altitude"
 harness = false
+required-features = ["bench-internals"]
 
 [[bench]]
 name = "elp2000"

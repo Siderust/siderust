@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Route fixed ICRS and `Star` altitude-event searches through the specialized
+  stellar analytical bracket predictor, retaining full-precision boundary
+  refinement and caller-provided search tolerances.
+
 ## [0.12.0] - 2026-09-30
 
 ### Added

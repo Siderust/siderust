@@ -13,6 +13,7 @@
 
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
+use crate::coordinates::spherical::direction;
 use crate::event::altitude::search::InternalSearchConfig;
 use crate::event::altitude::{CrossingEvent, SearchOpts};
 use crate::event::search::intervals::LabeledCrossing;
@@ -22,6 +23,28 @@ use alloc::vec::Vec;
 
 // Re-export the diagnostics struct so bench binaries can inspect it.
 pub use crate::event::solar::daily_events::SolarDailyDiagnostics;
+
+// ---------------------------------------------------------------------------
+// Fixed-ICRS baseline
+// ---------------------------------------------------------------------------
+
+/// Fixed-ICRS above-threshold search using the generic scan+Brent baseline.
+pub fn stellar_above_threshold_scan_baseline(
+    target: &direction::ICRS,
+    site: Geodetic<ECEF>,
+    window: Interval<ModifiedJulianDate>,
+    threshold: Degrees,
+    opts: SearchOpts,
+) -> Vec<Interval<ModifiedJulianDate>> {
+    crate::event::stellar::stellar_above_threshold_scan_baseline(
+        target.ra(),
+        target.dec(),
+        site,
+        window,
+        threshold,
+        opts,
+    )
+}
 
 // ---------------------------------------------------------------------------
 // Solar baselines
