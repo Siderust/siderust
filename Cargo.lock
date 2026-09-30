@@ -271,8 +271,9 @@ checksum = "4e7648175b45a9a48536d676f68d918270699102aa8dab5496df06904c914600"
 
 [[package]]
 name = "cheby"
-version = "0.4.1"
-source = "git+https://github.com/Siderust/cheby?rev=268fdee90841ff4854f89edade4e27884b37816b#268fdee90841ff4854f89edade4e27884b37816b"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dc914ad662ae2aaf46501983306e3f11cbde64bd44ec8507200b0dc9b4469807"
 dependencies = [
  "qtty",
 ]
