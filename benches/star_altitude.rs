@@ -5,10 +5,11 @@
 //!
 //! Organized as:
 //!
-//! - **`public_api/star/{30d,184d,365d}`**: stable Option A API calls for a
-//!   fixed ICRS target (Sirius, α CMa). The star engine uses an analytic
-//!   sinusoidal model exploiting Earth's diurnal rotation; no internal baseline
-//!   variants exist.
+//! - **`public_api/star/{30d,184d,365d}`**: stable API calls for a fixed ICRS
+//!   target (Sirius, α CMa), dispatched through the specialized analytical
+//!   bracket predictor with full-precision boundary refinement.
+//! - **`engine_comparison/star/{30d,365d}`**: optimized public
+//!   `above_threshold` versus the generic scan+Brent reference path.
 //!
 //! - **`altitude/single_eval`**: single-point altitude cost for the star engine,
 //!   useful as a reference for the period-finding benchmarks above.
@@ -21,6 +22,7 @@
 
 use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
 use criterion::{criterion_group, criterion_main, Criterion};
+use siderust::bench_internals;
 use siderust::catalogs::observatories::ROQUE_DE_LOS_MUCHACHOS;
 use siderust::coordinates::spherical::direction;
 use siderust::event::altitude::{
@@ -130,11 +132,48 @@ fn bench_public_api_star(c: &mut Criterion) {
     }
 }
 
+fn bench_star_engine_comparison(c: &mut Criterion) {
+    let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
+    let target = sirius();
+    let opts = SearchOpts::default();
+
+    for (label, days) in [("30d", 30u32), ("365d", 365)] {
+        let period = build_period(days);
+        let mut g = c.benchmark_group(format!("engine_comparison/star/{label}"));
+
+        g.bench_function("optimized_public/above_threshold", |b| {
+            b.iter(|| {
+                black_box(above_threshold(
+                    black_box(&target),
+                    &site,
+                    black_box(period),
+                    black_box(Degrees::new(0.0)),
+                    opts,
+                ))
+            });
+        });
+
+        g.bench_function("generic_scan_brent/above_threshold", |b| {
+            b.iter(|| {
+                black_box(bench_internals::stellar_above_threshold_scan_baseline(
+                    black_box(&target),
+                    site,
+                    black_box(period),
+                    black_box(Degrees::new(0.0)),
+                    opts,
+                ))
+            });
+        });
+
+        g.finish();
+    }
+}
+
 criterion_group! {
     name = star_benches;
     config = Criterion::default()
         .measurement_time(Duration::from_secs(5))
         .sample_size(20);
-    targets = bench_star_single_eval, bench_public_api_star
+    targets = bench_star_single_eval, bench_public_api_star, bench_star_engine_comparison
 }
 criterion_main!(star_benches);

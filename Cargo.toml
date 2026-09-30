@@ -100,7 +100,7 @@ serde = [
     "keplerian/serde",
     "optica/serde",
 ]
-photometry = []
+photometry = ["qtty/photometry"]
 ## SPICE kernel context. Path-based loading requires `std`.
 spice = ["std"]
 atmosphere = []
@@ -118,7 +118,7 @@ bench-internals = []
 [dependencies]
 # Alloc is always enabled: siderust is an orchestration crate built around Vec/String.
 affn = { version = "0.10", default-features = false, features = ["astro", "alloc"] }
-cheby = { version = "0.4", default-features = false, features = ["alloc", "approx", "calculus"] }
+cheby = { version = "0.4.2", default-features = false, features = ["alloc", "approx", "calculus"] }
 keplerian = { version = "0.3", default-features = false, features = ["alloc"] }
 optica = { version = "0.3", default-features = false, features = ["alloc"] }
 principia = { version = "0.3", default-features = false, features = ["alloc"] }
@@ -181,6 +181,7 @@ required-features = ["bench-internals"]
 [[bench]]
 name = "star_altitude"
 harness = false
+required-features = ["bench-internals"]
 
 [[bench]]
 name = "elp2000"

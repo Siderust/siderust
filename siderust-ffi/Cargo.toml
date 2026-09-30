@@ -22,7 +22,7 @@ runtime-data = ["siderust/runtime-data", "dep:siderust-archive", "siderust-archi
 siderust    = { version = "0.12.0", path = "..", default-features = false, features = ["std"] }
 siderust-archive = { version = "0.1.5", optional = true, default-features = false, features = ["jpl", "std"] }
 keplerian   = { version = "0.3", default-features = false, features = ["std", "alloc"] }
-principia   = { version = "0.3", git = "https://github.com/Siderust/principia", branch = "feature/no-std-affn-0.10", default-features = false, features = ["alloc", "std"] }
+principia   = { version = "0.3", default-features = false, features = ["alloc", "std"] }
 qtty        = { version = "0.8", default-features = false, features = ["std", "alloc"] }
 tempoch     = { version = "0.7", default-features = false, features = ["std", "alloc"] }
 # tempoch-ffi 0.7 is tagged upstream but not yet on crates.io; 0.6.6 is ABI-compatible

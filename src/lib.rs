@@ -232,4 +232,6 @@ pub use event::lunar::photometry::{
 pub use targets::{CoordinateWithPM, Trackable};
 
 #[cfg(feature = "bench-internals")]
+#[doc(hidden)]
+#[path = "../benches/support/internals.rs"]
 pub mod bench_internals;

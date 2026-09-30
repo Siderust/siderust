@@ -29,9 +29,12 @@ pub use crate::ext_qtty::{
 
 pub use crate::ext_qtty::unit;
 pub use crate::ext_qtty::{
-    acceleration, angular, area, density, energy, force, length, mass, power, radiometry,
-    solid_angle, time, volume,
+    acceleration, angular, area, density, dimensionless, energy, force, length, mass, power,
+    radiometry, solid_angle, time, volume,
 };
+
+#[cfg(feature = "photometry")]
+pub use crate::ext_qtty::photometry;
 
 pub use crate::ext_qtty::solid_angle::*;
 
@@ -161,6 +164,13 @@ mod tests {
         assert_eq!(Albedos::new(0.3_f64).value(), 0.3_f64);
         assert_eq!(IlluminationFractions::new(0.75_f64).value(), 0.75_f64);
         assert_eq!(Refractivities::new(2.7e-4_f64).value(), 2.7e-4_f64);
+        assert_eq!(dimensionless::Ratios::new(1.25_f64).value(), 1.25_f64);
+    }
+
+    #[cfg(feature = "photometry")]
+    #[test]
+    fn reexported_photometry_module_is_available() {
+        assert_eq!(photometry::SurfaceBrightness::new(21.5).value(), 21.5);
     }
 
     #[test]
