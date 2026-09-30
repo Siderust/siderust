@@ -272,8 +272,7 @@ checksum = "4e7648175b45a9a48536d676f68d918270699102aa8dab5496df06904c914600"
 [[package]]
 name = "cheby"
 version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6eeca393073baa9a8591f0c7e6e2bbf79458060055714373a0b42f5cb6f5fe1b"
+source = "git+https://github.com/Siderust/cheby?rev=268fdee90841ff4854f89edade4e27884b37816b#268fdee90841ff4854f89edade4e27884b37816b"
 dependencies = [
  "qtty",
 ]
@@ -1279,17 +1278,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "principia"
-version = "0.3.0"
-source = "git+https://github.com/Siderust/principia?branch=feature%2Fno-std-affn-0.10#a4ca4e2ac32251f82c68a3ec05df55138e6a198e"
-dependencies = [
- "affn 0.10.0",
- "qtty",
- "tempoch 0.7.0",
- "thiserror 2.0.21",
-]
-
-[[package]]
 name = "private-gemm-x86"
 version = "0.1.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1721,7 +1709,7 @@ dependencies = [
  "optica",
  "parquet",
  "paste",
- "principia 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "principia",
  "qtty",
  "quick-xml",
  "rstest",
@@ -1761,7 +1749,7 @@ dependencies = [
  "cbindgen",
  "chrono",
  "keplerian",
- "principia 0.3.0 (git+https://github.com/Siderust/principia?branch=feature%2Fno-std-affn-0.10)",
+ "principia",
  "qtty",
  "serde_json",
  "siderust",
