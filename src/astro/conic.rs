@@ -439,8 +439,21 @@ mod tests {
     }
 
     #[test]
-    fn jd_try_new_rejects_non_finite_encoded_day() {
-        assert!(crate::time::try_jd(qtty::Day::new(f64::NAN)).is_err());
+    fn conic_rejects_infinite_epoch_sentinels() {
+        for value in [f64::INFINITY, f64::NEG_INFINITY] {
+            assert_eq!(
+                ConicOrbit::try_new(
+                    1.0 * AU,
+                    0.5,
+                    Degrees::new(0.0),
+                    Degrees::new(0.0),
+                    Degrees::new(0.0),
+                    Degrees::new(0.0),
+                    JulianDate::new(value),
+                ),
+                Err(ConicError::InvalidEpoch)
+            );
+        }
     }
 
     #[test]

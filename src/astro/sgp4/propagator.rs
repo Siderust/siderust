@@ -17,8 +17,8 @@ use crate::formats::tle::TLE;
 use crate::qtty::Minutes;
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar, Transcendental};
-use alloc::format;
-use tempoch::{JulianDate, UTC};
+use alloc::{format, string::ToString};
+use tempoch::{JulianDate, TimeContext, UTC};
 
 use super::elements::{tle_to_elements, NativeElements};
 use super::state::TemeState;
@@ -104,6 +104,7 @@ impl GravityModel {
 /// ```
 #[derive(Clone, Debug)]
 pub struct TlePropagator {
+    context: TimeContext,
     constants: GravityConstants,
     elements: NativeElements,
     model: GravityModel,
@@ -154,16 +155,23 @@ impl TlePropagator {
     /// let _ = TlePropagator::from_tle_with_model(&tle, GravityModel::Wgs84).unwrap();
     /// ```
     pub fn from_tle_with_model(tle: &TLE, model: GravityModel) -> Result<Self, Sgp4Error> {
-        let elements = tle_to_elements(tle)?;
+        let context = TimeContext::new();
+        let elements = tle_to_elements(tle, &context)?;
         let constants = model.constants();
         validate_native_orbit(&elements, constants)?;
         let epoch_jd_utc = elements.epoch_jd_utc;
         Ok(Self {
+            context,
             constants,
             elements,
             model,
             epoch_jd_utc,
         })
+    }
+
+    /// Immutable time-data snapshot used for civil UTC encoding and decoding.
+    pub fn time_context(&self) -> &TimeContext {
+        &self.context
     }
 
     /// Return the gravity model in use.
@@ -199,7 +207,7 @@ impl TlePropagator {
     ///     "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537",
     /// ).unwrap();
     /// let p = TlePropagator::from_tle(&tle).unwrap();
-    /// assert!(p.epoch_jd_utc().raw().value() > 2_454_700.0);
+    /// assert!(p.epoch_jd_utc().try_raw_with(p.time_context()).unwrap().value() > 2_454_700.0);
     /// ```
     pub fn epoch_jd_utc(&self) -> JulianDate<UTC> {
         self.epoch_jd_utc
@@ -208,8 +216,8 @@ impl TlePropagator {
     /// Propagate to a UTC Julian-date epoch.
     ///
     /// The result is a typed [`TemeState`] valid at exactly the supplied
-    /// epoch. The conversion to minutes-since-epoch goes through `tempoch`
-    /// to honour leap seconds correctly.
+    /// epoch. The model uses civil UTC days of 1,440 nominal minutes,
+    /// not elapsed SI time. Leap-second instants cannot be encoded on this grid.
     ///
     /// # Errors
     ///
@@ -234,18 +242,20 @@ impl TlePropagator {
     /// assert!(s.position().distance().value() > 6_500.0);
     /// ```
     pub fn propagate_at(&self, target_jd_utc: JulianDate<UTC>) -> Result<TemeState, Sgp4Error> {
-        let t_jd = target_jd_utc.raw().value();
-        let epoch_jd = self.epoch_jd_utc.raw().value();
-        if !t_jd.is_finite() {
-            return Err(Sgp4Error::TimeConversion(
-                "target Julian date is non-finite".into(),
-            ));
-        }
+        let t_jd = target_jd_utc
+            .try_raw_with(&self.context)
+            .map_err(|e| Sgp4Error::TimeConversion(e.to_string()))?
+            .value();
+        let epoch_jd = self
+            .epoch_jd_utc
+            .try_raw_with(&self.context)
+            .map_err(|e| Sgp4Error::TimeConversion(e.to_string()))?
+            .value();
         let dt_minutes = (t_jd - epoch_jd) * 1_440.0;
         self.propagate_internal(dt_minutes, target_jd_utc)
     }
 
-    /// Propagate by an offset, in minutes, from the TLE epoch.
+    /// Propagate by nominal model minutes (1,440 per civil UTC day) from the TLE epoch.
     ///
     /// # Errors
     ///
@@ -275,7 +285,15 @@ impl TlePropagator {
                 "minutes offset is non-finite".into(),
             ));
         }
-        let target = jd_offset_minutes(self.epoch_jd_utc, dt_minutes);
+        let epoch = self
+            .epoch_jd_utc
+            .try_raw_with(&self.context)
+            .map_err(|e| Sgp4Error::TimeConversion(e.to_string()))?;
+        let target = JulianDate::<UTC>::try_new_with(
+            epoch + qtty::Day::new(dt_minutes.value() / 1_440.0),
+            &self.context,
+        )
+        .map_err(|e| Sgp4Error::TimeConversion(e.to_string()))?;
         self.propagate_internal(dt_minutes.value(), target)
     }
 
@@ -455,13 +473,4 @@ fn rotate_perifocal_to_inertial(
 
 fn normalize_radians(value: f64) -> f64 {
     value.rem_euclid(TWO_PI)
-}
-
-fn jd_offset_minutes(epoch: JulianDate<UTC>, minutes: Minutes) -> JulianDate<UTC> {
-    use qtty::time::Day;
-    use qtty::Quantity;
-    let days = minutes.value() / 1_440.0;
-    let raw = epoch.raw().value() + days;
-    JulianDate::<UTC>::try_new(Quantity::<Day>::new(raw))
-        .expect("finite Julian date increments remain finite")
 }

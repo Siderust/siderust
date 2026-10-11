@@ -231,13 +231,21 @@ pub trait TryFromFfi<F>: Sized {
 /// Validate and construct a TT Julian Date from an FFI scalar.
 #[inline]
 pub fn jd_from_f64(value: f64) -> Result<siderust::time::JulianDate, SiderustStatus> {
-    siderust::time::try_jd_f64(value).map_err(|_| SiderustStatus::InvalidArgument)
+    if !value.is_finite() {
+        return Err(SiderustStatus::InvalidArgument);
+    }
+    tempoch::JulianDate::<tempoch::TT>::try_new(qtty::Day::new(value))
+        .map_err(|_| SiderustStatus::InvalidArgument)
 }
 
 /// Validate and construct a TT Modified Julian Date from an FFI scalar.
 #[inline]
 pub fn mjd_from_f64(value: f64) -> Result<siderust::time::ModifiedJulianDate, SiderustStatus> {
-    siderust::time::try_mjd_f64(value).map_err(|_| SiderustStatus::InvalidArgument)
+    if !value.is_finite() {
+        return Err(SiderustStatus::InvalidArgument);
+    }
+    tempoch::ModifiedJulianDate::<tempoch::TT>::try_new(qtty::Day::new(value))
+        .map_err(|_| SiderustStatus::InvalidArgument)
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

@@ -4,6 +4,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.0] - Unreleased
+
+### Breaking changes
+
+- Adopt `tempoch` and `tempoch-ffi` 0.8.0 and `principia` 0.4.0. UTC JD/MJD
+  are civil coordinates with 86,400 nominal seconds per day. Construction,
+  conversion and extraction use upstream fallible context-aware APIs;
+  leap-second instants cannot be encoded as civil JD/MJD. TT/TAI remain
+  continuous scales with infallible day formats.
+- EOP lookup APIs now accept `tempoch::JulianDate<UTC>` rather than the
+  TT-default Siderust alias. C04 interpolation takes a `TimeContext` and
+  returns `Result<Option<EopRecord>, ConversionError>`.
+- Remove time constructor/chrono wrappers, the deprecated Julian-year alias,
+  and the approximate/fixed-point TT-to-UTC helpers. Use tempoch's generic
+  APIs and qtty's constants directly. Remove `EopValues::jd_ut1`, which
+  represented UTC/UT1 coordinates with a TT phantom type.
+
+### Changed
+
+- TLE propagation consistently uses civil UTC model minutes (1,440 per day),
+  rather than SI elapsed minutes. Each propagator retains one `TimeContext`;
+  its C API shares that snapshot and reports encoding/decoding failures.
+- CPF uses upstream MJD conversion instead of a duplicated calendar algorithm;
+  writing reports UTC encoding errors. Civil SOD must be in `[0, 86400)`.
+- Pin the upgraded Principia branch commit through a crates.io Git patch until
+  the compatible release is published. No tempoch 0.7 dependency remains.
+
 ## [0.12.0] - 2026-09-30
 
 ### Added

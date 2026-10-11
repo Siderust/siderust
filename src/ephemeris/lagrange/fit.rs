@@ -64,8 +64,10 @@ pub struct FitConfig {
 impl Default for FitConfig {
     fn default() -> Self {
         Self {
-            from: crate::time::try_jd_f64(DEFAULT_FROM_JD).expect("valid default start JD"),
-            to: crate::time::try_jd_f64(DEFAULT_TO_JD).expect("valid default end JD"),
+            from: tempoch::JulianDate::<tempoch::TT>::try_new(qtty::Day::new(DEFAULT_FROM_JD))
+                .expect("valid default start JD"),
+            to: tempoch::JulianDate::<tempoch::TT>::try_new(qtty::Day::new(DEFAULT_TO_JD))
+                .expect("valid default end JD"),
             block: Seconds::new(DEFAULT_BLOCK_SECONDS),
             validation_step: Seconds::new(DEFAULT_VALIDATION_SECONDS),
             tolerance: Meters::new(DEFAULT_TOLERANCE_METERS),
@@ -322,8 +324,13 @@ fn seconds_since_j2000(jd: JulianDate) -> f64 {
 }
 
 fn jd_from_seconds(seconds: f64) -> Result<JulianDate, FitError> {
-    crate::time::try_jd_f64(J2000_JD + seconds / SECONDS_PER_DAY)
-        .map_err(|_| FitError::InvalidEpoch)
+    if !seconds.is_finite() {
+        return Err(FitError::InvalidEpoch);
+    }
+    tempoch::JulianDate::<tempoch::TT>::try_new(qtty::Day::new(
+        J2000_JD + seconds / SECONDS_PER_DAY,
+    ))
+    .map_err(|_| FitError::InvalidEpoch)
 }
 
 fn distance_km(
@@ -344,8 +351,10 @@ mod tests {
     #[test]
     fn tiny_fixture_fits_and_evaluates() {
         let config = FitConfig {
-            from: crate::time::try_jd_f64(J2000_JD).expect("valid JD"),
-            to: crate::time::try_jd_f64(J2000_JD + 0.25).expect("valid JD"),
+            from: tempoch::JulianDate::<tempoch::TT>::try_new(qtty::Day::new(J2000_JD))
+                .expect("valid JD"),
+            to: tempoch::JulianDate::<tempoch::TT>::try_new(qtty::Day::new(J2000_JD + 0.25))
+                .expect("valid JD"),
             block: Seconds::new(0.125 * SECONDS_PER_DAY),
             validation_step: Seconds::new(0.125 * SECONDS_PER_DAY),
             tolerance: Meters::new(5_000_000.0),

@@ -47,23 +47,7 @@
 //! - International Astronomical Union (2006). Resolution B3 ("Re-definition
 //!   of Barycentric Dynamical Time, TDB"). IAU Transactions XXVIB.
 
-pub use tempoch::{
-    complement_within, constats, delta_t_seconds, delta_t_seconds_extrapolated, eop,
-    ContinuousScale, ConversionError, ConversionTarget, CoordinateScale, EncodedTime,
-    FormatForScale, InfallibleConversionTarget, InfallibleFormatForScale, Interval,
-    InvalidIntervalError, PeriodListError, Scale, Time, TimeContext, TimeInstant, JD, MJD, TAI,
-    TCB, TCG, TDB, TT, UT1, UTC,
-};
-
-#[cfg(feature = "std")]
-pub use tempoch::TimeDataError;
-
-/// Julian year length in days, derived from [`qtty::time::JULIAN_YEAR`].
-#[deprecated(
-    since = "0.8.0",
-    note = "use qtty::time::JULIAN_YEAR.to::<qtty::unit::Day>() instead"
-)]
-pub const JULIAN_YEAR_DAYS: qtty::Day = qtty::time::JULIAN_YEAR.to_const::<qtty::unit::Day>();
+pub use tempoch::*;
 
 /// TT-scale Julian Date.  Equivalent to `tempoch::JulianDate<TT>`.
 pub type JulianDate = tempoch::JulianDate<TT>;
@@ -74,90 +58,4 @@ pub type ModifiedJulianDate = tempoch::ModifiedJulianDate<TT>;
 /// J2000.0 TT as a [`JulianDate`] (`JD 2 451 545.0 TT`); **`const`** everywhere.
 pub const J2000: JulianDate = tempoch::JulianDate::<TT>::JD_EPOCH_J2000_0;
 
-/// Runtime helper; prefer [`J2000`] in `const` contexts.
-#[inline]
-pub fn j2000_tt() -> JulianDate {
-    J2000
-}
-
-/// Checked TT Julian Date constructor from a typed day quantity.
-#[inline]
-pub fn try_jd(raw: qtty::Day) -> Result<JulianDate, ConversionError> {
-    if !raw.value().is_finite() {
-        return Err(ConversionError::NonFinite);
-    }
-    JulianDate::try_new(raw)
-}
-
-/// Checked TT Julian Date constructor from a scalar JD value.
-#[inline]
-pub fn try_jd_f64(value: f64) -> Result<JulianDate, ConversionError> {
-    try_jd(qtty::Day::new(value))
-}
-
-/// Checked TT Modified Julian Date constructor from a typed day quantity.
-#[inline]
-pub fn try_mjd(raw: qtty::Day) -> Result<ModifiedJulianDate, ConversionError> {
-    if !raw.value().is_finite() {
-        return Err(ConversionError::NonFinite);
-    }
-    ModifiedJulianDate::try_new(raw)
-}
-
-/// Checked TT Modified Julian Date constructor from a scalar MJD value.
-#[inline]
-pub fn try_mjd_f64(value: f64) -> Result<ModifiedJulianDate, ConversionError> {
-    try_mjd(qtty::Day::new(value))
-}
-
-/// Helper: build a `ModifiedJulianDate` (TT scale) directly from a `chrono::DateTime<Utc>`.
-///
-/// This mirrors the common pattern `ModifiedJulianDate::from(dt)` but keeps a
-/// crate-local helper for callers that prefer going through `siderust::time`.
-#[inline]
-pub fn modified_julian_date_from_chrono(dt: chrono::DateTime<chrono::Utc>) -> ModifiedJulianDate {
-    ModifiedJulianDate::from(dt)
-}
-
 pub use crate::event::search::intervals::intersect as intersect_periods;
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use chrono::Utc;
-    use qtty::Day;
-
-    #[test]
-    fn j2000_constant_matches_runtime_helper() {
-        assert_eq!(j2000_tt(), J2000);
-    }
-
-    #[test]
-    fn try_jd_rejects_non_finite_scalar() {
-        assert_eq!(
-            try_jd_f64(f64::NAN).unwrap_err(),
-            ConversionError::NonFinite
-        );
-    }
-
-    #[test]
-    fn try_mjd_accepts_finite_scalar() {
-        try_mjd_f64(58_000.0).unwrap();
-    }
-
-    #[test]
-    fn try_jd_accepts_typed_day() {
-        try_jd(Day::new(2_451_545.0)).unwrap();
-    }
-
-    #[test]
-    fn julian_year_days_matches_typed_conversion() {
-        let _days: qtty::Day = qtty::time::JULIAN_YEAR.to::<qtty::unit::Day>();
-    }
-
-    #[test]
-    fn modified_julian_date_from_chrono_produces_finite_mjd() {
-        let mjd = modified_julian_date_from_chrono(Utc::now());
-        assert!(mjd.raw().value().is_finite());
-    }
-}

@@ -43,7 +43,7 @@
 //! * IERS Technical Note 36
 
 use crate::qtty::*;
-use crate::time::JulianDate;
+use tempoch::{JulianDate, UTC};
 
 /// A set of Earth Orientation Parameters at a given epoch.
 ///
@@ -83,17 +83,11 @@ impl Default for EopValues {
     }
 }
 
-impl EopValues {
-    /// Convert UTC Julian Date to UT1 Julian Date using this EOP's dUT1.
-    #[inline]
-    pub fn jd_ut1(&self, jd_utc: JulianDate) -> JulianDate {
-        crate::time::JulianDate::new(jd_utc.raw().value() + self.dut1.to::<Day>().value())
-    }
-}
-
 /// EOP lookup error.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum EopError {
+    /// A time-format or scale conversion failed.
+    TimeConversion(tempoch::ConversionError),
     /// No EOP entry covers the requested UTC epoch.
     NoData {
         /// Requested UTC Julian Date.
@@ -106,6 +100,7 @@ pub enum EopError {
 impl core::fmt::Display for EopError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match *self {
+            Self::TimeConversion(e) => write!(f, "EOP time conversion: {e}"),
             Self::NoData { jd_utc, mjd_utc } => write!(
                 f,
                 "no Earth Orientation Parameters cover UTC JD {jd_utc} (MJD {mjd_utc})"
@@ -115,6 +110,12 @@ impl core::fmt::Display for EopError {
 }
 
 impl core::error::Error for EopError {}
+
+impl From<tempoch::ConversionError> for EopError {
+    fn from(error: tempoch::ConversionError) -> Self {
+        Self::TimeConversion(error)
+    }
+}
 
 /// Trait for providing Earth Orientation Parameters at a given epoch.
 ///
@@ -137,7 +138,7 @@ pub trait EopProvider {
     /// The default implementation preserves compatibility for providers that
     /// are intentionally total, such as [`NullEop`].
     #[inline]
-    fn try_eop_at(&self, jd_utc: JulianDate) -> Result<EopValues, EopError> {
+    fn try_eop_at(&self, jd_utc: JulianDate<UTC>) -> Result<EopValues, EopError> {
         Ok(self.eop_at(jd_utc))
     }
 
@@ -147,7 +148,7 @@ pub trait EopProvider {
     /// `jd_utc` **must** be a UTC Julian Date.  Passing a TT or UT1 Julian
     /// Date will silently produce incorrect EOP values due to the offset
     /// between UTC and those scales (up to ~70 s accumulated).
-    fn eop_at(&self, jd_utc: JulianDate) -> EopValues;
+    fn eop_at(&self, jd_utc: JulianDate<UTC>) -> EopValues;
 }
 
 /// Null EOP provider: returns zero for all parameters.
@@ -161,12 +162,12 @@ pub struct NullEop;
 
 impl EopProvider for NullEop {
     #[inline]
-    fn try_eop_at(&self, _jd_utc: JulianDate) -> Result<EopValues, EopError> {
+    fn try_eop_at(&self, _jd_utc: JulianDate<UTC>) -> Result<EopValues, EopError> {
         Ok(EopValues::default())
     }
 
     #[inline]
-    fn eop_at(&self, _jd_utc: JulianDate) -> EopValues {
+    fn eop_at(&self, _jd_utc: JulianDate<UTC>) -> EopValues {
         EopValues::default()
     }
 }
@@ -231,11 +232,12 @@ impl IersEop {
 }
 
 impl EopProvider for IersEop {
-    fn try_eop_at(&self, jd_utc: JulianDate) -> Result<EopValues, EopError> {
-        let mjd = Days::new(jd_utc.raw().value() - 2_400_000.5);
+    fn try_eop_at(&self, jd_utc: JulianDate<UTC>) -> Result<EopValues, EopError> {
+        let ctx = tempoch::TimeContext::with_builtin_eop();
+        let mjd = jd_utc.to_with::<tempoch::MJD>(&ctx)?.try_raw_with(&ctx)?;
 
-        let e = tempoch::eop::builtin_eop_at(mjd).ok_or(EopError::NoData {
-            jd_utc: jd_utc.raw().value(),
+        let e = ctx.eop_at(mjd).ok_or(EopError::NoData {
+            jd_utc: jd_utc.try_raw_with(&ctx)?.value(),
             mjd_utc: mjd.value(),
         })?;
 
@@ -249,7 +251,7 @@ impl EopProvider for IersEop {
         })
     }
 
-    fn eop_at(&self, jd_utc: JulianDate) -> EopValues {
+    fn eop_at(&self, jd_utc: JulianDate<UTC>) -> EopValues {
         self.try_eop_at(jd_utc).unwrap_or_default()
     }
 }
@@ -261,29 +263,12 @@ mod tests {
     #[test]
     fn null_eop_returns_zeros() {
         let eop = NullEop;
-        let vals = eop.eop_at(crate::J2000);
+        let vals = eop.eop_at(crate::J2000.to::<UTC>());
         assert_eq!(vals.dut1.value(), 0.0);
         assert_eq!(vals.xp.value(), 0.0);
         assert_eq!(vals.yp.value(), 0.0);
         assert_eq!(vals.dx.value(), 0.0);
         assert_eq!(vals.dy.value(), 0.0);
-    }
-
-    #[test]
-    fn eop_jd_ut1_conversion() {
-        let vals = EopValues {
-            dut1: Seconds::new(0.35),
-            ..Default::default()
-        };
-        let jd_utc = crate::J2000;
-        let jd_ut1 = vals.jd_ut1(jd_utc);
-        let diff_days = (jd_ut1.raw() - jd_utc.raw()).value();
-        let diff_s = diff_days * 86400.0;
-        assert!(
-            (diff_s - 0.35).abs() < 1e-3,
-            "UT1-UTC = {}s, expected 0.35s",
-            diff_s
-        );
     }
 
     #[test]
@@ -307,7 +292,7 @@ mod tests {
         // tempoch no longer embeds EOP at compile time; IersEop.try_eop_at
         // returns Err(NoData) when no runtime bundle has been loaded.
         let eop = IersEop::new();
-        let result = eop.try_eop_at(crate::J2000);
+        let result = eop.try_eop_at(crate::J2000.to::<UTC>());
         assert!(
             matches!(result, Err(EopError::NoData { .. })),
             "expected NoData without runtime EOP bundle, got {result:?}"
@@ -319,7 +304,7 @@ mod tests {
         // eop_at() uses the graceful fallback (zero corrections) when no
         // runtime EOP bundle is loaded.
         let eop = IersEop::new();
-        let vals = eop.eop_at(crate::J2000);
+        let vals = eop.eop_at(crate::J2000.to::<UTC>());
         assert_eq!(vals.dut1.value(), 0.0);
         assert_eq!(vals.xp.value(), 0.0);
     }

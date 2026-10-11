@@ -10,34 +10,13 @@ checksum = "320119579fcad9c21884f5c4861d16174d0e06250625266f50fe6898340abefa"
 
 [[package]]
 name = "affn"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f3b930c8e20e9f26940bb2272eca1010e94c24866394d5433d3f543f3f512da"
-dependencies = [
- "affn-derive 0.8.0",
- "qtty",
-]
-
-[[package]]
-name = "affn"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c25a6b73983cee27bbaa7d3f08d6d2d266984effbadc7ae7089b383615845539"
 dependencies = [
- "affn-derive 0.10.0",
+ "affn-derive",
  "qtty",
  "serde",
-]
-
-[[package]]
-name = "affn-derive"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "82ff2c27df87b6023e6f0adc926e374165a5179471cb508e31735bdfe4fc70f0"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.119",
 ]
 
 [[package]]
@@ -997,7 +976,7 @@ version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "928bdb660c65a5288f5bfd80b5262b46e5e4fb6a52e3ec6c51b502e3e116dde0"
 dependencies = [
- "affn 0.10.0",
+ "affn",
  "qtty",
  "serde",
  "thiserror 2.0.21",
@@ -1186,7 +1165,7 @@ version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a168b2762e9a5ccf51dc51e4d4871dda76eff02ea151dcf78991df9d20f2fa55"
 dependencies = [
- "affn 0.10.0",
+ "affn",
  "qtty",
  "serde",
  "thiserror 2.0.21",
@@ -1268,13 +1247,12 @@ dependencies = [
 
 [[package]]
 name = "principia"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "625cf28c0da6aa418e1461906c80a8f80c41672cbbe0e40dc505cf806d2498e7"
+version = "0.4.0"
+source = "git+https://github.com/Siderust/principia?rev=7ef0c30#7ef0c3016d2d0ed3007170b80de9fb250448eb6d"
 dependencies = [
- "affn 0.10.0",
+ "affn",
  "qtty",
- "tempoch 0.7.0",
+ "tempoch",
  "thiserror 2.0.21",
 ]
 
@@ -1696,9 +1674,9 @@ checksum = "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba"
 
 [[package]]
 name = "siderust"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
- "affn 0.10.0",
+ "affn",
  "approx",
  "cheby",
  "chrono",
@@ -1719,7 +1697,7 @@ dependencies = [
  "sha2",
  "siderust-archive",
  "spin",
- "tempoch 0.7.0",
+ "tempoch",
  "thiserror 2.0.21",
  "toml 1.1.6+spec-1.1.0",
  "wide",
@@ -1744,9 +1722,9 @@ dependencies = [
 
 [[package]]
 name = "siderust-ffi"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
- "affn 0.10.0",
+ "affn",
  "cbindgen",
  "chrono",
  "keplerian",
@@ -1755,7 +1733,7 @@ dependencies = [
  "serde_json",
  "siderust",
  "siderust-archive",
- "tempoch 0.7.0",
+ "tempoch",
  "tempoch-ffi",
  "tokio",
 ]
@@ -1852,41 +1830,20 @@ dependencies = [
 
 [[package]]
 name = "tempoch"
-version = "0.6.5"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d63544602031b5ac9b90e3e3824080aea8b37fdd586b80c08fa6c8e281a75903"
+checksum = "a1816e003419cee3eac31a35ad88f328cb32d9a887408eb4efb3ab9274a65740"
 dependencies = [
- "tempoch-core 0.6.5",
-]
-
-[[package]]
-name = "tempoch"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9ab8a3c03b7f73299406d2a4f542fa267f26979cef505ab198617c93618752eb"
-dependencies = [
- "tempoch-core 0.7.0",
+ "tempoch-core",
 ]
 
 [[package]]
 name = "tempoch-core"
-version = "0.6.5"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8a0a0d25de8d969e76c6aaeb24cdcb3ef0502aea7647d6baff78f951f2b0db90"
+checksum = "ee0aae071420ec4c8a58be7b2168d989a3b72a1b049fb6589935ef3cfc405dbe"
 dependencies = [
- "affn 0.8.0",
- "chrono",
- "qtty",
- "siderust-archive",
-]
-
-[[package]]
-name = "tempoch-core"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a66104342366d6cc334419731c65897c9bfb2a0fcd8e31bda648f9467436125a"
-dependencies = [
- "affn 0.10.0",
+ "affn",
  "chrono",
  "serde",
  "siderust-archive",
@@ -1894,16 +1851,16 @@ dependencies = [
 
 [[package]]
 name = "tempoch-ffi"
-version = "0.6.6"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ddab86d587243a63f55934979b9059a89ce629ad54c1658f8da08e2ed40d6fcb"
+checksum = "3688a848c13b92120f139fc5f5521b1ef668835f375aa96c6db183bfce143745"
 dependencies = [
  "cbindgen",
  "chrono",
  "qtty",
  "qtty-ffi",
- "tempoch 0.6.5",
- "tempoch-core 0.6.5",
+ "tempoch",
+ "tempoch-core",
 ]
 
 [[package]]

@@ -63,7 +63,7 @@
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::qtty::{Degrees, Hectopascals, Kelvins, Meters};
-use alloc::borrow::{Cow, ToOwned};
+use alloc::borrow::Cow;
 use alloc::string::{String, ToString};
 use alloc::vec;
 use alloc::vec::Vec;
@@ -208,7 +208,7 @@ impl ObservatoryCatalog {
     ///
     /// This API is available with the `serde` feature, which is enabled by
     /// default.
-    #[cfg(feature = "serde")]
+    #[cfg(all(feature = "serde", feature = "std"))]
     pub fn from_path(path: impl AsRef<Path>) -> Result<Self, ObservatoryCatalogError> {
         let path = path.as_ref();
         let input =
@@ -234,7 +234,7 @@ impl<'a> IntoIterator for &'a ObservatoryCatalog {
 #[derive(Debug, thiserror::Error)]
 pub enum ObservatoryCatalogError {
     /// The external catalog file could not be read.
-    #[cfg(feature = "serde")]
+    #[cfg(all(feature = "serde", feature = "std"))]
     #[error("failed to read observatory catalog `{path}`: {source}")]
     Read {
         /// Path that could not be read.

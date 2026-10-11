@@ -33,10 +33,13 @@ pub(crate) struct NativeElements {
 }
 
 /// Convert a typed [`TLE`] into native propagation elements.
-pub(crate) fn tle_to_elements(tle: &TLE) -> Result<NativeElements, Sgp4Error> {
+pub(crate) fn tle_to_elements(
+    tle: &TLE,
+    ctx: &tempoch::TimeContext,
+) -> Result<NativeElements, Sgp4Error> {
     let dt_utc = tle
         .epoch
-        .try_to_chrono()
+        .try_to_chrono_with(ctx)
         .map_err(|e| Sgp4Error::TimeConversion(format!("TLE epoch → chrono failed: {e:?}")))?;
     // SGP4 wants a NaiveDateTime in UTC.
     let datetime = dt_utc.naive_utc();
@@ -56,7 +59,10 @@ pub(crate) fn tle_to_elements(tle: &TLE) -> Result<NativeElements, Sgp4Error> {
     }
 
     Ok(NativeElements {
-        epoch_jd_utc: tle.epoch.to::<tempoch::JD>(),
+        epoch_jd_utc: tle
+            .epoch
+            .to_with::<tempoch::JD>(ctx)
+            .map_err(|e| Sgp4Error::TimeConversion(format!("TLE epoch → UTC JD: {e}")))?,
         inclination_rad: tle.inclination.value().to_radians(),
         raan_rad: tle.raan.value().to_radians(),
         eccentricity: tle.eccentricity,

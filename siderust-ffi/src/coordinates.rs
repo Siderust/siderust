@@ -1726,11 +1726,11 @@ mod tests {
     fn to_horizontal_precise_matches_default_ut1_path() {
         let mut coarse = empty_dir();
         let mut precise = empty_dir();
-        let jd_tt = siderust::time::try_jd_f64(J2000).unwrap();
+        let jd_tt = tempoch::JulianDate::<tempoch::TT>::try_new(qtty::Day::new(J2000)).unwrap();
         // Replicate the EOP-derived UT1 that `to_horizontal` uses internally:
         // the coarse path calls `jd_ut1_from_tt_eop` with the default IersEop context.
         let ctx: siderust::coordinates::transform::AstroContext = Default::default();
-        let eop = ctx.eop_at(jd_tt);
+        let eop = ctx.eop_at_tt(jd_tt);
         let jd_ut1 = siderust::astro::earth_rotation::jd_ut1_from_tt_eop(jd_tt, &eop);
 
         let s1 = siderust_spherical_dir_to_horizontal(
@@ -1760,7 +1760,8 @@ mod tests {
     fn to_horizontal_precise_with_context_is_finite() {
         let mut out = empty_dir();
         let ctx = context_with_model(SiderustEarthOrientationModel::Iau2006);
-        let jd_tt = siderust::time::try_jd_f64(2_458_850.0).unwrap();
+        let jd_tt =
+            tempoch::JulianDate::<tempoch::TT>::try_new(qtty::Day::new(2_458_850.0)).unwrap();
         let jd_ut1 = siderust::astro::earth_rotation::jd_ut1_from_tt(jd_tt);
 
         let s = siderust_spherical_dir_to_horizontal_precise_with_context(

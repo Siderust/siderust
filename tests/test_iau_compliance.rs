@@ -181,12 +181,11 @@ fn gast_minus_gmst_equals_equation_of_equinoxes() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[test]
-fn null_eop_produces_ut1_equal_utc() {
+fn null_eop_supplies_zero_ut1_minus_utc() {
     let eop = NullEop;
     let jd_utc = JulianDate::try_new(Days::new(2_460_000.5)).unwrap();
-    let vals = eop.eop_at(jd_utc);
-    let jd_ut1 = vals.jd_ut1(jd_utc);
-    assert_eq!(jd_ut1.raw().value(), jd_utc.raw().value());
+    let vals = eop.eop_at(jd_utc.to::<tempoch::UTC>());
+    assert_eq!(vals.dut1.value(), 0.0);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

@@ -3,7 +3,7 @@
 
 //! # Earth Rotation Helpers
 //!
-//! Utilities for computing UT1/UTC Julian Dates from TT and for evaluating GMST
+//! Utilities for computing UT1 Julian Dates from TT and for evaluating GMST
 //! with properly separated UT1 and TT arguments.
 //!
 //! ## Scientific scope
@@ -25,8 +25,6 @@
 //! | Function | EOP required? | Notes |
 //! |---|---|---|
 //! | [`jd_ut1_from_tt`] | no | monthly ΔT model via [`TimeContext::new`] |
-//! | [`try_jd_utc_from_tt`] | **yes** | IERS-indexed UTC for EOP lookup keys |
-//! | [`jd_utc_from_tt_delta_t`] | no | ΔT + leap-second approximation |
 //! | [`jd_ut1_from_tt_eop`] | preferred | refines UT1 when runtime EOP is active |
 //! | [`gmst_from_tt`] | no | ΔT-derived UT1 |
 //! | [`gmst_default`] | no | alias of [`gmst_from_tt`] (ΔT approximation) |
@@ -34,10 +32,10 @@
 //!
 //! EOP data is available only when a `tempoch` runtime bundle is active
 //! (loaded via `tempoch`'s runtime-data mechanisms). Without runtime EOP,
-//! [`try_jd_utc_from_tt`] and [`try_gmst_with_eop`] return
-//! [`EopError::NoData`]; they never fabricate UTC by equating UT1 with UTC.
+//! [`try_gmst_with_eop`] returns
+//! [`EopError::NoData`]. UTC coordinates come from tempoch's native conversion.
 //!
-//! The `JulianDate` returned by the UT1/UTC helpers carries the numeric JD
+//! The `JulianDate` returned by the UT1 helpers carries the numeric JD
 //! value of the requested timescale but is typed as TT for interoperability
 //! with the rest of the sidereal-time call sites (matching the SOFA convention
 //! for `iauGmst06`).
@@ -80,65 +78,6 @@ pub fn jd_ut1_from_tt(jd_tt: JulianDate) -> JulianDate {
     crate::time::JulianDate::new(ut1.to::<tempoch::JD>().raw().value())
 }
 
-/// Compute JD(UTC) from JD(TT) using the active IERS EOP bundle.
-///
-/// This is the UTC axis required for IERS EOP table lookups. The conversion
-/// uses a fixed-point iteration on `UT1 − UTC` from the runtime-loaded
-/// `tempoch` EOP series.
-///
-/// # Errors
-///
-/// Returns [`EopError::NoData`] when no runtime EOP bundle covers the epoch.
-/// Callers that only need a ΔT-based civil-time approximation should use
-/// [`jd_utc_from_tt_delta_t`].
-#[inline]
-pub fn try_jd_utc_from_tt(jd_tt: JulianDate) -> Result<JulianDate, EopError> {
-    let jd_tt_t: tempoch::JulianDate<TT> = jd_tt;
-    let ctx = TimeContext::with_builtin_eop();
-    let ut1 = jd_tt_t
-        .to_with::<UT1>(&ctx)
-        .expect("TT->UT1 conversion should succeed within the bundled model horizon");
-    let ut1_jd = ut1.to::<tempoch::JD>().raw().value();
-    let mut utc_jd = ut1_jd;
-
-    for _ in 0..3 {
-        let mjd_utc = Days::new(utc_jd - 2_400_000.5);
-        let Some(eop) = tempoch::eop::builtin_eop_at(mjd_utc) else {
-            return Err(EopError::NoData {
-                jd_utc: utc_jd,
-                mjd_utc: mjd_utc.value(),
-            });
-        };
-        utc_jd = ut1_jd - eop.ut1_minus_utc.to::<Day>().value();
-    }
-
-    Ok(crate::time::JulianDate::new(utc_jd))
-}
-
-/// Compute JD(UTC) from JD(TT) without requiring runtime EOP.
-///
-/// Uses the ΔT model to obtain JD(UT1) and treats that axis as UTC, neglecting
-/// the sub-second `UT1 − UTC` offset when no daily EOP series is available
-/// (typically < 0.9 s). This is adequate for coarse civil-time indexing but
-/// not for IERS EOP table keys — use [`try_jd_utc_from_tt`] there.
-#[inline]
-pub fn jd_utc_from_tt_delta_t(jd_tt: JulianDate) -> JulianDate {
-    jd_ut1_from_tt(jd_tt)
-}
-
-/// Compute JD(UTC) from JD(TT).
-///
-/// # Deprecated behaviour
-///
-/// This is a compatibility wrapper around [`jd_utc_from_tt_delta_t`]. It does
-/// **not** consult the runtime IERS EOP bundle and therefore must not be used
-/// as an EOP table index when sub-second UT1 accuracy is required. For IERS
-/// lookups use [`try_jd_utc_from_tt`].
-#[inline]
-pub fn jd_utc_from_tt(jd_tt: JulianDate) -> JulianDate {
-    jd_utc_from_tt_delta_t(jd_tt)
-}
-
 /// Compute JD(UT1) from JD(TT) with IERS EOP refinement.
 ///
 /// Routes the conversion through `tempoch`'s context-aware `TT → UT1` chain.
@@ -163,9 +102,12 @@ pub fn jd_ut1_from_tt_eop(jd_tt: JulianDate, eop: &EopValues) -> JulianDate {
         .expect("TT->UT1 conversion should succeed within the bundled model horizon");
     let ut1_jd = ut1.to::<tempoch::JD>().raw().value();
 
-    let mjd_query = qtty::Day::new(ut1_jd - 2_400_000.5);
-    let bundled_dut1 = ctx
-        .ut1_minus_utc(mjd_query)
+    let bundled_dut1 = jd_tt_t
+        .to::<tempoch::UTC>()
+        .to_with::<tempoch::MJD>(&ctx)
+        .and_then(|utc| utc.try_raw_with(&ctx))
+        .ok()
+        .and_then(|mjd_utc| ctx.ut1_minus_utc(mjd_utc))
         .map(|s| s.value())
         .unwrap_or(0.0);
     let residual_days = (eop.dut1.value() - bundled_dut1) / 86_400.0;
@@ -207,7 +149,9 @@ pub fn gmst_default(jd_tt: JulianDate) -> Radians {
 /// Returns [`EopError::NoData`] when no runtime EOP bundle covers the epoch.
 #[inline]
 pub fn try_gmst_with_eop(jd_tt: JulianDate) -> Result<Radians, EopError> {
-    let jd_utc = try_jd_utc_from_tt(jd_tt)?;
+    let jd_utc = jd_tt
+        .to::<tempoch::UTC>()
+        .to_with::<tempoch::JD>(&TimeContext::new())?;
     let eop = IersEop::new().try_eop_at(jd_utc)?;
     Ok(gmst_from_tt_eop(jd_tt, &eop))
 }
@@ -233,26 +177,6 @@ mod tests {
         assert!(
             diff_sec > 50.0 && diff_sec < 80.0,
             "ΔT at J2000 expected ~63s, got {diff_sec}s"
-        );
-    }
-
-    // ── try_jd_utc_from_tt ────────────────────────────────────────────────
-
-    #[test]
-    fn try_jd_utc_returns_no_data_without_runtime_eop() {
-        assert!(matches!(
-            try_jd_utc_from_tt(jd()),
-            Err(EopError::NoData { .. })
-        ));
-    }
-
-    #[test]
-    fn jd_utc_delta_t_differs_from_tt_at_j2000() {
-        let jd_utc = jd_utc_from_tt_delta_t(jd());
-        let diff_sec = (jd().raw().value() - jd_utc.raw().value()) * 86_400.0;
-        assert!(
-            diff_sec > 60.0 && diff_sec < 70.0,
-            "TT-UTC at J2000 should include leap seconds + 32.184s, got {diff_sec}s"
         );
     }
 
