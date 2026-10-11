@@ -122,9 +122,9 @@ mod demo {
 
         let recovered_coords: CoordinateBundle = roundtrip(&coords);
         println!(
-            "Roundtrip check: x={:.1} km, lon={:.4} deg\n",
-            recovered_coords.geo_icrs_cart.x().value(),
-            recovered_coords.observer_site.lon.value()
+            "Roundtrip check: x={:.1}, lon={:.4}\n",
+            recovered_coords.geo_icrs_cart.x(),
+            recovered_coords.observer_site.lon
         );
 
         // =========================================================================
@@ -157,10 +157,10 @@ mod demo {
 
         let recovered_halley: BodySnapshot = roundtrip(&halley_snapshot);
         println!(
-            "Roundtrip check: {} @ JD {:.1}, r={:.6} AU\n",
+            "Roundtrip check: {} @ JD {:.1}, r={:.6}\n",
             recovered_halley.name,
             recovered_halley.epoch,
-            recovered_halley.heliocentric_ecliptic.distance().value()
+            recovered_halley.heliocentric_ecliptic.distance()
         );
 
         // =========================================================================
