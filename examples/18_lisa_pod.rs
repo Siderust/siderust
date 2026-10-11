@@ -34,56 +34,32 @@
 //! - Danzmann, K. et al. (2017). *LISA: Laser Interferometer Space Antenna.*
 //!   ESA/SRE(2017)1. <https://arxiv.org/abs/1702.00786>
 
-#![allow(clippy::print_stdout, missing_docs)]
+#![allow(clippy::print_stdout)]
 
 use std::fs::File;
+use std::path::Path;
 
-use qtty::Second;
 use siderust::coordinates::centers::Heliocentric;
 use siderust::coordinates::frames::EME2000;
 use siderust::ephemeris::tabulated::{
-    offset_tdb_epoch, read_oem_tdb_ephemeris, TabulatedEphemeris, TabulatedEphemerisProvider,
+    offset_tdb_epoch, read_oem_tdb_ephemeris, TabulatedEphemerisProvider,
 };
 use siderust::pod::observation::one_way_light_time_range;
-
-type LisaEphemeris = TabulatedEphemeris<Heliocentric, EME2000>;
-type LisaProvider = TabulatedEphemerisProvider<Heliocentric, EME2000>;
+use siderust::qtty::Second;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let provider = lisa_provider()?;
-    let (coverage_start, _) = provider
-        .ephemeris(-1001)
-        .expect("SC1 ephemeris")
-        .coverage()?;
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/test-data/lisa");
+    let sc1 = read_oem_tdb_ephemeris(-1001, File::open(root.join("lisa_orbit_sample.oem1"))?)?;
+    let sc2 = read_oem_tdb_ephemeris(-1002, File::open(root.join("lisa_orbit_sample.oem2"))?)?;
+    let (start, _) = sc1.coverage()?;
+    let provider = TabulatedEphemerisProvider::<Heliocentric, EME2000>::new(vec![sc1, sc2])?;
 
-    let sc1 = provider.state_at(-1001, coverage_start)?;
-    println!("SC1 at coverage start: {}", sc1.position);
-    println!("SC1 velocity: {}", sc1.velocity);
+    let state = provider.state_at(-1001, start)?;
+    println!("SC1 at coverage start: {}", state.position);
+    println!("SC1 velocity: {}", state.velocity);
 
-    let range_epoch = offset_tdb_epoch(coverage_start, Second::new(10.0))?;
-    let measured = one_way_light_time_range(&provider, -1001, -1002, range_epoch)?;
-    let modeled = one_way_light_time_range(&provider, -1001, -1002, range_epoch)?;
-    let residual_m = measured.value() - modeled.value();
-
-    println!("SC1 -> SC2 one-way range: {:.3} m", modeled.value());
-    println!("synthetic O-C residual: {residual_m:.6} m");
-
-    assert!(residual_m.abs() < 1e-9);
+    let epoch = offset_tdb_epoch(start, Second::new(10.0))?;
+    let range = one_way_light_time_range(&provider, -1001, -1002, epoch)?;
+    println!("SC1 -> SC2 one-way range: {range:.3}");
     Ok(())
-}
-
-fn lisa_provider() -> Result<LisaProvider, Box<dyn std::error::Error>> {
-    let root = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/test-data/lisa");
-    Ok(LisaProvider::new(vec![
-        load_ephemeris(-1001, &format!("{root}/lisa_orbit_sample.oem1"))?,
-        load_ephemeris(-1002, &format!("{root}/lisa_orbit_sample.oem2"))?,
-        load_ephemeris(-1003, &format!("{root}/lisa_orbit_sample.oem3"))?,
-    ])?)
-}
-
-fn load_ephemeris(
-    body_naif_id: i32,
-    path: &str,
-) -> Result<LisaEphemeris, Box<dyn std::error::Error>> {
-    Ok(read_oem_tdb_ephemeris(body_naif_id, File::open(path)?)?)
 }

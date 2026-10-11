@@ -117,9 +117,6 @@ fn main() {
     let prepared_pos = prepared.position_at(jd);
     let delta = kepler_pos.distance_to(&prepared_pos);
     println!("4. PreparedOrbit");
-    println!(
-        "   prepared radius = {:.12} AU",
-        prepared_pos.distance().value()
-    );
+    println!("   prepared radius = {:.12}", prepared_pos.distance());
     println!("   chord delta vs direct Keplerian = {:.3e}", delta);
 }

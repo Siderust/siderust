@@ -19,126 +19,61 @@ use siderust::coordinates::centers::Topocentric;
 use siderust::coordinates::frames::{EquatorialMeanOfDate, Horizontal};
 use siderust::coordinates::spherical;
 use siderust::coordinates::transform::{DirectionAstroExt, SphericalDirectionAstroExt, Transform};
-use siderust::qtty::*;
+use siderust::qtty::{Degrees, Kilometer, KM};
 use siderust::time::JulianDate;
 
-fn main() {
-    println!("=== Horizontal Coordinates Example ===\n");
-
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
-    let jd = JulianDate::new(2_459_015.5); // 2020-01-01 12:00 TT
-
-    // Sirius apparent equatorial coordinates (degrees).
+    let jd = JulianDate::new(2_459_015.5);
     let ra = Degrees::new(101.287);
     let dec = Degrees::new(-16.716);
-    let distance = 384_400.0 * KM;
 
     println!("Observer: {}", ROQUE_DE_LOS_MUCHACHOS.name);
-    println!("Epoch (TT): {jd:.6}\n");
+    println!("Epoch (TT): {jd:.6}");
 
-    // =========================================================================
-    // 1. Spherical positions (EquatorialMeanOfDate → Horizontal, GMST)
-    // =========================================================================
-    println!("1. SPHERICAL POSITIONS (GMST, .transform)");
-    println!("-------------------------------------------");
-
-    let eq_mod_dir = spherical::direction::EquatorialMeanOfDate::new(ra, dec);
-    let eq_sph = eq_mod_dir.position_with_params::<Topocentric, Kilometer>(site, distance);
-
-    println!("EquatorialMeanOfDate (topocentric):");
+    // Sample topocentric position: mean-of-date ↔ horizontal, using GMST.
+    let equatorial = spherical::direction::EquatorialMeanOfDate::new(ra, dec)
+        .position_with_params::<Topocentric, Kilometer>(site, 384_400.0 * KM);
+    let horizontal: spherical::Position<Topocentric, Horizontal, Kilometer> =
+        equatorial.transform(jd);
+    let back: spherical::Position<Topocentric, EquatorialMeanOfDate, Kilometer> =
+        horizontal.transform(jd);
+    println!("\nSpherical position (GMST): {horizontal:.4}");
     println!(
-        "  RA = {:.4}, Dec = {:.4}, dist = {}",
-        eq_sph.ra(),
-        eq_sph.dec(),
-        eq_sph.distance
+        "Round-trip position error: {}",
+        equatorial
+            .to_cartesian()
+            .try_distance_to(&back.to_cartesian())?
     );
 
-    let hz_sph: spherical::Position<Topocentric, Horizontal, Kilometer> = eq_sph.transform(jd);
-    let back_sph: spherical::Position<Topocentric, EquatorialMeanOfDate, Kilometer> =
-        hz_sph.transform(jd);
-
-    println!("Horizontal:");
+    let equatorial_cart = equatorial.to_cartesian();
+    let horizontal_cart: Position<Topocentric, Horizontal, Kilometer> =
+        equatorial_cart.transform(jd);
+    let back_cart: Position<Topocentric, EquatorialMeanOfDate, Kilometer> =
+        horizontal_cart.transform(jd);
+    println!("\nCartesian position (GMST): {horizontal_cart:.4}");
     println!(
-        "  Alt = {:.4}, Az = {:.4}, dist = {}",
-        hz_sph.alt(),
-        hz_sph.az(),
-        hz_sph.distance
-    );
-    println!(
-        "  Round-trip distance residual: {}\n",
-        (eq_sph.distance - back_sph.distance).abs()
+        "Round-trip position error: {}",
+        equatorial_cart.try_distance_to(&back_cart)?
     );
 
-    // =========================================================================
-    // 2. Cartesian positions (EquatorialMeanOfDate → Horizontal, GMST)
-    // =========================================================================
-    println!("2. CARTESIAN POSITIONS (GMST, .transform)");
-    println!("-------------------------------------------");
-
-    let eq_cart = Position::<Topocentric, EquatorialMeanOfDate, Kilometer>::from_spherical(&eq_sph);
-
-    let hz_cart: Position<Topocentric, Horizontal, Kilometer> = eq_cart.transform(jd);
-    let back_cart: Position<Topocentric, EquatorialMeanOfDate, Kilometer> = hz_cart.transform(jd);
-
+    // Direction transforms use true-of-date coordinates and GAST.
+    let direction = spherical::direction::EquatorialTrueOfDate::new(ra, dec);
+    let horizontal_direction = direction.to_horizontal(&jd, &site);
+    let back_direction = horizontal_direction.to_equatorial(&jd, &site);
+    println!("\nSpherical direction (GAST): {horizontal_direction:.4}");
     println!(
-        "EquatorialMeanOfDate (cartesian): dist = {}",
-        eq_cart.distance()
-    );
-    println!(
-        "Horizontal (cartesian): Alt = {:.4}, Az = {:.4}, dist = {}",
-        hz_cart.to_spherical().alt(),
-        hz_cart.to_spherical().az(),
-        hz_cart.distance()
-    );
-    println!(
-        "  Round-trip distance residual: {}\n",
-        (eq_cart.distance() - back_cart.distance()).abs()
+        "Round-trip angular error: {}",
+        direction.angular_separation(&back_direction)
     );
 
-    // =========================================================================
-    // 3. Spherical directions (EquatorialTrueOfDate → Horizontal, GAST)
-    // =========================================================================
-    println!("3. SPHERICAL DIRECTIONS (GAST, .to_horizontal / .to_equatorial)");
-    println!("----------------------------------------------------------------");
-
-    let eq_tod = spherical::direction::EquatorialTrueOfDate::new(ra, dec);
-
-    println!("EquatorialTrueOfDate:");
-    println!("  RA = {:.4}, Dec = {:.4}", eq_tod.ra(), eq_tod.dec());
-
-    let hz_tod = eq_tod.to_horizontal(&jd, &site);
-    let back_tod = hz_tod.to_equatorial(&jd, &site);
-
-    println!("Horizontal:");
-    println!("  Alt = {:.4}, Az = {:.4}", hz_tod.alt(), hz_tod.az());
+    let cart_direction = direction.to_cartesian();
+    let horizontal_cart_direction = cart_direction.to_horizontal(&jd, &site);
+    let back_cart_direction = horizontal_cart_direction.to_equatorial(&jd, &site);
+    println!("\nCartesian direction (GAST): {horizontal_cart_direction:.4}");
     println!(
-        "  Round-trip angular separation: {}\n",
-        eq_tod.angular_separation(&back_tod)
+        "Round-trip angular error: {}",
+        cart_direction.angle_to(&back_cart_direction)
     );
-
-    // =========================================================================
-    // 4. Cartesian directions (EquatorialTrueOfDate → Horizontal, GAST)
-    // =========================================================================
-    println!("4. CARTESIAN DIRECTIONS (GAST, .to_horizontal / .to_equatorial)");
-    println!("-----------------------------------------------------------------");
-
-    let eq_cart_dir = eq_tod.to_cartesian();
-    let hz_cart_dir = eq_cart_dir.to_horizontal(&jd, &site);
-    let back_cart_dir = hz_cart_dir.to_equatorial(&jd, &site);
-
-    let hz_cart_sph = hz_cart_dir.to_spherical();
-    let back_cart_sph = back_cart_dir.to_spherical();
-
-    println!("Horizontal (cartesian):");
-    println!(
-        "  Alt = {:.4}, Az = {:.4}",
-        hz_cart_sph.alt(),
-        hz_cart_sph.az()
-    );
-    println!(
-        "  Round-trip angular separation: {}\n",
-        eq_tod.angular_separation(&back_cart_sph)
-    );
-
-    println!("=== Example Complete ===");
+    Ok(())
 }

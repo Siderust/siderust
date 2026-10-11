@@ -973,7 +973,8 @@ dependencies = [
 [[package]]
 name = "keplerian"
 version = "0.4.0"
-source = "git+https://github.com/Siderust/keplerian.git?rev=45bad1d40c91f9bbe85c3f88bb3024bfdd9f8e03#45bad1d40c91f9bbe85c3f88bb3024bfdd9f8e03"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "014a70f1d26f6e578f86359804a5f5979a39c32e652076c60b8b6d6a10c822c0"
 dependencies = [
  "affn",
  "qtty",
@@ -1161,7 +1162,8 @@ checksum = "d6790f58c7ff633d8771f42965289203411a5e5c68388703c06e14f24770b41e"
 [[package]]
 name = "optica"
 version = "0.4.0"
-source = "git+https://github.com/Siderust/optica.git?rev=8fbf20151855f8da94a10eb0ea1b44c49ad33fdd#8fbf20151855f8da94a10eb0ea1b44c49ad33fdd"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b2c4841db0aa9ffdaa2943886bf421d2f0830ade7dacc43389b920d1ed160976"
 dependencies = [
  "affn",
  "qtty",
@@ -1246,7 +1248,8 @@ dependencies = [
 [[package]]
 name = "principia"
 version = "0.5.0"
-source = "git+https://github.com/Siderust/principia.git?rev=0f5aedcb81706bbfc8a6240095d1d3321c437d52#0f5aedcb81706bbfc8a6240095d1d3321c437d52"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ea827b982c419ed89b2e8dfb0abde7d68bd3c7e5263b3430a72bdcde9e7bca2c"
 dependencies = [
  "affn",
  "qtty",
@@ -1829,7 +1832,8 @@ dependencies = [
 [[package]]
 name = "tempoch"
 version = "0.9.0"
-source = "git+https://github.com/Siderust/tempoch.git?rev=8738e233b489b7a4e6b6ec1ada10138bed5908bf#8738e233b489b7a4e6b6ec1ada10138bed5908bf"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e002565331f423a3cc428f4c9615653f3c8f39bdd399eb76c41efeb96c48ebb5"
 dependencies = [
  "tempoch-core",
 ]
@@ -1837,7 +1841,8 @@ dependencies = [
 [[package]]
 name = "tempoch-core"
 version = "0.9.0"
-source = "git+https://github.com/Siderust/tempoch.git?rev=8738e233b489b7a4e6b6ec1ada10138bed5908bf#8738e233b489b7a4e6b6ec1ada10138bed5908bf"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "37320805d32dea837e0a6106a3cbb3f526219964d64f5d068de920ff699d14b0"
 dependencies = [
  "affn",
  "chrono",
@@ -1848,7 +1853,8 @@ dependencies = [
 [[package]]
 name = "tempoch-ffi"
 version = "0.9.0"
-source = "git+https://github.com/Siderust/tempoch.git?rev=8738e233b489b7a4e6b6ec1ada10138bed5908bf#8738e233b489b7a4e6b6ec1ada10138bed5908bf"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e6eb672ae02e1f075320371066d29411dd34f9e62c017322e1f184d7224ef24a"
 dependencies = [
  "cbindgen",
  "chrono",

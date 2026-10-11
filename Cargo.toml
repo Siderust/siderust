@@ -213,12 +213,3 @@ workspace = true
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
-
-# Temporary release bridges: remove after these versions are published.
-[patch.crates-io]
-keplerian = { git = "https://github.com/Siderust/keplerian.git", rev = "45bad1d40c91f9bbe85c3f88bb3024bfdd9f8e03" }
-optica = { git = "https://github.com/Siderust/optica.git", rev = "8fbf20151855f8da94a10eb0ea1b44c49ad33fdd" }
-tempoch = { git = "https://github.com/Siderust/tempoch.git", rev = "8738e233b489b7a4e6b6ec1ada10138bed5908bf" }
-tempoch-core = { git = "https://github.com/Siderust/tempoch.git", rev = "8738e233b489b7a4e6b6ec1ada10138bed5908bf" }
-tempoch-ffi = { git = "https://github.com/Siderust/tempoch.git", rev = "8738e233b489b7a4e6b6ec1ada10138bed5908bf" }
-principia = { git = "https://github.com/Siderust/principia.git", rev = "0f5aedcb81706bbfc8a6240095d1d3321c437d52" }
