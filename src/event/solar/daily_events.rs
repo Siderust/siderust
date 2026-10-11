@@ -8,7 +8,7 @@
 //! generic Chebyshev-first engine or scan+Brent when the analytic model is
 //! unreliable.
 
-use crate::astro::earth_rotation::gmst_default;
+use crate::astro::earth_rotation::gmst_from_tt;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::event::altitude::search::{
@@ -569,7 +569,7 @@ fn solar_daily_state(
         return None;
     }
 
-    let gmst = gmst_default(jd).value();
+    let gmst = gmst_from_tt(jd).value();
     let lst = normalize_angle(gmst + site.lon.to::<Radian>().value());
     let hour_angle = normalize_angle(lst - ra);
     let transit_offset_days = -hour_angle / HA_RATE_RAD_PER_DAY;

@@ -22,7 +22,7 @@ pub extern "C" fn siderust_vsop87_sun_barycentric(
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
-        let t = ffi_try!(crate::ffi_utils::jd_from_f64(jd));
+        let t = ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd));
         let pos = Vsop87Ephemeris::sun_barycentric(t);
         // SAFETY: raw-pointer use follows this function's C ABI preconditions.
         unsafe {
@@ -50,7 +50,7 @@ pub extern "C" fn siderust_vsop87_earth_barycentric(
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
-        let t = ffi_try!(crate::ffi_utils::jd_from_f64(jd));
+        let t = ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd));
         let pos = Vsop87Ephemeris::earth_barycentric(t);
         // SAFETY: raw-pointer use follows this function's C ABI preconditions.
         unsafe {
@@ -78,7 +78,7 @@ pub extern "C" fn siderust_vsop87_earth_heliocentric(
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
-        let t = ffi_try!(crate::ffi_utils::jd_from_f64(jd));
+        let t = ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd));
         let pos = Vsop87Ephemeris::earth_heliocentric(t);
         // SAFETY: raw-pointer use follows this function's C ABI preconditions.
         unsafe {
@@ -106,7 +106,7 @@ pub extern "C" fn siderust_vsop87_mars_heliocentric(
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
-        let t = ffi_try!(crate::ffi_utils::jd_from_f64(jd));
+        let t = ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd));
         let pos = Mars::vsop87a(t);
         // SAFETY: raw-pointer use follows this function's C ABI preconditions.
         unsafe {
@@ -134,7 +134,7 @@ pub extern "C" fn siderust_vsop87_mars_barycentric(
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
-        let t = ffi_try!(crate::ffi_utils::jd_from_f64(jd));
+        let t = ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd));
         let pos = Mars::vsop87e(t);
         // SAFETY: raw-pointer use follows this function's C ABI preconditions.
         unsafe {
@@ -162,7 +162,7 @@ pub extern "C" fn siderust_vsop87_venus_heliocentric(
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
-        let t = ffi_try!(crate::ffi_utils::jd_from_f64(jd));
+        let t = ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd));
         let pos = Venus::vsop87a(t);
         // SAFETY: raw-pointer use follows this function's C ABI preconditions.
         unsafe {
@@ -190,7 +190,7 @@ pub extern "C" fn siderust_vsop87_mercury_heliocentric(
 ) -> SiderustStatus {
     ffi_guard! {{
         if out.is_null() { return SiderustStatus::NullPointer; }
-        let t = ffi_try!(crate::ffi_utils::jd_from_f64(jd));
+        let t = ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd));
         let pos = Mercury::vsop87a(t);
         // SAFETY: raw-pointer use follows this function's C ABI preconditions.
         unsafe { *out = SiderustCartesianPos { x: pos.x().value(), y: pos.y().value(), z: pos.z().value(), frame: SiderustFrame::EclipticMeanJ2000, center: SiderustCenter::Heliocentric, length_unit: SiderustLengthUnit::AU }; }
@@ -207,7 +207,7 @@ pub extern "C" fn siderust_vsop87_mercury_barycentric(
 ) -> SiderustStatus {
     ffi_guard! {{
         if out.is_null() { return SiderustStatus::NullPointer; }
-        let t = ffi_try!(crate::ffi_utils::jd_from_f64(jd));
+        let t = ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd));
         let pos = Mercury::vsop87e(t);
         // SAFETY: raw-pointer use follows this function's C ABI preconditions.
         unsafe { *out = SiderustCartesianPos { x: pos.x().value(), y: pos.y().value(), z: pos.z().value(), frame: SiderustFrame::EclipticMeanJ2000, center: SiderustCenter::Barycentric, length_unit: SiderustLengthUnit::AU }; }
@@ -224,7 +224,7 @@ pub extern "C" fn siderust_vsop87_venus_barycentric(
 ) -> SiderustStatus {
     ffi_guard! {{
         if out.is_null() { return SiderustStatus::NullPointer; }
-        let t = ffi_try!(crate::ffi_utils::jd_from_f64(jd));
+        let t = ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd));
         let pos = Venus::vsop87e(t);
         // SAFETY: raw-pointer use follows this function's C ABI preconditions.
         unsafe { *out = SiderustCartesianPos { x: pos.x().value(), y: pos.y().value(), z: pos.z().value(), frame: SiderustFrame::EclipticMeanJ2000, center: SiderustCenter::Barycentric, length_unit: SiderustLengthUnit::AU }; }
@@ -241,7 +241,7 @@ pub extern "C" fn siderust_vsop87_jupiter_heliocentric(
 ) -> SiderustStatus {
     ffi_guard! {{
         if out.is_null() { return SiderustStatus::NullPointer; }
-        let t = ffi_try!(crate::ffi_utils::jd_from_f64(jd));
+        let t = ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd));
         let pos = Jupiter::vsop87a(t);
         // SAFETY: raw-pointer use follows this function's C ABI preconditions.
         unsafe { *out = SiderustCartesianPos { x: pos.x().value(), y: pos.y().value(), z: pos.z().value(), frame: SiderustFrame::EclipticMeanJ2000, center: SiderustCenter::Heliocentric, length_unit: SiderustLengthUnit::AU }; }
@@ -258,7 +258,7 @@ pub extern "C" fn siderust_vsop87_jupiter_barycentric(
 ) -> SiderustStatus {
     ffi_guard! {{
         if out.is_null() { return SiderustStatus::NullPointer; }
-        let t = ffi_try!(crate::ffi_utils::jd_from_f64(jd));
+        let t = ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd));
         let pos = Jupiter::vsop87e(t);
         // SAFETY: raw-pointer use follows this function's C ABI preconditions.
         unsafe { *out = SiderustCartesianPos { x: pos.x().value(), y: pos.y().value(), z: pos.z().value(), frame: SiderustFrame::EclipticMeanJ2000, center: SiderustCenter::Barycentric, length_unit: SiderustLengthUnit::AU }; }
@@ -275,7 +275,7 @@ pub extern "C" fn siderust_vsop87_saturn_heliocentric(
 ) -> SiderustStatus {
     ffi_guard! {{
         if out.is_null() { return SiderustStatus::NullPointer; }
-        let t = ffi_try!(crate::ffi_utils::jd_from_f64(jd));
+        let t = ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd));
         let pos = Saturn::vsop87a(t);
         // SAFETY: raw-pointer use follows this function's C ABI preconditions.
         unsafe { *out = SiderustCartesianPos { x: pos.x().value(), y: pos.y().value(), z: pos.z().value(), frame: SiderustFrame::EclipticMeanJ2000, center: SiderustCenter::Heliocentric, length_unit: SiderustLengthUnit::AU }; }
@@ -292,7 +292,7 @@ pub extern "C" fn siderust_vsop87_saturn_barycentric(
 ) -> SiderustStatus {
     ffi_guard! {{
         if out.is_null() { return SiderustStatus::NullPointer; }
-        let t = ffi_try!(crate::ffi_utils::jd_from_f64(jd));
+        let t = ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd));
         let pos = Saturn::vsop87e(t);
         // SAFETY: raw-pointer use follows this function's C ABI preconditions.
         unsafe { *out = SiderustCartesianPos { x: pos.x().value(), y: pos.y().value(), z: pos.z().value(), frame: SiderustFrame::EclipticMeanJ2000, center: SiderustCenter::Barycentric, length_unit: SiderustLengthUnit::AU }; }
@@ -309,7 +309,7 @@ pub extern "C" fn siderust_vsop87_uranus_heliocentric(
 ) -> SiderustStatus {
     ffi_guard! {{
         if out.is_null() { return SiderustStatus::NullPointer; }
-        let t = ffi_try!(crate::ffi_utils::jd_from_f64(jd));
+        let t = ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd));
         let pos = Uranus::vsop87a(t);
         // SAFETY: raw-pointer use follows this function's C ABI preconditions.
         unsafe { *out = SiderustCartesianPos { x: pos.x().value(), y: pos.y().value(), z: pos.z().value(), frame: SiderustFrame::EclipticMeanJ2000, center: SiderustCenter::Heliocentric, length_unit: SiderustLengthUnit::AU }; }
@@ -326,7 +326,7 @@ pub extern "C" fn siderust_vsop87_uranus_barycentric(
 ) -> SiderustStatus {
     ffi_guard! {{
         if out.is_null() { return SiderustStatus::NullPointer; }
-        let t = ffi_try!(crate::ffi_utils::jd_from_f64(jd));
+        let t = ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd));
         let pos = Uranus::vsop87e(t);
         // SAFETY: raw-pointer use follows this function's C ABI preconditions.
         unsafe { *out = SiderustCartesianPos { x: pos.x().value(), y: pos.y().value(), z: pos.z().value(), frame: SiderustFrame::EclipticMeanJ2000, center: SiderustCenter::Barycentric, length_unit: SiderustLengthUnit::AU }; }
@@ -343,7 +343,7 @@ pub extern "C" fn siderust_vsop87_neptune_heliocentric(
 ) -> SiderustStatus {
     ffi_guard! {{
         if out.is_null() { return SiderustStatus::NullPointer; }
-        let t = ffi_try!(crate::ffi_utils::jd_from_f64(jd));
+        let t = ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd));
         let pos = Neptune::vsop87a(t);
         // SAFETY: raw-pointer use follows this function's C ABI preconditions.
         unsafe { *out = SiderustCartesianPos { x: pos.x().value(), y: pos.y().value(), z: pos.z().value(), frame: SiderustFrame::EclipticMeanJ2000, center: SiderustCenter::Heliocentric, length_unit: SiderustLengthUnit::AU }; }
@@ -360,7 +360,7 @@ pub extern "C" fn siderust_vsop87_neptune_barycentric(
 ) -> SiderustStatus {
     ffi_guard! {{
         if out.is_null() { return SiderustStatus::NullPointer; }
-        let t = ffi_try!(crate::ffi_utils::jd_from_f64(jd));
+        let t = ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd));
         let pos = Neptune::vsop87e(t);
         // SAFETY: raw-pointer use follows this function's C ABI preconditions.
         unsafe { *out = SiderustCartesianPos { x: pos.x().value(), y: pos.y().value(), z: pos.z().value(), frame: SiderustFrame::EclipticMeanJ2000, center: SiderustCenter::Barycentric, length_unit: SiderustLengthUnit::AU }; }
@@ -379,7 +379,7 @@ pub extern "C" fn siderust_vsop87_moon_geocentric(
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
-        let t = ffi_try!(crate::ffi_utils::jd_from_f64(jd));
+        let t = ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd));
         let pos = Vsop87Ephemeris::moon_geocentric(t);
         // SAFETY: raw-pointer use follows this function's C ABI preconditions.
         unsafe {

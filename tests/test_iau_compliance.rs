@@ -33,7 +33,7 @@ fn full_gcrs_to_itrs_chain() {
     // We verify that the chain produces a proper rotation (det = 1, orthogonal).
 
     let jd_tt = JulianDate::try_new(Days::new(2_460_000.5)).unwrap(); // 2023-02-25 TT
-    let jd_ut1 = jd_tt; // approximation: UT1 ≈ TT (placeholder pending real EOP; ΔT ≈ 69 s in 2025)
+    let jd_ut1 = siderust::astro::earth_rotation::jd_ut1_from_tt(jd_tt);
 
     // Step 1: Nutation
     let nut = nutation_iau2000b(jd_tt);
@@ -144,8 +144,11 @@ fn era_and_gmst_differ_by_accumulation() {
     // The polynomial is ~0.014506″ at t=0, growing at ~4612″/century.
     // At t ≈ 0.23 century (2023), the polynomial is ~1060″ ≈ 0.295°.
     let jd = JulianDate::try_new(Days::new(2_460_000.5)).unwrap();
-    let era = earth_rotation_angle(jd);
-    let gmst = gmst_iau2006(jd, jd);
+    let era = earth_rotation_angle(tempoch::JulianDate::<tempoch::UT1>::new(jd.raw().value()));
+    let gmst = gmst_iau2006(
+        tempoch::JulianDate::<tempoch::UT1>::new(jd.raw().value()),
+        jd,
+    );
 
     let diff_as = ((gmst - era).value().rem_euclid(TAU)) * 206_264.806;
     // Should be ~1060″ ≈ 0.295°
@@ -162,8 +165,16 @@ fn gast_minus_gmst_equals_equation_of_equinoxes() {
     let jd = JulianDate::try_new(Days::new(2_460_000.5)).unwrap();
     let nut = nutation_iau2000b(jd);
 
-    let gmst = gmst_iau2006(jd, jd);
-    let gast = gast_iau2006(jd, jd, nut.dpsi, nut.mean_obliquity);
+    let gmst = gmst_iau2006(
+        tempoch::JulianDate::<tempoch::UT1>::new(jd.raw().value()),
+        jd,
+    );
+    let gast = gast_iau2006(
+        tempoch::JulianDate::<tempoch::UT1>::new(jd.raw().value()),
+        jd,
+        nut.dpsi,
+        nut.mean_obliquity,
+    );
 
     let ee_expected = equation_of_the_equinoxes_iau2000(jd, nut.dpsi, nut.mean_obliquity);
     let ee_actual = (gast - gmst).value();
@@ -301,7 +312,8 @@ fn era_monotonic_over_sidereal_day() {
     let jd0 = 2_460_000.5;
     for i in 0..24 {
         let jd = JulianDate::try_new(Days::new(jd0 + i as f64 / 24.0 * 0.99727)).unwrap();
-        let era = earth_rotation_angle(jd).value();
+        let era = earth_rotation_angle(tempoch::JulianDate::<tempoch::UT1>::new(jd.raw().value()))
+            .value();
         if i > 0 {
             // Allow wraparound at 2π
             let diff = (era - prev).rem_euclid(TAU);

@@ -183,7 +183,7 @@ pub extern "C" fn siderust_runtime_ephemeris_sun_barycentric(
             return SiderustStatus::NullPointer;
         }
         let eph = unsafe { &*handle };
-        let t = ffi_try!(crate::ffi_utils::jd_from_f64(jd));
+        let t = ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd));
         let pos = match eph.inner.try_sun_barycentric(t) {
             Ok(pos) => pos,
             Err(err) => return ephemeris_status(err),
@@ -215,7 +215,7 @@ pub extern "C" fn siderust_runtime_ephemeris_earth_barycentric(
             return SiderustStatus::NullPointer;
         }
         let eph = unsafe { &*handle };
-        let t = ffi_try!(crate::ffi_utils::jd_from_f64(jd));
+        let t = ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd));
         let pos = match eph.inner.try_earth_barycentric(t) {
             Ok(pos) => pos,
             Err(err) => return ephemeris_status(err),
@@ -247,7 +247,7 @@ pub extern "C" fn siderust_runtime_ephemeris_earth_heliocentric(
             return SiderustStatus::NullPointer;
         }
         let eph = unsafe { &*handle };
-        let t = ffi_try!(crate::ffi_utils::jd_from_f64(jd));
+        let t = ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd));
         let pos = match eph.inner.try_earth_heliocentric(t) {
             Ok(pos) => pos,
             Err(err) => return ephemeris_status(err),
@@ -279,7 +279,7 @@ pub extern "C" fn siderust_runtime_ephemeris_earth_barycentric_velocity(
             return SiderustStatus::NullPointer;
         }
         let eph = unsafe { &*handle };
-        let t = ffi_try!(crate::ffi_utils::jd_from_f64(jd));
+        let t = ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd));
         let vel = match eph.inner.try_earth_barycentric_velocity(t) {
             Ok(vel) => vel,
             Err(err) => return ephemeris_status(err),
@@ -309,7 +309,7 @@ pub extern "C" fn siderust_runtime_ephemeris_moon_geocentric(
             return SiderustStatus::NullPointer;
         }
         let eph = unsafe { &*handle };
-        let t = ffi_try!(crate::ffi_utils::jd_from_f64(jd));
+        let t = ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd));
         let pos = match eph.inner.try_moon_geocentric(t) {
             Ok(pos) => pos,
             Err(err) => return ephemeris_status(err),

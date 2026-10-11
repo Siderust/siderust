@@ -26,10 +26,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TLE propagation consistently uses civil UTC model minutes (1,440 per day),
   rather than SI elapsed minutes. Each propagator retains one `TimeContext`;
   its C API shares that snapshot and reports encoding/decoding failures.
-- CPF uses upstream MJD conversion instead of a duplicated calendar algorithm;
-  writing reports UTC encoding errors. Civil SOD must be in `[0, 86400)`.
-- Pin the upgraded Principia branch commit through a crates.io Git patch until
-  the compatible release is published. No tempoch 0.7 dependency remains.
+- CPF preserves native UTC civil leap-second labels and fractional seconds;
+  invalid leap-second dates report conversion errors.
+- Interpolate C04 UT1-TAI across leap boundaries, then recover DUT1 using
+  context-decoded UTC offsets; invalid EOP fields now report format errors.
+- Supplied DUT1 is applied relative to native UTC; the coarse IERS policy
+  derives DUT1 from the monthly UT1 model when observations are unavailable.
+- Earth-rotation, ERA, GMST/GAST and precise horizontal APIs carry
+  `JulianDate<UT1>` separately from TT. FFI decodes each scale explicitly.
+- Use published Principia 0.4 from crates.io. No tempoch 0.7 dependency remains.
+  Pin tempoch-core's native UTC offset API and split-coordinate civil
+  precision fixes at `9b6d90e` pending release; UTC history stays upstream.
+- Remove the redundant `gmst_default` alias; use `gmst_from_tt`.
 
 ## [0.12.0] - 2026-09-30
 

@@ -413,5 +413,10 @@ TLE model offsets use 1,440 nominal minutes per civil day. Scalar Serde uses
 civil UTC coordinates and a fresh default context; use upstream tagged split
 representations for leap instants and explicit snapshots for reproducibility.
 
-The manifest temporarily patches Principia to the committed tempoch 0.8 upgrade
-in its upstream repository; this also applies to `siderust-ffi`.
+Principia 0.4.0 resolves from crates.io and shares tempoch 0.8 with Siderust.
+
+The native `TimeContext::tai_minus_utc` API and split-coordinate UTC civil
+conversion fixes are pinned from tempoch-core revision `9b6d90e` pending an
+upstream release. This preserves nanoseconds at leap boundaries and keeps
+UTC history and historical frequency offsets in tempoch. Principia has no
+Git patch.

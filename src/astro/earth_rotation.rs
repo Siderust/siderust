@@ -27,7 +27,6 @@
 //! | [`jd_ut1_from_tt`] | no | monthly ΔT model via [`TimeContext::new`] |
 //! | [`jd_ut1_from_tt_eop`] | preferred | refines UT1 when runtime EOP is active |
 //! | [`gmst_from_tt`] | no | ΔT-derived UT1 |
-//! | [`gmst_default`] | no | alias of [`gmst_from_tt`] (ΔT approximation) |
 //! | [`try_gmst_with_eop`] | **yes** | IERS EOP–refined GMST |
 //!
 //! EOP data is available only when a `tempoch` runtime bundle is active
@@ -35,10 +34,8 @@
 //! [`try_gmst_with_eop`] returns
 //! [`EopError::NoData`]. UTC coordinates come from tempoch's native conversion.
 //!
-//! The `JulianDate` returned by the UT1 helpers carries the numeric JD
-//! value of the requested timescale but is typed as TT for interoperability
-//! with the rest of the sidereal-time call sites (matching the SOFA convention
-//! for `iauGmst06`).
+//! UT1 arguments and results carry `JulianDate<UT1>`; dynamical arguments
+//! carry `JulianDate<TT>`.
 //!
 //! ## References
 //!
@@ -49,18 +46,13 @@
 use crate::astro::eop::{EopError, EopProvider, EopValues, IersEop};
 use crate::astro::sidereal::gmst_iau2006;
 use crate::qtty::*;
-use crate::time::{JulianDate, TimeContext, TT, UT1};
+use crate::time::{JulianDate, TimeContext, UT1};
 
 /// Compute JD(UT1) from JD(TT) using tempoch's ΔT model.
 ///
 /// This uses the piecewise ΔT model in `tempoch` (Stephenson & Houlden,
 /// Meeus table, IERS-observed 1992–2025, linear extrapolation),
 /// accurate to ~0.5 s for modern epochs.
-///
-/// The result is stored as a `JulianDate` (which has TT semantics in
-/// tempoch's type system), but its numeric value is on the UT1 axis.
-/// This matches the SOFA convention where `iauGmst06` takes UT1 as a
-/// plain JD double.
 ///
 /// # Panics
 ///
@@ -70,49 +62,36 @@ use crate::time::{JulianDate, TimeContext, TT, UT1};
 /// trigger an `expect` failure. Domain-restricted callers can use
 /// [`tempoch::JulianDate::to_with`] directly to recover a `Result`.
 #[inline]
-pub fn jd_ut1_from_tt(jd_tt: JulianDate) -> JulianDate {
-    let jd_tt: tempoch::JulianDate<crate::time::TT> = jd_tt;
+pub fn jd_ut1_from_tt(jd_tt: JulianDate) -> tempoch::JulianDate<UT1> {
     let ut1 = jd_tt
         .to_with::<UT1>(&TimeContext::new())
         .expect("TT->UT1 conversion should succeed within the bundled model horizon");
-    crate::time::JulianDate::new(ut1.to::<tempoch::JD>().raw().value())
+    ut1.to::<tempoch::JD>()
 }
 
 /// Compute JD(UT1) from JD(TT) with IERS EOP refinement.
 ///
-/// Routes the conversion through `tempoch`'s context-aware `TT → UT1` chain.
-/// When a runtime EOP bundle is active, the bundled daily `dUT1 = UT1 − UTC`
-/// interpolation is applied first; the caller's [`EopValues`] is then honoured
-/// by adding the residual `eop.dut1 − bundled_dut1`.
-///
-/// Without runtime EOP the bundled `dUT1` term is unavailable and the
-/// residual reduces to the caller-supplied `eop.dut1` relative to zero.
+/// The supplied DUT1 defines UT1 relative to native civil UTC. The context
+/// supplies TAI-UTC, including at leap-second instants. No monthly ΔT
+/// estimate is added to the supplied EOP.
 ///
 /// # Panics
 ///
-/// Panics if `jd_tt` encodes a value that is not finite or falls outside
-/// the range supported by the bundled `tempoch` ΔT model (approximately
-/// 4500 BCE through year 3000 CE).
+/// Panics if the UTC offset or resulting UT1 coordinate cannot be represented.
 #[inline]
-pub fn jd_ut1_from_tt_eop(jd_tt: JulianDate, eop: &EopValues) -> JulianDate {
-    let jd_tt_t: tempoch::JulianDate<TT> = jd_tt;
-    let ctx = TimeContext::with_builtin_eop();
-    let ut1 = jd_tt_t
-        .to_with::<UT1>(&ctx)
-        .expect("TT->UT1 conversion should succeed within the bundled model horizon");
-    let ut1_jd = ut1.to::<tempoch::JD>().raw().value();
-
-    let bundled_dut1 = jd_tt_t
-        .to::<tempoch::UTC>()
-        .to_with::<tempoch::MJD>(&ctx)
-        .and_then(|utc| utc.try_raw_with(&ctx))
-        .ok()
-        .and_then(|mjd_utc| ctx.ut1_minus_utc(mjd_utc))
-        .map(|s| s.value())
-        .unwrap_or(0.0);
-    let residual_days = (eop.dut1.value() - bundled_dut1) / 86_400.0;
-
-    crate::time::JulianDate::new(ut1_jd + residual_days)
+pub fn jd_ut1_from_tt_eop(jd_tt: JulianDate, eop: &EopValues) -> tempoch::JulianDate<UT1> {
+    // A supplied DUT1 defines UT1 relative to civil UTC, independently of
+    // the monthly ΔT model. Use its atomic coordinate and the context-owned
+    // offset without passing a leap instant through a scalar UTC JD.
+    let ctx = TimeContext::new().allow_pre_definition_utc();
+    let utc = jd_tt.to::<tempoch::UTC>();
+    let offset = ctx
+        .tai_minus_utc(utc)
+        .expect("TT epoch must have a representable civil UTC date");
+    let (hi, lo) = utc.to::<tempoch::TAI>().raw_seconds_pair();
+    tempoch::Time::<UT1>::try_from_raw_j2000_seconds_split(hi, lo - offset + eop.dut1)
+        .expect("UT1 coordinate must be finite")
+        .to::<tempoch::JD>()
 }
 
 /// Compute GMST with proper UT1/TT separation.
@@ -130,16 +109,6 @@ pub fn gmst_from_tt(jd_tt: JulianDate) -> Radians {
 pub fn gmst_from_tt_eop(jd_tt: JulianDate, eop: &EopValues) -> Radians {
     let jd_ut1 = jd_ut1_from_tt_eop(jd_tt, eop);
     gmst_iau2006(jd_ut1, jd_tt)
-}
-
-/// Compute GMST using the ΔT model (no runtime EOP required).
-///
-/// This is the recommended default when a runtime IERS EOP bundle is not
-/// loaded. Accuracy is limited by the monthly ΔT table (~0.5 s in UT1 for
-/// modern epochs). For IERS-refined GMST use [`try_gmst_with_eop`].
-#[inline]
-pub fn gmst_default(jd_tt: JulianDate) -> Radians {
-    gmst_from_tt(jd_tt)
 }
 
 /// Compute GMST with IERS EOP refinement when a runtime bundle is active.
@@ -208,8 +177,13 @@ mod tests {
             ..Default::default()
         };
         let jd_eop = jd_ut1_from_tt_eop(jd(), &eop);
-        let jd_delta_t = jd_ut1_from_tt(jd());
-        let recovered_dut1_s = (jd_eop.raw().value() - jd_delta_t.raw().value()) * 86_400.0;
+        let jd_utc = jd()
+            .to::<tempoch::UTC>()
+            .to_with::<tempoch::JD>(&TimeContext::new())
+            .unwrap();
+        let recovered_dut1_s = (jd_eop.raw().value()
+            - jd_utc.try_raw_with(&TimeContext::new()).unwrap().value())
+            * 86_400.0;
         assert!(
             (recovered_dut1_s - dut1_s).abs() < 1e-4,
             "residual dut1 should equal supplied value ({dut1_s}s), got {recovered_dut1_s}s"
@@ -285,13 +259,7 @@ mod tests {
         assert!(gmst_eop >= Radians::new(0.0));
     }
 
-    // ── gmst_default / try_gmst_with_eop ──────────────────────────────────
-
-    #[test]
-    fn gmst_default_matches_delta_t_path() {
-        let jd_val = jd();
-        assert!((gmst_default(jd_val).value() - gmst_from_tt(jd_val).value()).abs() < 1e-15);
-    }
+    // ── try_gmst_with_eop ──────────────────────────────────
 
     #[test]
     fn try_gmst_with_eop_requires_runtime_bundle() {

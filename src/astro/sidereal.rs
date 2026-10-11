@@ -37,10 +37,12 @@
 //! use siderust::time::{JulianDate, JD, TT, Time, UTC};
 //!
 //! let jd: JulianDate = Time::<UTC>::from_chrono(Utc::now()).to::<TT>().to::<JD>();
-//! let gmst = gmst_iau2006(jd, jd); // jd_ut1 ≈ jd_tt for most applications
+//! let ut1 = jd.to_with::<tempoch::UT1>(&tempoch::TimeContext::new())?;
+//! let gmst = gmst_iau2006(ut1, jd);
 //! let lon_madrid = Degrees::new(-3.7038).to::<Radian>();
 //! let lst = gmst + lon_madrid;
 //! println!("GMST = {:.4}°,  LST = {:.4}°", gmst.to::<Degree>(), lst.to::<Degree>());
+//! # Ok::<(), tempoch::ConversionError>(())
 //! ```
 //!
 //! ## References
@@ -79,7 +81,7 @@ pub use crate::qtty::time::SIDEREAL_DAY;
 /// * Capitaine, Wallace & Chapront (2003), A&A 412, 567
 /// * SOFA routine `iauGmst06`
 #[inline]
-pub fn gmst_iau2006(jd_ut1: JulianDate, jd_tt: JulianDate) -> Radians {
+pub fn gmst_iau2006(jd_ut1: tempoch::JulianDate<tempoch::UT1>, jd_tt: JulianDate) -> Radians {
     let era = earth_rotation_angle(jd_ut1);
     let t = (jd_tt.raw().value() - 2_451_545.0_f64) / 36_525.0_f64;
 
@@ -115,7 +117,7 @@ pub fn gmst_iau2006(jd_ut1: JulianDate, jd_tt: JulianDate) -> Radians {
 /// * SOFA routine `iauGst06`
 #[inline]
 pub fn gast_iau2006(
-    jd_ut1: JulianDate,
+    jd_ut1: tempoch::JulianDate<tempoch::UT1>,
     jd_tt: JulianDate,
     dpsi: Radians,
     mean_obliquity: Radians,
@@ -133,7 +135,7 @@ pub fn gast_iau2006(
 /// hold nutation angles; use [`gast_iau2006`] when supplying precomputed
 /// nutation for batch transforms.
 #[inline]
-pub fn gast_iau2006a(jd_ut1: JulianDate, jd_tt: JulianDate) -> Radians {
+pub fn gast_iau2006a(jd_ut1: tempoch::JulianDate<tempoch::UT1>, jd_tt: JulianDate) -> Radians {
     let nut = crate::astro::nutation::nutation_iau2000b(jd_tt);
     gast_iau2006(jd_ut1, jd_tt, nut.dpsi, nut.mean_obliquity)
 }
@@ -147,7 +149,10 @@ mod tests {
     fn gmst_iau2006_at_j2000() {
         // At J2000.0, GMST ≈ ERA ≈ 280.46° (polynomial term is tiny at t=0)
         let jd = crate::J2000;
-        let gmst = gmst_iau2006(jd, jd);
+        let gmst = gmst_iau2006(
+            tempoch::JulianDate::<tempoch::UT1>::new(jd.raw().value()),
+            jd,
+        );
         let gmst_deg = gmst.to::<Degree>();
         assert!(
             (gmst_deg.value() - 280.46_f64).abs() < 0.1,
@@ -160,7 +165,10 @@ mod tests {
     fn gmst_iau2006_range() {
         for jd in [2_451_545.0, 2_460_000.5, 2_440_000.0] {
             let jd = crate::time::JulianDate::new(jd);
-            let gmst = gmst_iau2006(jd, jd);
+            let gmst = gmst_iau2006(
+                tempoch::JulianDate::<tempoch::UT1>::new(jd.raw().value()),
+                jd,
+            );
             assert!(gmst >= Radians::new(0.0), "GMST should be ≥ 0");
             assert!(gmst < Radians::new(TAU), "GMST should be < 2π");
         }
@@ -171,8 +179,16 @@ mod tests {
         // GAST differs from GMST by the equation of the equinoxes.
         let jd = crate::time::JulianDate::new(2_460_000.5);
         let nutation = crate::astro::nutation::nutation_iau2000b(jd);
-        let gast = gast_iau2006(jd, jd, nutation.dpsi, nutation.mean_obliquity);
-        let gmst = gmst_iau2006(jd, jd);
+        let gast = gast_iau2006(
+            tempoch::JulianDate::<tempoch::UT1>::new(jd.raw().value()),
+            jd,
+            nutation.dpsi,
+            nutation.mean_obliquity,
+        );
+        let gmst = gmst_iau2006(
+            tempoch::JulianDate::<tempoch::UT1>::new(jd.raw().value()),
+            jd,
+        );
 
         let diff_as = (gast - gmst).value().abs() * 206_264.806;
         assert!(
@@ -188,7 +204,12 @@ mod tests {
 
         let jd = crate::time::JulianDate::new(2_453_736.5);
         let nut = <Iau2006A as NutationModel>::nutation(jd);
-        let gast = gast_iau2006(jd, jd, nut.dpsi, nut.mean_obliquity);
+        let gast = gast_iau2006(
+            tempoch::JulianDate::<tempoch::UT1>::new(jd.raw().value()),
+            jd,
+            nut.dpsi,
+            nut.mean_obliquity,
+        );
 
         // SOFA/ERFA `gst06a(2400000.5, 53736.0, 2400000.5, 53736.0)`.
         let sofa = 1.754_166_137_675_019_2_f64;
@@ -204,8 +225,16 @@ mod tests {
     fn gast_iau2006a_matches_low_level_gast() {
         let jd = crate::time::JulianDate::new(2_460_000.5);
         let nut = crate::astro::nutation::nutation_iau2000b(jd);
-        let low = gast_iau2006(jd, jd, nut.dpsi, nut.mean_obliquity);
-        let high = gast_iau2006a(jd, jd);
+        let low = gast_iau2006(
+            tempoch::JulianDate::<tempoch::UT1>::new(jd.raw().value()),
+            jd,
+            nut.dpsi,
+            nut.mean_obliquity,
+        );
+        let high = gast_iau2006a(
+            tempoch::JulianDate::<tempoch::UT1>::new(jd.raw().value()),
+            jd,
+        );
         assert!((low.value() - high.value()).abs() < 1.0e-15);
     }
 }

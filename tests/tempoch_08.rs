@@ -1,5 +1,5 @@
 //! Regression values for the civil UTC integration introduced with tempoch 0.8.
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Timelike, Utc};
 use qtty::time::Minutes;
 use qtty::Day;
 use siderust::astro::sgp4::TlePropagator;
@@ -137,7 +137,7 @@ fn c04_interpolation_follows_civil_mjd_not_elapsed_si_time() {
         .unwrap();
     let mid = interpolate(&records, noon, &ctx).unwrap().unwrap();
     assert!((mid.eop.xp.value() - 0.2).abs() < 1e-8);
-    assert!((mid.eop.dut1.value() - 0.1).abs() < 1e-8);
+    assert!((mid.eop.dut1.value() + 0.4).abs() < 1e-8);
     let leap = calendar("2016-12-31T23:59:60Z", &ctx).reinterpret::<MJD>();
     assert_eq!(
         interpolate(&records, leap, &ctx).unwrap_err(),
@@ -201,6 +201,129 @@ fn utc_context_policy_and_invalid_coordinates_propagate_errors() {
         assert_eq!(
             JulianDate::<UTC>::try_new_with(Day::new(raw), &ctx).unwrap_err(),
             ConversionError::NonFinite
+        );
+    }
+}
+
+#[cfg(feature = "std")]
+#[test]
+fn cpf_preserves_leap_second_labels_and_fractional_seconds() {
+    use siderust::formats::ilrs::cpf::{parse_cpf, write_cpf};
+    let ctx = TimeContext::new();
+    for sod in [86400.0, 86400.125, 86400.999, 86400.999999999] {
+        let input = format!("H1 CPF 2 TEST 2016 12 31 00 1\nH2 TEST 1 5 2016 12 31 00 00 00 2017 01 01 00 00 00 60 0 0\n10 1 57753 {sod:.9} 0 1000000 2000000 3000000\n99\n");
+        let cpf = parse_cpf(&input).unwrap();
+        let civil = cpf.ephemeris.entries[0]
+            .epoch
+            .try_to_chrono_with(&ctx)
+            .unwrap();
+        assert_eq!(civil.second(), 59);
+        assert!(
+            (cpf.ephemeris.entries[0]
+                .epoch
+                .duration_since(
+                    ModifiedJulianDate::<UTC>::try_new_with(Day::new(57753.0), &ctx)
+                        .unwrap()
+                        .to_j2000s()
+                )
+                .value()
+                - sod)
+                .abs()
+                < 2e-7
+        );
+        let mut output = Vec::new();
+        write_cpf(&cpf, &mut output).unwrap();
+        let output = String::from_utf8(output).unwrap();
+        assert!(output.contains(&format!("10 1 57753 {sod:.9}")), "{output}");
+        let roundtrip = parse_cpf(&output).unwrap();
+        assert!(
+            (roundtrip.ephemeris.entries[0]
+                .epoch
+                .duration_since(cpf.ephemeris.entries[0].epoch)
+                .value())
+            .abs()
+                < 2e-7
+        );
+        assert!(parse_cpf(&input.replace("10 1 57753", "10 1 57754")).is_err());
+    }
+}
+
+#[cfg(feature = "std")]
+#[test]
+fn eop_dut1_jump_is_preserved_at_leap_boundary() {
+    use siderust::formats::iers::eop::{interpolate, read_eop_c04};
+    let records = read_eop_c04("2016 12 31 57753 0.1 0.2 -0.4 0.0 0.0 0.0\n2017 1 1 57754 0.3 0.4 0.6 0.0 0.0 0.0\n2017 1 2 57755 0.5 0.6 0.4 0.0 0.0 0.0\n".as_bytes()).unwrap();
+    let ctx = TimeContext::new();
+    for (label, dut1) in [
+        ("2016-12-31T23:59:59Z", -0.4),
+        ("2017-01-01T00:00:00Z", 0.6),
+        ("2017-01-01T12:00:00Z", 0.5),
+    ] {
+        let query = calendar(label, &ctx).to_with::<MJD>(&ctx).unwrap();
+        let value = interpolate(&records, query, &ctx).unwrap().unwrap();
+        assert!(
+            (value.eop.dut1.value() - dut1).abs() < 2e-7,
+            "{label}: {}",
+            value.eop.dut1
+        );
+    }
+}
+
+#[test]
+fn earth_rotation_helpers_preserve_ut1_scale_and_supplied_dut1() {
+    use siderust::astro::earth_rotation::{jd_ut1_from_tt, jd_ut1_from_tt_eop};
+    let ctx = TimeContext::new();
+    let utc = calendar("2016-12-31T23:59:60.125Z", &ctx);
+    let tt = utc.to::<TT>().to::<JD>();
+    let _: JulianDate<tempoch::UT1> = jd_ut1_from_tt(tt);
+    let eop = siderust::astro::eop::EopValues {
+        dut1: qtty::time::Seconds::new(-0.4),
+        ..Default::default()
+    };
+    let ut1: JulianDate<tempoch::UT1> = jd_ut1_from_tt_eop(tt, &eop);
+    let expected = utc.to::<TAI>().to_j2000s() - qtty::Second::new(36.4);
+    let (actual_hi, actual_lo) = ut1.raw_seconds_pair();
+    let (expected_hi, expected_lo) = expected.raw_seconds_pair();
+    assert!(
+        ((actual_hi - expected_hi) + (actual_lo - expected_lo))
+            .value()
+            .abs()
+            < 1e-8
+    );
+}
+
+#[cfg(feature = "std")]
+#[test]
+fn invalid_c04_values_report_errors() {
+    use siderust::formats::iers::eop::read_eop_c04;
+    for value in ["invalid", "NaN", "inf"] {
+        let line = format!("2017 1 1 57754 0.1 0.2 {value} 0.0 0.0 0.0\n");
+        assert!(read_eop_c04(line.as_bytes()).is_err());
+    }
+}
+
+#[cfg(feature = "std")]
+#[test]
+fn cpf_roundtrips_the_civil_labels_adjacent_to_the_leap() {
+    use siderust::formats::ilrs::cpf::{parse_cpf, write_cpf};
+    for (mjd, sod, label) in [
+        (57753, "86399.999999999", "2016-12-31T23:59:59.999999999Z"),
+        (57754, "0.000000000", "2017-01-01T00:00:00Z"),
+    ] {
+        let input = format!("H1 CPF 2 TEST 2016 12 31 00 1\nH2 TEST 1 5 2016 12 31 00 00 00 2017 01 01 00 00 00 60 0 0\n10 1 {mjd} {sod} 0 1000000 2000000 3000000\n99\n");
+        let cpf = parse_cpf(&input).unwrap();
+        assert_eq!(
+            cpf.ephemeris.entries[0].epoch.try_to_chrono().unwrap(),
+            label.parse::<DateTime<Utc>>().unwrap()
+        );
+        let mut output = Vec::new();
+        write_cpf(&cpf, &mut output).unwrap();
+        let output = String::from_utf8(output).unwrap();
+        assert!(output.contains(&format!("10 1 {mjd} {sod}")), "{output}");
+        let roundtrip = parse_cpf(&output).unwrap();
+        assert_eq!(
+            cpf.ephemeris.entries[0].epoch,
+            roundtrip.ephemeris.entries[0].epoch
         );
     }
 }

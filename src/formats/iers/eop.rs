@@ -98,12 +98,21 @@ pub fn read_eop_c04<R: Read>(rdr: R) -> Result<Vec<EopRecord>, FormatError> {
             Ok(m) => m,
             Err(e) => return Err(FormatError::Format(alloc::format!("C04 UTC MJD: {e}"))),
         };
-        let x = parts[4].parse().unwrap_or(0.0);
-        let y = parts[5].parse().unwrap_or(0.0);
-        let ut1 = parts[6].parse().unwrap_or(0.0);
-        let lod = parts[7].parse().unwrap_or(0.0);
-        let dpsi = parts[8].parse().unwrap_or(0.0);
-        let deps = parts[9].parse().unwrap_or(0.0);
+        let field = |index: usize| -> Result<f64, FormatError> {
+            parts[index]
+                .parse::<f64>()
+                .ok()
+                .filter(|value| value.is_finite())
+                .ok_or_else(|| {
+                    FormatError::Format(alloc::format!("C04: invalid EOP field {}", index + 1))
+                })
+        };
+        let x = field(4)?;
+        let y = field(5)?;
+        let ut1 = field(6)?;
+        let lod = field(7)?;
+        let dpsi = field(8)?;
+        let deps = field(9)?;
         out.push(EopRecord {
             mjd,
             eop: EopValues {
@@ -154,12 +163,16 @@ pub fn interpolate(
     let a_val = a.mjd.try_raw_with(ctx)?.value();
     let b_val = b.mjd.try_raw_with(ctx)?.value();
     let f = (t_val - a_val) / (b_val - a_val);
+    let offset = |epoch| ctx.tai_minus_utc(epoch).map(|value| value.value());
+    let a_continuous = a.eop.dut1.value() - offset(a.mjd)?;
+    let b_continuous = b.eop.dut1.value() - offset(b.mjd)?;
+    let dut1 = a_continuous + f * (b_continuous - a_continuous) + offset(mjd)?;
     Ok(Some(EopRecord {
         mjd,
         eop: EopValues {
             xp: Arcseconds::new(a.eop.xp.value() + f * (b.eop.xp.value() - a.eop.xp.value())),
             yp: Arcseconds::new(a.eop.yp.value() + f * (b.eop.yp.value() - a.eop.yp.value())),
-            dut1: Seconds::new(a.eop.dut1.value() + f * (b.eop.dut1.value() - a.eop.dut1.value())),
+            dut1: Seconds::new(dut1),
             lod: Seconds::new(a.eop.lod.value() + f * (b.eop.lod.value() - a.eop.lod.value())),
             dx: MilliArcseconds::new(a.eop.dx.value() + f * (b.eop.dx.value() - a.eop.dx.value())),
             dy: MilliArcseconds::new(a.eop.dy.value() + f * (b.eop.dy.value() - a.eop.dy.value())),

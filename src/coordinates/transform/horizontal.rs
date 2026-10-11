@@ -37,7 +37,7 @@
 //! use siderust::time::JulianDate;
 //! use siderust::qtty::*;
 //!
-//! let jd_ut1 = siderust::JulianDate::new(2_451_545.0);
+//! let jd_ut1 = tempoch::JulianDate::<tempoch::UT1>::new(2_451_545.0);
 //! let jd_tt = siderust::JulianDate::new(2_451_545.000_800_741);
 //!
 //! let equatorial = spherical::Direction::<EquatorialTrueOfDate>::new(45.0 * DEG, 30.0 * DEG)
@@ -83,7 +83,7 @@ pub trait ToHorizontal {
     /// - Altitude in `[-90°, +90°]`
     fn to_horizontal(
         &self,
-        jd_ut1: &JulianDate,
+        jd_ut1: &tempoch::JulianDate<tempoch::UT1>,
         jd_tt: &JulianDate,
         site: &Geodetic<ECEF>,
     ) -> Direction<Horizontal>;
@@ -93,7 +93,7 @@ impl ToHorizontal for Direction<EquatorialTrueOfDate> {
     #[inline]
     fn to_horizontal(
         &self,
-        jd_ut1: &JulianDate,
+        jd_ut1: &tempoch::JulianDate<tempoch::UT1>,
         jd_tt: &JulianDate,
         site: &Geodetic<ECEF>,
     ) -> Direction<Horizontal> {
@@ -160,7 +160,7 @@ pub trait FromHorizontal {
     /// - Declination in `[-90°, +90°]`
     fn to_equatorial(
         &self,
-        jd_ut1: &JulianDate,
+        jd_ut1: &tempoch::JulianDate<tempoch::UT1>,
         jd_tt: &JulianDate,
         site: &Geodetic<ECEF>,
     ) -> Direction<EquatorialTrueOfDate>;
@@ -170,7 +170,7 @@ impl FromHorizontal for Direction<Horizontal> {
     #[inline]
     fn to_equatorial(
         &self,
-        jd_ut1: &JulianDate,
+        jd_ut1: &tempoch::JulianDate<tempoch::UT1>,
         jd_tt: &JulianDate,
         site: &Geodetic<ECEF>,
     ) -> Direction<EquatorialTrueOfDate> {
@@ -230,7 +230,7 @@ pub trait TopocentricEquatorialExt<U: LengthUnit> {
     /// A [`Position<Topocentric, Horizontal, U>`] with the same distance and observer site.
     fn to_horizontal_position(
         &self,
-        jd_ut1: &JulianDate,
+        jd_ut1: &tempoch::JulianDate<tempoch::UT1>,
         jd_tt: &JulianDate,
     ) -> Position<Topocentric, Horizontal, U>;
 
@@ -238,7 +238,7 @@ pub trait TopocentricEquatorialExt<U: LengthUnit> {
     #[inline]
     fn to_horizontal(
         &self,
-        jd_ut1: &JulianDate,
+        jd_ut1: &tempoch::JulianDate<tempoch::UT1>,
         jd_tt: &JulianDate,
     ) -> Position<Topocentric, Horizontal, U> {
         self.to_horizontal_position(jd_ut1, jd_tt)
@@ -249,7 +249,7 @@ impl<U: LengthUnit> TopocentricEquatorialExt<U> for Position<Topocentric, Equato
     #[inline]
     fn to_horizontal_position(
         &self,
-        jd_ut1: &JulianDate,
+        jd_ut1: &tempoch::JulianDate<tempoch::UT1>,
         jd_tt: &JulianDate,
     ) -> Position<Topocentric, Horizontal, U> {
         let site = *self.center_params();
@@ -288,7 +288,7 @@ pub trait TopocentricHorizontalExt<U: LengthUnit> {
     /// A [`Position<Topocentric, EquatorialTrueOfDate, U>`] with the same distance and observer site.
     fn to_equatorial_position(
         &self,
-        jd_ut1: &JulianDate,
+        jd_ut1: &tempoch::JulianDate<tempoch::UT1>,
         jd_tt: &JulianDate,
     ) -> Position<Topocentric, EquatorialTrueOfDate, U>;
 
@@ -296,7 +296,7 @@ pub trait TopocentricHorizontalExt<U: LengthUnit> {
     #[inline]
     fn to_equatorial(
         &self,
-        jd_ut1: &JulianDate,
+        jd_ut1: &tempoch::JulianDate<tempoch::UT1>,
         jd_tt: &JulianDate,
     ) -> Position<Topocentric, EquatorialTrueOfDate, U> {
         self.to_equatorial_position(jd_ut1, jd_tt)
@@ -307,7 +307,7 @@ impl<U: LengthUnit> TopocentricHorizontalExt<U> for Position<Topocentric, Horizo
     #[inline]
     fn to_equatorial_position(
         &self,
-        jd_ut1: &JulianDate,
+        jd_ut1: &tempoch::JulianDate<tempoch::UT1>,
         jd_tt: &JulianDate,
     ) -> Position<Topocentric, EquatorialTrueOfDate, U> {
         let site = *self.center_params();
@@ -333,7 +333,7 @@ mod tests {
 
     #[test]
     fn roundtrip_equatorial_horizontal_is_stable() {
-        let jd_ut1 = crate::time::JulianDate::new(2_451_545.0);
+        let jd_ut1 = tempoch::JulianDate::<tempoch::UT1>::new(2_451_545.0);
         let jd_tt = crate::time::JulianDate::new(2_451_545.000_800_741);
 
         let ra = 1.0 * RAD;
@@ -370,7 +370,7 @@ mod tests {
     #[test]
     fn matches_sofa_reference_case() {
         // Reference generated from the SOFA-based lab benchmark suite
-        let jd_ut1 = crate::time::JulianDate::new(2_451_545.0);
+        let jd_ut1 = tempoch::JulianDate::<tempoch::UT1>::new(2_451_545.0);
         let jd_tt = crate::time::JulianDate::new(2_451_545.000_800_741);
 
         let ra = 1.0 * RAD;
@@ -407,7 +407,7 @@ mod tests {
         use crate::qtty::Kilometer;
         use affn::spherical;
 
-        let jd_ut1 = crate::time::JulianDate::new(2_451_545.0);
+        let jd_ut1 = tempoch::JulianDate::<tempoch::UT1>::new(2_451_545.0);
         let jd_tt = crate::time::JulianDate::new(2_451_545.000_800_741);
 
         let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.5 * DEG, 100.0 * M);

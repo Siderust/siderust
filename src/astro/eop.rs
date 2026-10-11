@@ -135,8 +135,7 @@ impl From<tempoch::ConversionError> for EopError {
 pub trait EopProvider {
     /// Fallibly look up EOP values for the given **UTC** Julian Date.
     ///
-    /// The default implementation preserves compatibility for providers that
-    /// are intentionally total, such as [`NullEop`].
+    /// Total providers, such as [`NullEop`], can use this default implementation.
     #[inline]
     fn try_eop_at(&self, jd_utc: JulianDate<UTC>) -> Result<EopValues, EopError> {
         Ok(self.eop_at(jd_utc))
@@ -186,8 +185,11 @@ impl EopProvider for NullEop {
 ///
 /// The provider interpolates linearly between daily entries for any epoch
 /// within the bundle's MJD range. For epochs outside the range,
-/// [`IersEop::try_eop_at`] returns [`EopError::NoData`]; the provider never
-/// fabricates zero EOP values outside coverage.
+/// [`IersEop::try_eop_at`] returns [`EopError::NoData`]. The infallible
+/// [`IersEop::eop_at`] convenience policy instead derives DUT1 from tempoch's
+/// monthly ΔT model, with zero polar-motion and celestial-pole corrections.
+/// It therefore retains the model's limited accuracy rather than assuming
+/// that UT1 equals UTC when observations are unavailable.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct IersEop;
 
@@ -252,7 +254,26 @@ impl EopProvider for IersEop {
     }
 
     fn eop_at(&self, jd_utc: JulianDate<UTC>) -> EopValues {
-        self.try_eop_at(jd_utc).unwrap_or_default()
+        if let Ok(observed) = self.try_eop_at(jd_utc) {
+            return observed;
+        }
+        // The coarse policy uses the monthly UT1 model. Express its result
+        // as DUT1 so callers can apply supplied observations and model values
+        // with the same physical UT1 = TAI - (TAI-UTC) + DUT1 identity.
+        let ctx = tempoch::TimeContext::new().allow_pre_definition_utc();
+        let model = jd_utc
+            .to::<tempoch::TT>()
+            .to_with::<tempoch::UT1>(&ctx)
+            .expect("monthly UT1 model must cover an infallible EOP request");
+        let offset = ctx
+            .tai_minus_utc(jd_utc)
+            .expect("UTC offset must be representable for an infallible EOP request");
+        let (model_hi, model_lo) = model.raw_seconds_pair();
+        let (tai_hi, tai_lo) = jd_utc.to::<tempoch::TAI>().raw_seconds_pair();
+        EopValues {
+            dut1: (model_hi - tai_hi) + (model_lo - tai_lo) + offset,
+            ..EopValues::default()
+        }
     }
 }
 
@@ -300,12 +321,16 @@ mod tests {
     }
 
     #[test]
-    fn iers_eop_falls_back_to_zeros_without_runtime_bundle() {
-        // eop_at() uses the graceful fallback (zero corrections) when no
-        // runtime EOP bundle is loaded.
+    fn iers_eop_falls_back_to_monthly_ut1_without_runtime_bundle() {
+        // The coarse fallback must reproduce the monthly UT1 coordinate.
         let eop = IersEop::new();
         let vals = eop.eop_at(crate::J2000.to::<UTC>());
-        assert_eq!(vals.dut1.value(), 0.0);
+        let ctx = tempoch::TimeContext::new();
+        let supplied = crate::astro::earth_rotation::jd_ut1_from_tt_eop(crate::J2000, &vals);
+        let model = crate::J2000.to_with::<tempoch::UT1>(&ctx).unwrap();
+        let (s_hi, s_lo) = supplied.raw_seconds_pair();
+        let (m_hi, m_lo) = model.raw_seconds_pair();
+        assert!(((s_hi - m_hi) + (s_lo - m_lo)).value().abs() < 1e-8);
         assert_eq!(vals.xp.value(), 0.0);
     }
 

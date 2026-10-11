@@ -44,6 +44,7 @@
 //! * SOFA routine `iauEra00`
 
 use crate::qtty::*;
+
 use crate::time::JulianDate;
 use core::f64::consts::TAU;
 
@@ -72,7 +73,7 @@ fn fmod_c(x: f64, y: f64) -> f64 {
 /// UT1 is passed as a single Julian day number. For maximum precision, callers
 /// with a true two-part UT1 Julian date should use [`earth_rotation_angle_parts`].
 #[inline]
-pub fn earth_rotation_angle(jd_ut1: JulianDate) -> Radians {
+pub fn earth_rotation_angle(jd_ut1: tempoch::JulianDate<tempoch::UT1>) -> Radians {
     earth_rotation_angle_parts(ERFA_DJ00, jd_ut1.raw().value() - ERFA_DJ00)
 }
 
@@ -426,7 +427,7 @@ mod tests {
             (2_400_000.5, 50123.2),                   // MJD-style split (SOFA note example shape)
         ];
         for &(d1, d2) in cases {
-            let jd = crate::time::JulianDate::new(d1 + d2);
+            let jd = tempoch::JulianDate::<tempoch::UT1>::new(d1 + d2);
             let era = earth_rotation_angle(jd).value();
             let expected = reference_era00(d1, d2);
             assert!(
@@ -439,7 +440,7 @@ mod tests {
     #[test]
     fn era_parts_matches_single_jd_when_split_at_j2000() {
         let jd = 2_453_736.5_f64;
-        let from_jd = earth_rotation_angle(crate::time::JulianDate::new(jd)).value();
+        let from_jd = earth_rotation_angle(tempoch::JulianDate::<tempoch::UT1>::new(jd)).value();
         let from_parts = earth_rotation_angle_parts(ERFA_DJ00, jd - ERFA_DJ00).value();
         assert_eq!(from_jd, from_parts);
     }
@@ -447,7 +448,7 @@ mod tests {
     #[test]
     fn era_at_j2000() {
         // At J2000.0 (JD 2451545.0), ERA ≈ 280.46° (GST at that epoch)
-        let era = earth_rotation_angle(crate::J2000);
+        let era = earth_rotation_angle(tempoch::JulianDate::<tempoch::UT1>::new(2_451_545.0));
         let era_deg = era.to::<Degree>();
         // ERA at J2000.0 ≈ 0.7790572732640 × 360° ≈ 280.46°
         assert!(
@@ -459,8 +460,8 @@ mod tests {
 
     #[test]
     fn era_increases_with_time() {
-        let era1 = earth_rotation_angle(crate::time::JulianDate::new(2_451_545.0));
-        let era2 = earth_rotation_angle(crate::time::JulianDate::new(2_451_545.5));
+        let era1 = earth_rotation_angle(tempoch::JulianDate::<tempoch::UT1>::new(2_451_545.0));
+        let era2 = earth_rotation_angle(tempoch::JulianDate::<tempoch::UT1>::new(2_451_545.5));
         // Half a solar day ≈ half a sidereal rotation ≈ 180°
         // Actually ERA increases by 360.985...° per solar day, so ≈ 180.5° per half day
         let diff = (era2 - era1).value().rem_euclid(TAU);
@@ -475,7 +476,7 @@ mod tests {
     #[test]
     fn era_range() {
         for jd in [2_451_545.0, 2_460_000.5, 2_440_000.0] {
-            let era = earth_rotation_angle(crate::time::JulianDate::new(jd));
+            let era = earth_rotation_angle(tempoch::JulianDate::<tempoch::UT1>::new(jd));
             assert!(era >= Radians::new(0.0), "ERA should be ≥ 0");
             assert!(era < Radians::new(TAU), "ERA should be < 2π");
         }

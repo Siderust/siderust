@@ -101,13 +101,7 @@ pub(crate) fn itrs_to_equatorial_mean_j2000_rotation<Eph, Eop: EopProvider, Nut:
     jd: JulianDate,
     ctx: &AstroContext<Eph, Eop>,
 ) -> affn::Rotation3 {
-    let eop = match jd
-        .to::<tempoch::UTC>()
-        .to_with::<tempoch::JD>(&tempoch::TimeContext::new())
-    {
-        Ok(jd_utc) => ctx.eop_at(jd_utc),
-        Err(_) => EopValues::default(),
-    };
+    let eop = ctx.eop_at_tt(jd);
     let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
 
     let (dpsi, deps) = nutation_with_celestial_pole_offsets::<Nut>(jd, eop);

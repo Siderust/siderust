@@ -498,7 +498,7 @@ impl SiderustOrbit {
             Degrees::new(self.lon_ascending_node_deg),
             Degrees::new(self.arg_periapsis_deg),
             Degrees::new(self.mean_anomaly_deg),
-            crate::ffi_utils::jd_from_f64(self.epoch_jd)?,
+            crate::ffi_utils::jd_from_f64::<tempoch::TT>(self.epoch_jd)?,
         ))
     }
 
@@ -556,7 +556,7 @@ impl SiderustMeanMotionOrbit {
             Degrees::new(self.lon_ascending_node_deg),
             Degrees::new(self.arg_periapsis_deg),
             AngularRate::<Degree, Day>::new(self.mean_motion_deg_per_day),
-            crate::ffi_utils::jd_from_f64(self.epoch_jd)?,
+            crate::ffi_utils::jd_from_f64::<tempoch::TT>(self.epoch_jd)?,
         ))
     }
 
@@ -569,7 +569,7 @@ impl SiderustMeanMotionOrbit {
             Degrees::new(self.lon_ascending_node_deg),
             Degrees::new(self.arg_periapsis_deg),
             AngularRate::<Degree, Day>::new(self.mean_motion_deg_per_day),
-            crate::ffi_utils::jd_from_f64(self.epoch_jd)?,
+            crate::ffi_utils::jd_from_f64::<tempoch::TT>(self.epoch_jd)?,
         )
         .map_err(|_| SiderustStatus::InvalidArgument)
     }
@@ -628,7 +628,7 @@ impl SiderustConicOrbit {
             Degrees::new(self.lon_ascending_node_deg),
             Degrees::new(self.arg_periapsis_deg),
             Degrees::new(self.mean_anomaly_deg),
-            crate::ffi_utils::jd_from_f64(self.epoch_jd)?,
+            crate::ffi_utils::jd_from_f64::<tempoch::TT>(self.epoch_jd)?,
         ))
     }
 
@@ -641,7 +641,7 @@ impl SiderustConicOrbit {
             Degrees::new(self.lon_ascending_node_deg),
             Degrees::new(self.arg_periapsis_deg),
             Degrees::new(self.mean_anomaly_deg),
-            crate::ffi_utils::jd_from_f64(self.epoch_jd)?,
+            crate::ffi_utils::jd_from_f64::<tempoch::TT>(self.epoch_jd)?,
         )
         .map_err(|_| SiderustStatus::InvalidArgument)
     }

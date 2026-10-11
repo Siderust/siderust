@@ -1841,8 +1841,7 @@ dependencies = [
 [[package]]
 name = "tempoch-core"
 version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ee0aae071420ec4c8a58be7b2168d989a3b72a1b049fb6589935ef3cfc405dbe"
+source = "git+https://github.com/Siderust/tempoch.git?rev=9b6d90e6acbb0f753e075f1de7dd91006d917005#9b6d90e6acbb0f753e075f1de7dd91006d917005"
 dependencies = [
  "affn",
  "chrono",

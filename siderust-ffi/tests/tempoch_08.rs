@@ -141,3 +141,41 @@ fn siderust_tle_ffi_reports_the_published_civil_epoch() {
     siderust_sgp4_free(prop);
     siderust_tle_free(tle);
 }
+
+#[test]
+fn precise_horizontal_rejects_invalid_scale_coordinates_without_writing_output() {
+    use siderust_ffi::coordinates::siderust_spherical_dir_to_horizontal_precise;
+    use siderust_ffi::error::SiderustStatus;
+    use siderust_ffi::types::{SiderustFrame, SiderustGeodetict, SiderustSphericalDir};
+    let observer = SiderustGeodetict {
+        lon_deg: 0.0,
+        lat_deg: 45.0,
+        height_m: 0.0,
+    };
+    for (tt, ut1) in [
+        (f64::NAN, 2451545.0),
+        (2451545.0, f64::NAN),
+        (2451545.0, f64::INFINITY),
+    ] {
+        let mut out = SiderustSphericalDir {
+            polar_deg: -123.0,
+            azimuth_deg: -456.0,
+            frame: SiderustFrame::ICRS,
+        };
+        assert_eq!(
+            siderust_spherical_dir_to_horizontal_precise(
+                20.0,
+                30.0,
+                SiderustFrame::ICRS,
+                tt,
+                ut1,
+                observer,
+                &mut out
+            ),
+            SiderustStatus::InvalidArgument
+        );
+        assert_eq!(out.polar_deg, -123.0);
+        assert_eq!(out.azimuth_deg, -456.0);
+        assert_eq!(out.frame, SiderustFrame::ICRS);
+    }
+}

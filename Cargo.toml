@@ -213,3 +213,7 @@ workspace = true
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
+
+# Native UTC offset lookup stays in tempoch; replace this pin with its release.
+[patch.crates-io]
+tempoch-core = { git = "https://github.com/Siderust/tempoch.git", rev = "9b6d90e6acbb0f753e075f1de7dd91006d917005" }

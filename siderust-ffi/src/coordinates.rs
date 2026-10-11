@@ -250,7 +250,7 @@ pub extern "C" fn siderust_spherical_dir_transform_frame(
             src_frame,
             polar_deg,
             azimuth_deg,
-            |dir| transform_spherical_dir_from!(dir, dst_frame, &ffi_try!(crate::ffi_utils::jd_from_f64(jd)))
+            |dir| transform_spherical_dir_from!(dir, dst_frame, &ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd)))
         ) {
             Ok(Ok(values)) => values,
             Err(e) => return e,
@@ -294,7 +294,7 @@ pub extern "C" fn siderust_spherical_dir_transform_frame_with_context(
             src_frame,
             polar_deg,
             azimuth_deg,
-            |dir| transform_spherical_dir_from_model!(dir, dst_frame, &ffi_try!(crate::ffi_utils::jd_from_f64(jd)), model)
+            |dir| transform_spherical_dir_from_model!(dir, dst_frame, &ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd)), model)
         ) {
             Ok(Ok(values)) => values,
             Err(e) => return e,
@@ -337,7 +337,7 @@ pub extern "C" fn siderust_spherical_dir_to_horizontal(
             src_frame,
             polar_deg,
             azimuth_deg,
-            |dir| spherical_dir_to_horizontal_from!(dir, &ffi_try!(crate::ffi_utils::jd_from_f64(jd)), &site)
+            |dir| spherical_dir_to_horizontal_from!(dir, &ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd)), &site)
         ) {
             Ok(values) => values,
             Err(e) => return e,
@@ -379,8 +379,8 @@ pub extern "C" fn siderust_spherical_dir_to_horizontal_precise(
             azimuth_deg,
             |dir| spherical_dir_to_horizontal_precise_from!(
                 dir,
-                &ffi_try!(crate::ffi_utils::jd_from_f64(jd_tt)),
-                &ffi_try!(crate::ffi_utils::jd_from_f64(jd_ut1)),
+                &ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd_tt)),
+                &ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::UT1>(jd_ut1)),
                 &site
             )
         ) {
@@ -429,8 +429,8 @@ pub extern "C" fn siderust_spherical_dir_to_horizontal_precise_with_context(
             azimuth_deg,
             |dir| spherical_dir_to_horizontal_precise_from_model!(
                 dir,
-                &ffi_try!(crate::ffi_utils::jd_from_f64(jd_tt)),
-                &ffi_try!(crate::ffi_utils::jd_from_f64(jd_ut1)),
+                &ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd_tt)),
+                &ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::UT1>(jd_ut1)),
                 &site,
                 model
             )
@@ -587,7 +587,7 @@ pub extern "C" fn siderust_cartesian_dir_transform_frame(
             x,
             y,
             z,
-            |dir| transform_cartesian_dir_from!(dir, dst_frame, &ffi_try!(crate::ffi_utils::jd_from_f64(jd)))
+            |dir| transform_cartesian_dir_from!(dir, dst_frame, &ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd)))
         ) {
             Ok(Ok(values)) => values,
             Err(e) => return e,
@@ -636,7 +636,7 @@ pub extern "C" fn siderust_cartesian_dir_transform_frame_with_context(
             x,
             y,
             z,
-            |dir| transform_cartesian_dir_from_model!(dir, dst_frame, &ffi_try!(crate::ffi_utils::jd_from_f64(jd)), model)
+            |dir| transform_cartesian_dir_from_model!(dir, dst_frame, &ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd)), model)
         ) {
             Ok(Ok(values)) => values,
             Err(e) => return e,
@@ -834,7 +834,7 @@ pub extern "C" fn siderust_cartesian_pos_transform_frame(
             pos.x,
             pos.y,
             pos.z,
-            |source| transform_cartesian_pos_from!(source, dst_frame, &ffi_try!(crate::ffi_utils::jd_from_f64(jd)))
+            |source| transform_cartesian_pos_from!(source, dst_frame, &ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd)))
         ) {
             Ok(Ok(values)) => values,
             Err(e) => return e,
@@ -883,7 +883,7 @@ pub extern "C" fn siderust_cartesian_pos_transform_frame_with_context(
             |source| transform_cartesian_pos_from_model!(
                 source,
                 dst_frame,
-                &ffi_try!(crate::ffi_utils::jd_from_f64(jd)),
+                &ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd)),
                 model
             )
         ) {
@@ -956,7 +956,7 @@ fn shift_center_xyz(
     if from == to {
         return Ok((x, y, z));
     }
-    let t = crate::ffi_utils::jd_from_f64(jd)?;
+    let t = crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd)?;
 
     // Sun's barycentric position, used for helio ↔ bary shifts
     let sun_b = Vsop87Ephemeris::sun_barycentric(t);
@@ -1096,7 +1096,7 @@ pub extern "C" fn siderust_kepler_position_ex(
             None => return SiderustStatus::InvalidCenter,
         };
         let orbit = ffi_try!(orbit.try_to_rust());
-        let pos = orbit.kepler_position(ffi_try!(crate::ffi_utils::jd_from_f64(jd)));
+        let pos = orbit.kepler_position(ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd)));
         write_ecliptic_au_position(out, pos, center);
         SiderustStatus::Ok
 
@@ -1115,7 +1115,7 @@ pub extern "C" fn siderust_mean_motion_position(
             return SiderustStatus::NullPointer;
         }
         let rust_orbit = ffi_try!(orbit.try_to_rust_validated());
-        let pos = match rust_orbit.position_at(ffi_try!(crate::ffi_utils::jd_from_f64(jd))) {
+        let pos = match rust_orbit.position_at(ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd))) {
             Ok(pos) => pos,
             Err(_) => return SiderustStatus::InvalidArgument,
         };
@@ -1137,7 +1137,7 @@ pub extern "C" fn siderust_conic_position(
             return SiderustStatus::NullPointer;
         }
         let rust_orbit = ffi_try!(orbit.try_to_rust_validated());
-        let pos = match rust_orbit.position_at(ffi_try!(crate::ffi_utils::jd_from_f64(jd))) {
+        let pos = match rust_orbit.position_at(ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd))) {
             Ok(pos) => pos,
             Err(_) => return SiderustStatus::InvalidArgument,
         };
@@ -1181,7 +1181,7 @@ pub extern "C" fn siderust_prepared_orbit_create(
             Degrees::new(orbit.lon_ascending_node_deg),
             Degrees::new(orbit.arg_periapsis_deg),
             Degrees::new(orbit.mean_anomaly_deg),
-            ffi_try!(crate::ffi_utils::jd_from_f64(orbit.epoch_jd)),
+            ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(orbit.epoch_jd)),
         ) {
             Ok(p) => p,
             Err(_) => return SiderustStatus::InvalidArgument,
@@ -1208,7 +1208,7 @@ pub extern "C" fn siderust_prepared_orbit_position(
             return SiderustStatus::NullPointer;
         }
         let prepared = unsafe { &*(handle as *const siderust::PreparedOrbit) };
-        let pos = prepared.position_at(ffi_try!(crate::ffi_utils::jd_from_f64(jd)));
+        let pos = prepared.position_at(ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd)));
         write_ecliptic_au_position(out, pos, SiderustCenter::Heliocentric);
         SiderustStatus::Ok
     }}
@@ -1262,7 +1262,7 @@ pub extern "C" fn siderust_to_bodycentric(
 
         // Keplerian position of the body in its own orbit's reference center
         let orbit = ffi_try!(params.orbit.try_to_rust());
-        let body_kep = orbit.kepler_position(ffi_try!(crate::ffi_utils::jd_from_f64(jd)));
+        let body_kep = orbit.kepler_position(ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd)));
         let (bkx, bky, bkz) = (
             body_kep.x().value(),
             body_kep.y().value(),
@@ -1312,7 +1312,7 @@ pub extern "C" fn siderust_from_bodycentric(
 
         // Keplerian position of the body in its own orbit's reference center
         let orbit = ffi_try!(params.orbit.try_to_rust());
-        let body_kep = orbit.kepler_position(ffi_try!(crate::ffi_utils::jd_from_f64(jd)));
+        let body_kep = orbit.kepler_position(ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd)));
         let (bkx, bky, bkz) = (
             body_kep.x().value(),
             body_kep.y().value(),
