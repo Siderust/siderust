@@ -126,7 +126,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-siderust = "0.9"
+siderust = "0.13"
 ```
 
 VSOP87/ELP2000 coefficients, nutation tables, and EOP data are provided by
@@ -144,7 +144,7 @@ JPL DE440/DE441 (and other NAIF BSP kernels) are provided at **runtime** via [`R
 
 ```toml
 [dependencies]
-siderust = { version = "0.9", features = ["runtime-data"] }
+siderust = { version = "0.13", features = ["runtime-data"] }
 ```
 
 ```rust
@@ -161,7 +161,7 @@ VSOP87-only (explicit):
 
 ```toml
 [dependencies]
-siderust = { version = "0.9", default-features = false }
+siderust = { version = "0.13", default-features = false }
 ```
 
 Combine with other features (for example `serde`):

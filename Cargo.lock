@@ -1675,7 +1675,7 @@ checksum = "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba"
 
 [[package]]
 name = "siderust"
-version = "0.14.0"
+version = "0.13.0"
 dependencies = [
  "affn",
  "approx",
@@ -1723,7 +1723,7 @@ dependencies = [
 
 [[package]]
 name = "siderust-ffi"
-version = "0.14.0"
+version = "0.13.0"
 dependencies = [
  "affn",
  "cbindgen",
@@ -1736,7 +1736,6 @@ dependencies = [
  "siderust-archive",
  "tempoch",
  "tempoch-ffi",
- "tokio",
 ]
 
 [[package]]
@@ -1921,15 +1920,6 @@ checksum = "be4d6b5f19ff7664e8c98d03e2139cb510db9b0a60b55f8e8709b689d939b6bc"
 dependencies = [
  "serde",
  "serde_json",
-]
-
-[[package]]
-name = "tokio"
-version = "1.53.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e95f91fcc7a621e8b030f6aa23c71fe9838ae2fb4d8118b75602a328f5144044"
-dependencies = [
- "pin-project-lite",
 ]
 
 [[package]]
