@@ -79,12 +79,18 @@ fn bench_runtime_ephemeris(c: &mut Criterion) {
 
     group.bench_function("gmst_iau2006", |b| {
         let jd = siderust::time::J2000;
-        b.iter(|| black_box(gmst_iau2006(black_box(jd), jd)));
+        let ut1 = jd
+            .to_with::<tempoch::UT1>(&tempoch::TimeContext::new())
+            .unwrap();
+        b.iter(|| black_box(gmst_iau2006(black_box(ut1), jd)));
     });
 
     group.bench_function("gast_iau2006a", |b| {
         let jd = siderust::time::J2000;
-        b.iter(|| black_box(gast_iau2006a(black_box(jd), jd)));
+        let ut1 = jd
+            .to_with::<tempoch::UT1>(&tempoch::TimeContext::new())
+            .unwrap();
+        b.iter(|| black_box(gast_iau2006a(black_box(ut1), jd)));
     });
 
     group.finish();

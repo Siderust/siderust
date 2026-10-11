@@ -37,7 +37,7 @@
 //! * SOFA Earth-rotation cookbook (`iauC2t06a` and friends)
 
 use crate::astro::cio;
-use crate::astro::earth_rotation::{jd_ut1_from_tt_eop, try_jd_utc_from_tt};
+use crate::astro::earth_rotation::jd_ut1_from_tt_eop;
 use crate::astro::eop::{EopProvider, EopValues};
 use crate::astro::era::earth_rotation_angle;
 use crate::astro::nutation::NutationModel;
@@ -101,10 +101,7 @@ pub(crate) fn itrs_to_equatorial_mean_j2000_rotation<Eph, Eop: EopProvider, Nut:
     jd: JulianDate,
     ctx: &AstroContext<Eph, Eop>,
 ) -> affn::Rotation3 {
-    let eop = match try_jd_utc_from_tt(jd) {
-        Ok(jd_utc) => ctx.eop_at(jd_utc),
-        Err(_) => EopValues::default(),
-    };
+    let eop = ctx.eop_at_tt(jd);
     let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
 
     let (dpsi, deps) = nutation_with_celestial_pole_offsets::<Nut>(jd, eop);

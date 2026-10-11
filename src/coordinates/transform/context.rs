@@ -167,7 +167,10 @@ impl<Eph, Eop> AstroContext<Eph, Eop> {
 impl<Eph, Eop: EopProvider> AstroContext<Eph, Eop> {
     /// Fallibly look up EOP values for the given **UTC** Julian Date.
     #[inline]
-    pub fn try_eop_at(&self, jd_utc: JulianDate) -> Result<EopValues, EopError> {
+    pub fn try_eop_at(
+        &self,
+        jd_utc: tempoch::JulianDate<tempoch::UTC>,
+    ) -> Result<EopValues, EopError> {
         self.eop.try_eop_at(jd_utc)
     }
 
@@ -177,19 +180,15 @@ impl<Eph, Eop: EopProvider> AstroContext<Eph, Eop> {
     /// EOP provider contract while keeping transform call sites ergonomic.
     #[inline]
     pub fn try_eop_at_tt(&self, jd_tt: JulianDate) -> Result<EopValues, EopError> {
-        let jd_utc = crate::astro::earth_rotation::try_jd_utc_from_tt(jd_tt)?;
+        let jd_utc = jd_tt.to::<tempoch::UTC>();
         self.try_eop_at(jd_utc)
     }
 
     /// Look up EOP values for a **TT** observation epoch.
     #[inline]
     pub fn eop_at_tt(&self, jd_tt: JulianDate) -> EopValues {
-        match crate::astro::earth_rotation::try_jd_utc_from_tt(jd_tt) {
-            Ok(jd_utc) => self.eop_at(jd_utc),
-            Err(_) => self
-                .eop
-                .eop_at(crate::astro::earth_rotation::jd_utc_from_tt_delta_t(jd_tt)),
-        }
+        let jd_utc = jd_tt.to::<tempoch::UTC>();
+        self.eop_at(jd_utc)
     }
 
     /// Look up EOP values for the given **UTC** Julian Date.
@@ -202,7 +201,7 @@ impl<Eph, Eop: EopProvider> AstroContext<Eph, Eop> {
     ///
     /// Delegates to the context's [`EopProvider`].
     #[inline]
-    pub fn eop_at(&self, jd_utc: JulianDate) -> EopValues {
+    pub fn eop_at(&self, jd_utc: tempoch::JulianDate<tempoch::UTC>) -> EopValues {
         self.eop.eop_at(jd_utc)
     }
 
@@ -340,32 +339,31 @@ impl<Eop: EopProvider> DynAstroContext<Eop> {
 
     /// Look up EOP values for the given **UTC** Julian Date.
     #[inline]
-    pub fn eop_at(&self, jd_utc: JulianDate) -> EopValues {
+    pub fn eop_at(&self, jd_utc: tempoch::JulianDate<tempoch::UTC>) -> EopValues {
         self.eop.eop_at(jd_utc)
     }
 
     /// Fallibly look up EOP values for the given **UTC** Julian Date.
     #[inline]
-    pub fn try_eop_at(&self, jd_utc: JulianDate) -> Result<EopValues, EopError> {
+    pub fn try_eop_at(
+        &self,
+        jd_utc: tempoch::JulianDate<tempoch::UTC>,
+    ) -> Result<EopValues, EopError> {
         self.eop.try_eop_at(jd_utc)
     }
 
     /// Fallibly look up EOP values for a **TT** observation epoch.
     #[inline]
     pub fn try_eop_at_tt(&self, jd_tt: JulianDate) -> Result<EopValues, EopError> {
-        let jd_utc = crate::astro::earth_rotation::try_jd_utc_from_tt(jd_tt)?;
+        let jd_utc = jd_tt.to::<tempoch::UTC>();
         self.try_eop_at(jd_utc)
     }
 
     /// Look up EOP values for a **TT** observation epoch.
     #[inline]
     pub fn eop_at_tt(&self, jd_tt: JulianDate) -> EopValues {
-        match crate::astro::earth_rotation::try_jd_utc_from_tt(jd_tt) {
-            Ok(jd_utc) => self.eop_at(jd_utc),
-            Err(_) => self
-                .eop
-                .eop_at(crate::astro::earth_rotation::jd_utc_from_tt_delta_t(jd_tt)),
-        }
+        let jd_utc = jd_tt.to::<tempoch::UTC>();
+        self.eop_at(jd_utc)
     }
 
     /// Reference to the underlying EOP provider.
@@ -438,7 +436,7 @@ mod tests {
         // Vsop87Ephemeris implements DynEphemeris via blanket impl
         let dyn_ctx = DynAstroContext::with_ephemeris(Box::new(Vsop87Ephemeris));
         let _eph = dyn_ctx.ephemeris();
-        let _eop = dyn_ctx.eop_at(crate::J2000);
+        let _eop = dyn_ctx.eop_at_tt(crate::J2000);
         let _eop_ref = dyn_ctx.eop();
 
         // Debug should work
@@ -454,7 +452,7 @@ mod tests {
             Box::new(Vsop87Ephemeris),
             DefaultEop::default(),
         );
-        let eop = dyn_ctx.eop_at(crate::J2000);
+        let eop = dyn_ctx.eop_at_tt(crate::J2000);
         assert!(eop.dut1.is_finite());
     }
 }

@@ -63,7 +63,7 @@ macro_rules! check_out {
 /// Early-return an FFI status on `Err`, otherwise unwrap the success value.
 ///
 /// ```ignore
-/// let jd = ffi_try!($crate::ffi_utils::jd_from_f64(jd_raw));
+/// let jd = ffi_try!($crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd_raw));
 /// ```
 #[macro_export]
 macro_rules! ffi_try {
@@ -228,16 +228,26 @@ pub trait TryFromFfi<F>: Sized {
     fn try_from_ffi(ffi: &F) -> Result<Self, SiderustStatus>;
 }
 
-/// Validate and construct a TT Julian Date from an FFI scalar.
+/// Validate and construct a Julian Date on the requested continuous scale.
 #[inline]
-pub fn jd_from_f64(value: f64) -> Result<siderust::time::JulianDate, SiderustStatus> {
-    siderust::time::try_jd_f64(value).map_err(|_| SiderustStatus::InvalidArgument)
+pub fn jd_from_f64<S: tempoch::ContinuousScale>(
+    value: f64,
+) -> Result<tempoch::JulianDate<S>, SiderustStatus> {
+    if !value.is_finite() {
+        return Err(SiderustStatus::InvalidArgument);
+    }
+    tempoch::JulianDate::<S>::try_new(qtty::Day::new(value))
+        .map_err(|_| SiderustStatus::InvalidArgument)
 }
 
 /// Validate and construct a TT Modified Julian Date from an FFI scalar.
 #[inline]
 pub fn mjd_from_f64(value: f64) -> Result<siderust::time::ModifiedJulianDate, SiderustStatus> {
-    siderust::time::try_mjd_f64(value).map_err(|_| SiderustStatus::InvalidArgument)
+    if !value.is_finite() {
+        return Err(SiderustStatus::InvalidArgument);
+    }
+    tempoch::ModifiedJulianDate::<tempoch::TT>::try_new(qtty::Day::new(value))
+        .map_err(|_| SiderustStatus::InvalidArgument)
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

@@ -159,7 +159,7 @@ pub trait DirectionAstroExt<F: ReferenceFrame> {
     fn to_horizontal_precise(
         &self,
         jd_tt: &JulianDate,
-        jd_ut1: &JulianDate,
+        jd_ut1: &tempoch::JulianDate<tempoch::UT1>,
         site: &Geodetic<ECEF>,
     ) -> Direction<Horizontal>
     where
@@ -194,7 +194,7 @@ pub trait DirectionAstroExt<F: ReferenceFrame> {
     fn to_equatorial_precise(
         &self,
         jd_tt: &JulianDate,
-        jd_ut1: &JulianDate,
+        jd_ut1: &tempoch::JulianDate<tempoch::UT1>,
         site: &Geodetic<ECEF>,
     ) -> Direction<EquatorialTrueOfDate>
     where
@@ -264,7 +264,7 @@ pub trait SphericalDirectionAstroExt<F: ReferenceFrame> {
     fn to_horizontal_precise(
         &self,
         jd_tt: &JulianDate,
-        jd_ut1: &JulianDate,
+        jd_ut1: &tempoch::JulianDate<tempoch::UT1>,
         site: &Geodetic<ECEF>,
     ) -> spherical::Direction<Horizontal>
     where
@@ -283,7 +283,7 @@ pub trait SphericalDirectionAstroExt<F: ReferenceFrame> {
     fn to_equatorial_precise(
         &self,
         jd_tt: &JulianDate,
-        jd_ut1: &JulianDate,
+        jd_ut1: &tempoch::JulianDate<tempoch::UT1>,
         site: &Geodetic<ECEF>,
     ) -> spherical::Direction<EquatorialTrueOfDate>
     where
@@ -329,7 +329,7 @@ impl<F: ReferenceFrame> SphericalDirectionAstroExt<F> for spherical::Direction<F
     fn to_horizontal_precise(
         &self,
         jd_tt: &JulianDate,
-        jd_ut1: &JulianDate,
+        jd_ut1: &tempoch::JulianDate<tempoch::UT1>,
         site: &Geodetic<ECEF>,
     ) -> spherical::Direction<Horizontal>
     where
@@ -356,7 +356,7 @@ impl<F: ReferenceFrame> SphericalDirectionAstroExt<F> for spherical::Direction<F
     fn to_equatorial_precise(
         &self,
         jd_tt: &JulianDate,
-        jd_ut1: &JulianDate,
+        jd_ut1: &tempoch::JulianDate<tempoch::UT1>,
         site: &Geodetic<ECEF>,
     ) -> spherical::Direction<EquatorialTrueOfDate>
     where

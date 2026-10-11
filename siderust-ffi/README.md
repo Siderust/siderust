@@ -41,7 +41,7 @@ This crate is meant to be built from a workspace checkout where the Rust sources
 
 - `siderust` (Rust implementation) at `..`
 - `affn`, `qtty`, `tempoch` in the sibling workspace crates
-- `tempoch-ffi` (git tag `v0.6.3`, package `tempoch-ffi`) for the shared C time ABI
+- `tempoch-ffi` 0.8.0 (crates.io) for the shared C time ABI
 
 `tempoch-ffi` exposes JD/MJD carriers as raw `double`s, so `siderust-ffi`
 reuses that scalar ABI directly instead of duplicating wrapper structs.
@@ -114,3 +114,10 @@ This crate is not published by default; publish only when C API/ABI changes.
 
 Alternatively, use `scripts/publish-changed.sh --confirm-ffi` from the repo root, which
 enforces the soundness check and skips `publish = false` crates automatically.
+
+UTC Julian dates accepted/returned by the TLE API are civil UTC JD coordinates
+(86,400 nominal seconds per day). The propagator retains a time-data snapshot
+for decoding and encoding. Conversion failures return `InvalidArgument` without
+writing output values. Shared time carriers and generic JD/MJD conversion
+functions come directly from tempoch-ffi 0.8.0 (`tempoch_ffi_version() == 800`);
+include the matching upstream `tempoch_ffi.h`. TT event windows remain TT MJD.

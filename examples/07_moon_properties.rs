@@ -81,13 +81,10 @@ fn main() {
     println!("Site: lat={lat:.4} deg, lon={lon:.4} deg, h={h_m:.0} m");
     println!("\nGeocentric:");
     println!("  label                 : {}", geo.label());
-    println!(
-        "  illuminated fraction  : {:.4}",
-        geo.illuminated_fraction.value()
-    );
+    println!("  illuminated fraction  : {:.4}", geo.illuminated_fraction);
     println!(
         "  illuminated percent   : {:.2} %",
-        geo.illuminated_fraction.value() * 100.0
+        geo.illuminated_fraction * 100.0
     );
     println!(
         "  phase angle           : {}",
@@ -101,13 +98,10 @@ fn main() {
 
     println!("\nTopocentric:");
     println!("  label                 : {}", topo.label());
-    println!(
-        "  illuminated fraction  : {:.4}",
-        topo.illuminated_fraction.value()
-    );
+    println!("  illuminated fraction  : {:.4}", topo.illuminated_fraction);
     println!(
         "  illumination delta    : {:+.4} %",
-        (topo.illuminated_fraction - geo.illuminated_fraction).value() * 100.0
+        (topo.illuminated_fraction - geo.illuminated_fraction) * 100.0
     );
     println!(
         "  elongation            : {}",

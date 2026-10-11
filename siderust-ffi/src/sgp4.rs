@@ -246,7 +246,15 @@ pub extern "C" fn siderust_sgp4_epoch_jd_utc(
             return SiderustStatus::NullPointer;
         }
         let sgp4 = unsafe { &*sgp4 };
-        unsafe { *out_jd = sgp4.inner.epoch_jd_utc().raw().value() };
+        let raw = match sgp4
+            .inner
+            .epoch_jd_utc()
+            .try_raw_with(sgp4.inner.time_context())
+        {
+            Ok(raw) => raw,
+            Err(_) => return SiderustStatus::InvalidArgument,
+        };
+        unsafe { *out_jd = raw.value() };
         SiderustStatus::Ok
     })
 }
@@ -280,7 +288,10 @@ pub extern "C" fn siderust_sgp4_propagate_at(
         }
         let sgp4 = unsafe { &*sgp4 };
 
-        let target = match JulianDate::<UTC>::try_new(Quantity::<Day>::new(jd_utc)) {
+        let target = match JulianDate::<UTC>::try_new_with(
+            Quantity::<Day>::new(jd_utc),
+            sgp4.inner.time_context(),
+        ) {
             Ok(jd) => jd,
             Err(_) => return SiderustStatus::InvalidArgument,
         };

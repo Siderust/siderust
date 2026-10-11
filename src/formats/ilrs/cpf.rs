@@ -26,6 +26,8 @@
 //! [`parse_cpf_with_mode`]. All three return a [`CpfFile`] whose
 //! tabulated ephemeris is the typed [`CpfEphemeris`] view.
 //!
+//! CPF v2 specification: <https://ilrs.gsfc.nasa.gov/docs/2018/cpf_2.00h-1.pdf>.
+//!
 //! ## References
 //!
 //! - International Laser Ranging Service. (2018). Consolidated Prediction
@@ -43,16 +45,14 @@ use affn::frames::ITRF;
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use chrono::{DateTime, NaiveDate, Utc as ChronoUtc};
 use qtty::unit::Kilometer;
-use qtty::Day;
 #[cfg(feature = "std")]
 use std::fs;
 #[cfg(feature = "std")]
 use std::io::Write;
 #[cfg(feature = "std")]
 use std::path::Path;
-use tempoch::{ModifiedJulianDate, Time, UTC};
+use tempoch::{Time, UTC};
 
 // ── GeocentricCenter ──────────────────────────────────────────────────────────
 
@@ -284,6 +284,7 @@ pub fn parse_cpf_with_mode(text: &str, mode: ParseMode) -> Result<CpfFile, Forma
 /// assert_eq!(f.reference_frame, f2.reference_frame);
 /// ```
 pub fn write_cpf<W: Write>(f: &CpfFile, w: &mut W) -> Result<(), FormatError> {
+    let ctx = tempoch::TimeContext::new();
     // H1: CPF <version> <source> <year> <month> <day> <hour> 1
     writeln!(w, "H1 CPF {} {} 2024 01 01 00 1", f.version, f.source).map_err(FormatError::Io)?;
     // H2: <cospar> <sic> <norad> <start> <end> <step> <leap> <frame>
@@ -307,35 +308,35 @@ pub fn write_cpf<W: Write>(f: &CpfFile, w: &mut W) -> Result<(), FormatError> {
     .map_err(FormatError::Io)?;
     // Position records.
     for entry in &f.ephemeris.entries {
-        let (mjd_int, sod) = mjd_sod_from_epoch(entry.epoch);
+        use chrono::Timelike;
+        let civil = entry
+            .epoch
+            .try_to_chrono_with(&ctx)
+            .map_err(|e| FormatError::Format(format!("CPF 10: UTC encoding: {e}")))?;
+        let midnight = civil
+            .date_naive()
+            .and_time(chrono::NaiveTime::MIN)
+            .and_utc();
+        let mjd_int = Time::<UTC>::try_from_chrono_with(midnight, &ctx)
+            .and_then(|epoch| epoch.to_with::<tempoch::MJD>(&ctx))
+            .and_then(|epoch| epoch.try_raw_with(&ctx))
+            .map_err(|e| FormatError::Format(format!("CPF 10: UTC date: {e}")))?
+            .value() as i64;
+        let sod =
+            civil.num_seconds_from_midnight() as f64 + civil.nanosecond() as f64 / 1_000_000_000.0;
         // Convert km back to metres for the on-the-wire representation.
         let x_m = entry.position.x().value() * 1_000.0;
         let y_m = entry.position.y().value() * 1_000.0;
         let z_m = entry.position.z().value() * 1_000.0;
         writeln!(
             w,
-            "10 1 {} {:.3} 0 {:.3} {:.3} {:.3}",
+            "10 1 {} {:.9} 0 {:.3} {:.3} {:.3}",
             mjd_int, sod, x_m, y_m, z_m,
         )
         .map_err(FormatError::Io)?;
     }
     writeln!(w, "99").map_err(FormatError::Io)?;
     Ok(())
-}
-
-/// Decompose a UTC epoch into the `(integer MJD, seconds-of-day)`
-/// pair used by CPF record 10.
-fn mjd_sod_from_epoch(epoch: Time<UTC>) -> (i64, f64) {
-    use chrono::Timelike;
-    let dt = epoch
-        .try_to_chrono()
-        .expect("CPF UTC epoch must be representable in chrono");
-    let mjd_epoch =
-        NaiveDate::from_ymd_opt(1858, 11, 17).expect("MJD epoch 1858-11-17 is a valid date");
-    let mjd_int = dt.date_naive().signed_duration_since(mjd_epoch).num_days();
-    let sod = (dt.time().num_seconds_from_midnight() as f64)
-        + (dt.timestamp_subsec_nanos() as f64) * 1e-9;
-    (mjd_int, sod)
 }
 
 // ── Internal parser ───────────────────────────────────────────────────────────
@@ -345,6 +346,7 @@ fn parse_cpf_impl(
     mode: ParseMode,
     path: Option<std::path::PathBuf>,
 ) -> Result<CpfFile, FormatError> {
+    let ctx = tempoch::TimeContext::new();
     let mut out = CpfFile {
         parse_mode: mode,
         ..Default::default()
@@ -454,12 +456,8 @@ fn parse_cpf_impl(
                         }
                     };
 
-                let mjd = ModifiedJulianDate::<UTC>::try_new(Day::new(mjd_i as f64))
-                    .map_err(|_| FormatError::Format(format!("CPF 10: invalid MJD {mjd_i}")))?;
-                let _ = (mjd, sod); // mjd parsed for validation; epoch built below
-
                 // Typed record: convert metres to km, compute epoch.
-                let epoch = build_epoch_from_mjd_sod(mjd_i, sod)?;
+                let epoch = build_epoch_from_mjd_sod(mjd_i, sod, &ctx)?;
                 out.ephemeris.entries.push(CpfEphemerisEntry {
                     epoch,
                     position: CpfCartesian::new(x_m / 1_000.0, y_m / 1_000.0, z_m / 1_000.0),
@@ -475,34 +473,31 @@ fn parse_cpf_impl(
 }
 
 /// Build a `Time<UTC>` from an integer MJD and fractional seconds-of-day.
-fn build_epoch_from_mjd_sod(mjd_int: i64, sod: f64) -> Result<Time<UTC>, FormatError> {
-    // Convert MJD to calendar date, then to chrono, then add SOD.
-    // MJD 0 = 1858-11-17. MJD → Julian Day: JD = MJD + 2400000.5
-    // Use Julian Day Number arithmetic to get year/month/day.
-    let jd_whole = mjd_int + 2_400_001; // integer JD at noon of MJD day
-                                        // Algorithm from USNO (Fliegel & Van Flandern, 1968):
-    let l = jd_whole + 68_569;
-    let n = (4 * l) / 146_097;
-    let l2 = l - (146_097 * n + 3) / 4;
-    let i = (4_000 * (l2 + 1)) / 1_461_001;
-    let l3 = l2 - (1_461 * i) / 4 + 31;
-    let j = (80 * l3) / 2_447;
-    let day = l3 - (2_447 * j) / 80;
-    let l4 = j / 11;
-    let month = j + 2 - 12 * l4;
-    let year = 100 * (n - 49) + i + l4;
-
-    let sod_int = sod as u32;
-    let sod_nanos = ((sod - sod_int as f64) * 1e9).round() as u32;
-    let hour = sod_int / 3_600;
-    let minute = (sod_int % 3_600) / 60;
-    let second = sod_int % 60;
-
-    let naive = NaiveDate::from_ymd_opt(year as i32, month as u32, day as u32)
-        .and_then(|d| d.and_hms_nano_opt(hour, minute, second, sod_nanos))
-        .ok_or_else(|| FormatError::Format(format!("CPF 10: invalid date from MJD {mjd_int}")))?;
-    let dt: DateTime<ChronoUtc> = DateTime::from_naive_utc_and_offset(naive, ChronoUtc);
-    Time::<UTC>::try_from_chrono(dt)
+fn build_epoch_from_mjd_sod(
+    mjd_int: i64,
+    sod: f64,
+    ctx: &tempoch::TimeContext,
+) -> Result<Time<UTC>, FormatError> {
+    // Only midnight is encoded as MJD. The time-of-day stays a civil label,
+    // including chrono's extended nanosecond representation of 23:59:60.
+    if !sod.is_finite() || !(0.0..86_401.0).contains(&sod) {
+        return Err(FormatError::Format(format!(
+            "CPF 10: invalid civil seconds-of-day {sod}"
+        )));
+    }
+    let day_start =
+        tempoch::ModifiedJulianDate::<UTC>::try_new_with(qtty::Day::new(mjd_int as f64), ctx)
+            .map(|epoch| epoch.to_j2000s())
+            .map_err(|e| FormatError::Format(format!("CPF 10: UTC date: {e}")))?;
+    let midnight = day_start
+        .try_to_chrono_with(ctx)
+        .map_err(|e| FormatError::Format(format!("CPF 10: UTC date: {e}")))?;
+    let whole = sod.floor() as u32;
+    let second = whole.min(86_399);
+    let nanos = ((sod - second as f64) * 1_000_000_000.0).round() as u32;
+    let time = chrono::NaiveTime::from_num_seconds_from_midnight_opt(second, nanos)
+        .ok_or_else(|| FormatError::Format("CPF 10: invalid civil time".into()))?;
+    Time::<UTC>::try_from_chrono_with(midnight.date_naive().and_time(time).and_utc(), ctx)
         .map_err(|e| FormatError::Format(format!("CPF 10: UTC conversion: {e}")))
 }
 
@@ -510,6 +505,7 @@ fn build_epoch_from_mjd_sod(mjd_int: i64, sod: f64) -> Result<Time<UTC>, FormatE
 mod tests {
     use super::ParseMode;
     use super::*;
+    use chrono::Timelike;
 
     const SAMPLE: &str = "\
 H1 CPF 2 HTS 2024 01 01 00 1\n\
@@ -544,7 +540,6 @@ H2 lageos1 1155 7603901 2024 01 01 00 00 00 0 0 ITRF2014\n\
     #[test]
     fn ephemeris_epoch_correct() {
         let f = parse_cpf(SAMPLE).expect("parse");
-        use chrono::Timelike;
         let dt = f.ephemeris.entries[0].epoch.try_to_chrono().unwrap();
         // MJD 60310 = 2024-01-01 UTC, SOD = 0 → midnight
         assert_eq!(dt.hour(), 0);
@@ -555,7 +550,6 @@ H2 lageos1 1155 7603901 2024 01 01 00 00 00 0 0 ITRF2014\n\
     #[test]
     fn ephemeris_epoch_sod_offset() {
         let f = parse_cpf(SAMPLE).expect("parse");
-        use chrono::Timelike;
         let dt = f.ephemeris.entries[1].epoch.try_to_chrono().unwrap();
         // SOD = 60 s → 00:01:00
         assert_eq!(dt.hour(), 0);

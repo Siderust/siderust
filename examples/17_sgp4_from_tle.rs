@@ -20,7 +20,7 @@ use tempoch::{JulianDate, UTC};
 const L1: &str = "1 00005U 58002B   00179.78495062  .00000023  00000-0  28098-4 0  4753";
 const L2: &str = "2 00005  34.2682 348.7242 1859667 331.7664  19.3264 10.82419157413667";
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 1. Parse a real TLE the conventional way (column-positional).
     let parsed = parse_tle(L1, L2).expect("vendored Vallado-VER TLE parses cleanly");
 
@@ -52,7 +52,12 @@ fn main() {
 
     println!("Satellite     : NORAD {}", parsed.norad_id.0);
     println!("Gravity model : {:?}", prop.gravity_model());
-    println!("TLE epoch (JD): {:.10}", prop.epoch_jd_utc().raw().value());
+    println!(
+        "TLE epoch (JD): {:.10}",
+        prop.epoch_jd_utc()
+            .try_raw_with(prop.time_context())?
+            .value()
+    );
     println!();
     println!(
         "{:>12}  {:>14}  {:>14}  {:>14}  {:>10}  {:>10}  {:>10}",
@@ -63,7 +68,10 @@ fn main() {
         // Demonstrate both APIs: build a UTC Julian date, then call
         // `propagate_at`.
         let target = JulianDate::<UTC>::try_new(Quantity::<Day>::new(
-            prop.epoch_jd_utc().raw().value() + dt_min / 1_440.0,
+            prop.epoch_jd_utc()
+                .try_raw_with(prop.time_context())?
+                .value()
+                + dt_min / 1_440.0,
         ))
         .expect("finite Julian date");
         let s = prop.propagate_at(target).expect("propagation succeeds");
@@ -80,4 +88,5 @@ fn main() {
             v[2].value(),
         );
     }
+    Ok(())
 }

@@ -435,7 +435,7 @@ typedef int32_t SiderustBody;
 #endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
-// Coordinate kind discriminant for [`SiderustTargetCoord`].
+// Coordinate kind discriminant for `SiderustTargetCoord`.
 //
 // Specifies which coordinate representation is stored in the target.
 enum SiderustTargetCoordKind
@@ -1641,7 +1641,7 @@ siderust_status_t siderust_find_phase_events(tempoch_period_mjd_t window,
                                              struct siderust_phase_event_t **out,
                                              uintptr_t *count);
 
-// Find windows where geocentric Moon illumination is above `k_min` ∈ [0,1].
+// Find windows where geocentric Moon illumination is above `k_min` in `[0, 1]`.
 
 siderust_status_t siderust_moon_illumination_above(tempoch_period_mjd_t window,
                                                    double k_min,
@@ -1649,7 +1649,7 @@ siderust_status_t siderust_moon_illumination_above(tempoch_period_mjd_t window,
                                                    tempoch_period_mjd_t **out,
                                                    uintptr_t *count);
 
-// Find windows where geocentric Moon illumination is below `k_max` ∈ [0,1].
+// Find windows where geocentric Moon illumination is below `k_max` in `[0, 1]`.
 
 siderust_status_t siderust_moon_illumination_below(tempoch_period_mjd_t window,
                                                    double k_max,

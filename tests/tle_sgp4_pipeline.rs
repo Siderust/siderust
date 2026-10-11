@@ -37,7 +37,10 @@ fn tle_sgp4_pipeline_produces_typed_teme_state() {
     let prop = TlePropagator::from_tle_with_model(&tle, GravityModel::Wgs84)
         .expect("Vallado-VER TLE accepted by the native propagator");
 
-    let epoch_jd: JulianDate<_> = tle.epoch.to::<tempoch::JD>();
+    let epoch_jd: JulianDate<_> = tle
+        .epoch
+        .to_with::<tempoch::JD>(&tempoch::TimeContext::new())
+        .unwrap();
     let state_at_epoch = prop
         .propagate_at(epoch_jd)
         .expect("propagation at the TLE epoch must succeed");
@@ -72,7 +75,10 @@ fn tle_sgp4_pipeline_propagates_forward_in_time() {
     let prop =
         TlePropagator::from_tle_with_model(&tle, GravityModel::Wgs84).expect("propagator builds");
 
-    let epoch_jd: JulianDate<_> = tle.epoch.to::<tempoch::JD>();
+    let epoch_jd: JulianDate<_> = tle
+        .epoch
+        .to_with::<tempoch::JD>(&tempoch::TimeContext::new())
+        .unwrap();
     let state_0 = prop.propagate_at(epoch_jd).expect("epoch state");
     // Advance by one minute (TLE epoch is a JulianDate; adding a typed
     // Day quantity exercises the typed time addition path).

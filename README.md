@@ -390,3 +390,33 @@ The AGPL-3.0 ensures that:
 ## Acknowledgments
 
 Big thanks to **Màrius Montón** ([@mariusmm](https://github.com/mariusmm)) for inviting me to his three-week Rust intro course at the Universitat Autònoma de Barcelona (UAB) in 2024 that nudge set this project in motion.
+
+### Time coordinates (0.13 migration)
+
+Siderust uses `tempoch` 0.8.0. `siderust::time::JulianDate` defaults to TT;
+use `tempoch::JulianDate<UTC>` for civil UTC coordinates. UTC JD/MJD require
+fallible conversion with a shared data snapshot:
+
+```rust
+use siderust::time::{TimeContext, Time, UTC, MJD};
+use siderust::qtty::Day;
+let ctx = TimeContext::new();
+let utc = Time::<UTC, MJD>::try_new_with(Day::new(57754.0), &ctx)?;
+let raw = utc.to_with::<MJD>(&ctx)?.try_raw_with(&ctx)?;
+# Ok::<(), siderust::time::ConversionError>(())
+```
+
+MJD 57754.0 is 2017-01-01 00:00:00 UTC. Civil days have 86,400 nominal
+seconds; that midnight follows 2016-12-31 midnight by 86,401 SI seconds.
+Leap-second instants are valid internal instants but fail civil JD/MJD encoding.
+TLE model offsets use 1,440 nominal minutes per civil day. Scalar Serde uses
+civil UTC coordinates and a fresh default context; use upstream tagged split
+representations for leap instants and explicit snapshots for reproducibility.
+
+Principia 0.4.0 resolves from crates.io and shares tempoch 0.8 with Siderust.
+
+The native `TimeContext::tai_minus_utc` API and split-coordinate UTC civil
+conversion fixes are pinned from tempoch-core revision `9b6d90e` pending an
+upstream release. This preserves nanoseconds at leap boundaries and keeps
+UTC history and historical frequency offsets in tempoch. Principia has no
+Git patch.

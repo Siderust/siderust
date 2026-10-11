@@ -37,7 +37,7 @@ use qtty::time::Seconds;
 use qtty::Day;
 #[cfg(feature = "std")]
 use std::io::{BufRead, BufReader, Read};
-use tempoch::{ModifiedJulianDate, UTC};
+use tempoch::{ConversionError, ModifiedJulianDate, TimeContext, UTC};
 
 /// Earth-orientation parameters from an IERS C04 record.
 ///
@@ -69,6 +69,7 @@ pub struct EopRecord {
 
 /// Parse a C04-style EOP file.
 pub fn read_eop_c04<R: Read>(rdr: R) -> Result<Vec<EopRecord>, FormatError> {
+    let ctx = TimeContext::new();
     let br = BufReader::new(rdr);
     let mut out = Vec::new();
     for line in br.lines() {
@@ -93,16 +94,25 @@ pub fn read_eop_c04<R: Read>(rdr: R) -> Result<Vec<EopRecord>, FormatError> {
             Ok(v) => v,
             Err(_) => continue,
         };
-        let mjd = match ModifiedJulianDate::<UTC>::try_new(Day::new(mjd_raw)) {
+        let mjd = match ModifiedJulianDate::<UTC>::try_new_with(Day::new(mjd_raw), &ctx) {
             Ok(m) => m,
-            Err(_) => continue,
+            Err(e) => return Err(FormatError::Format(alloc::format!("C04 UTC MJD: {e}"))),
         };
-        let x = parts[4].parse().unwrap_or(0.0);
-        let y = parts[5].parse().unwrap_or(0.0);
-        let ut1 = parts[6].parse().unwrap_or(0.0);
-        let lod = parts[7].parse().unwrap_or(0.0);
-        let dpsi = parts[8].parse().unwrap_or(0.0);
-        let deps = parts[9].parse().unwrap_or(0.0);
+        let field = |index: usize| -> Result<f64, FormatError> {
+            parts[index]
+                .parse::<f64>()
+                .ok()
+                .filter(|value| value.is_finite())
+                .ok_or_else(|| {
+                    FormatError::Format(alloc::format!("C04: invalid EOP field {}", index + 1))
+                })
+        };
+        let x = field(4)?;
+        let y = field(5)?;
+        let ut1 = field(6)?;
+        let lod = field(7)?;
+        let dpsi = field(8)?;
+        let deps = field(9)?;
         out.push(EopRecord {
             mjd,
             eop: EopValues {
@@ -122,15 +132,20 @@ pub fn read_eop_c04<R: Read>(rdr: R) -> Result<Vec<EopRecord>, FormatError> {
 ///
 /// Returns `None` if the table is empty; clamps to the endpoints when the
 /// requested epoch lies outside the table range.
-pub fn interpolate(records: &[EopRecord], mjd: ModifiedJulianDate<UTC>) -> Option<EopRecord> {
+pub fn interpolate(
+    records: &[EopRecord],
+    mjd: ModifiedJulianDate<UTC>,
+    ctx: &TimeContext,
+) -> Result<Option<EopRecord>, ConversionError> {
+    let t_val = mjd.try_raw_with(ctx)?.value();
     if records.is_empty() {
-        return None;
+        return Ok(None);
     }
     if mjd <= records[0].mjd {
-        return Some(records[0]);
+        return Ok(Some(records[0]));
     }
     if mjd >= records[records.len() - 1].mjd {
-        return Some(records[records.len() - 1]);
+        return Ok(Some(records[records.len() - 1]));
     }
     // Binary search for the bracketing pair.
     let mut lo = 0usize;
@@ -145,21 +160,24 @@ pub fn interpolate(records: &[EopRecord], mjd: ModifiedJulianDate<UTC>) -> Optio
     }
     let a = records[lo];
     let b = records[hi];
-    let a_val = a.mjd.raw().value();
-    let b_val = b.mjd.raw().value();
-    let t_val = mjd.raw().value();
+    let a_val = a.mjd.try_raw_with(ctx)?.value();
+    let b_val = b.mjd.try_raw_with(ctx)?.value();
     let f = (t_val - a_val) / (b_val - a_val);
-    Some(EopRecord {
+    let offset = |epoch| ctx.tai_minus_utc(epoch).map(|value| value.value());
+    let a_continuous = a.eop.dut1.value() - offset(a.mjd)?;
+    let b_continuous = b.eop.dut1.value() - offset(b.mjd)?;
+    let dut1 = a_continuous + f * (b_continuous - a_continuous) + offset(mjd)?;
+    Ok(Some(EopRecord {
         mjd,
         eop: EopValues {
             xp: Arcseconds::new(a.eop.xp.value() + f * (b.eop.xp.value() - a.eop.xp.value())),
             yp: Arcseconds::new(a.eop.yp.value() + f * (b.eop.yp.value() - a.eop.yp.value())),
-            dut1: Seconds::new(a.eop.dut1.value() + f * (b.eop.dut1.value() - a.eop.dut1.value())),
+            dut1: Seconds::new(dut1),
             lod: Seconds::new(a.eop.lod.value() + f * (b.eop.lod.value() - a.eop.lod.value())),
             dx: MilliArcseconds::new(a.eop.dx.value() + f * (b.eop.dx.value() - a.eop.dx.value())),
             dy: MilliArcseconds::new(a.eop.dy.value() + f * (b.eop.dy.value() - a.eop.dy.value())),
         },
-    })
+    }))
 }
 
 #[cfg(test)]
@@ -176,7 +194,16 @@ mod tests {
     fn parses_two_records() {
         let r = read_eop_c04(SAMPLE.as_bytes()).unwrap();
         assert_eq!(r.len(), 2);
-        assert!((r[0].mjd.raw().value() - 60310.0).abs() < 1e-9);
+        assert!(
+            (r[0]
+                .mjd
+                .try_raw_with(&tempoch::TimeContext::new())
+                .unwrap()
+                .value()
+                - 60310.0)
+                .abs()
+                < 1e-9
+        );
     }
 
     #[test]
@@ -185,7 +212,9 @@ mod tests {
         let mid = interpolate(
             &r,
             ModifiedJulianDate::<UTC>::try_new(Day::new(60310.5)).unwrap(),
+            &TimeContext::new(),
         )
+        .unwrap()
         .unwrap();
         let expect = (0.123456 + 0.124000) / 2.0;
         assert!((mid.eop.xp.value() - expect).abs() < 1e-9);

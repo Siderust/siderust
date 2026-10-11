@@ -117,7 +117,7 @@ pub extern "C" fn siderust_star_create(
             LightYears::new(distance_ly),
         );
 
-        let epoch = ffi_try!(crate::ffi_utils::jd_from_f64(epoch_jd));
+        let epoch = ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(epoch_jd));
 
         let pm = if proper_motion.is_null() {
             None

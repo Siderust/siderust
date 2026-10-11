@@ -95,7 +95,7 @@ impl TemeState {
     ///     Utc.with_ymd_and_hms(2000, 1, 1, 12, 0, 0).unwrap(),
     /// )
     /// .unwrap();
-    /// let jd = t.to::<tempoch::JD>();
+    /// let jd = t.to_with::<tempoch::JD>(&tempoch::TimeContext::new()).unwrap();
     /// let s = TemeState::from_arrays(
     ///     jd,
     ///     [7000.0, 0.0, 0.0],
@@ -142,7 +142,7 @@ impl TemeState {
     /// ).unwrap();
     /// let p = TlePropagator::from_tle(&tle).unwrap();
     /// let s = p.propagate_minutes(Minutes::new(0.0)).unwrap();
-    /// assert!(s.epoch().raw().value() > 2_454_000.0);
+    /// assert!(s.epoch().try_raw_with(p.time_context()).unwrap().value() > 2_454_000.0);
     /// ```
     pub fn epoch(&self) -> JulianDate<UTC> {
         self.epoch_utc

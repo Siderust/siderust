@@ -83,7 +83,7 @@ pub extern "C" fn siderust_moon_phase_geocentric(
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
-        let geom = moon_phase_geocentric::<Vsop87Ephemeris>(ffi_try!(crate::ffi_utils::jd_from_f64(jd)));
+        let geom = moon_phase_geocentric::<Vsop87Ephemeris>(ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd)));
         // SAFETY: raw-pointer use follows this function's C ABI preconditions.
         unsafe { *out = phase_geometry_from_rust(geom) };
         SiderustStatus::Ok
@@ -102,7 +102,7 @@ pub extern "C" fn siderust_moon_phase_topocentric(
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
-        let geom = moon_phase_topocentric::<Vsop87Ephemeris>(ffi_try!(crate::ffi_utils::jd_from_f64(jd)), observer.to_rust());
+        let geom = moon_phase_topocentric::<Vsop87Ephemeris>(ffi_try!(crate::ffi_utils::jd_from_f64::<tempoch::TT>(jd)), observer.to_rust());
         // SAFETY: raw-pointer use follows this function's C ABI preconditions.
         unsafe { *out = phase_geometry_from_rust(geom) };
         SiderustStatus::Ok

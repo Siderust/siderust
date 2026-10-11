@@ -476,10 +476,17 @@ impl RotatingFrame {
 
 fn relative_velocity(sampler: &dyn Sampler, jd: JulianDate) -> Result<Vec3, SolverError> {
     let jd_value = jd.raw().value();
-    let before = crate::time::try_jd_f64(jd_value - DERIVATIVE_STEP_DAYS)
-        .map_err(|_| SolverError::DegenerateFrame)?;
-    let after = crate::time::try_jd_f64(jd_value + DERIVATIVE_STEP_DAYS)
-        .map_err(|_| SolverError::DegenerateFrame)?;
+    if !jd_value.is_finite() {
+        return Err(SolverError::DegenerateFrame);
+    }
+    let before = tempoch::JulianDate::<tempoch::TT>::try_new(qtty::Day::new(
+        jd_value - DERIVATIVE_STEP_DAYS,
+    ))
+    .map_err(|_| SolverError::DegenerateFrame)?;
+    let after = tempoch::JulianDate::<tempoch::TT>::try_new(qtty::Day::new(
+        jd_value + DERIVATIVE_STEP_DAYS,
+    ))
+    .map_err(|_| SolverError::DegenerateFrame)?;
     let rel_before = sub(sampler.earth(before)?, sampler.sun(before)?);
     let rel_after = sub(sampler.earth(after)?, sampler.sun(after)?);
     Ok(scale(

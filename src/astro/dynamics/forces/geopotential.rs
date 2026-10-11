@@ -63,7 +63,11 @@ impl AccelerationModel<DynamicsContext, TT, Geocentric, GCRS> for Geopotential {
             .require_gravity_field()
             .map_err(DynamicsError::into_principia)?;
         let (pos_kernel, era_sin_cos) = if self.order > 0 {
-            let era = earth_rotation_angle(s.epoch.to::<JD>());
+            let ut1 = s
+                .epoch
+                .to_with::<crate::time::UT1>(&crate::time::TimeContext::new())
+                .map_err(|_| PrincipiaError::ContextDataUnavailable { what: "UT1" })?;
+            let era = earth_rotation_angle(ut1.to::<JD>());
             let (sin_t, cos_t) = era.value().sin_cos();
             let x = s.position.x().value();
             let y = s.position.y().value();
@@ -153,5 +157,16 @@ mod tests {
                 what: "gravity field"
             })
         ));
+    }
+    #[test]
+    fn geopotential_reports_ut1_conversion_failures() {
+        for jd in [f64::INFINITY, 10_000_000.0] {
+            let mut state = make_state(7_000.0, 0.0, 0.0);
+            state.epoch = JulianDate::new(jd).to_j2000s();
+            assert!(matches!(
+                Geopotential::new(2, 2).acceleration(&state, &ctx_with_gravity()),
+                Err(PrincipiaError::ContextDataUnavailable { what: "UT1" })
+            ));
+        }
     }
 }

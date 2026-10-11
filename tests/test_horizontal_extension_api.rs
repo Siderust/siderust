@@ -24,7 +24,7 @@ const POSITION_EPSILON: f64 = 1e-10;
 #[test]
 fn cartesian_direction_horizontal_extensions_round_trip() {
     let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
-    let jd_ut1 = JulianDate::new(2_451_545.0);
+    let jd_ut1 = tempoch::JulianDate::<tempoch::UT1>::new(2_451_545.0);
     let jd_tt = JulianDate::new(2_451_545.000_800_741);
     let equatorial = spherical::direction::EquatorialTrueOfDate::new(
         Degrees::new(101.287),
@@ -60,7 +60,7 @@ fn cartesian_direction_horizontal_extensions_round_trip() {
 #[test]
 fn spherical_direction_horizontal_extensions_round_trip() {
     let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
-    let jd_ut1 = JulianDate::new(2_451_545.0);
+    let jd_ut1 = tempoch::JulianDate::<tempoch::UT1>::new(2_451_545.0);
     let jd_tt = JulianDate::new(2_451_545.000_800_741);
     let equatorial = spherical::direction::EquatorialTrueOfDate::new(
         Degrees::new(101.287),
@@ -91,7 +91,7 @@ fn spherical_direction_horizontal_extensions_round_trip() {
 #[test]
 fn topocentric_position_aliases_match_explicit_methods() {
     let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
-    let jd_ut1 = JulianDate::new(2_451_545.0);
+    let jd_ut1 = tempoch::JulianDate::<tempoch::UT1>::new(2_451_545.0);
     let jd_tt = JulianDate::new(2_451_545.000_800_741);
     let distance = 1_000.0 * KM;
 

@@ -4,6 +4,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.0] - Unreleased
+
+### Breaking changes
+
+- Adopt `tempoch` and `tempoch-ffi` 0.8.0 and `principia` 0.4.0. UTC JD/MJD
+  are civil coordinates with 86,400 nominal seconds per day. Construction,
+  conversion and extraction use upstream fallible context-aware APIs;
+  leap-second instants cannot be encoded as civil JD/MJD. TT/TAI remain
+  continuous scales with infallible day formats.
+- EOP lookup APIs now accept `tempoch::JulianDate<UTC>` rather than the
+  TT-default Siderust alias. C04 interpolation takes a `TimeContext` and
+  returns `Result<Option<EopRecord>, ConversionError>`.
+- Remove time constructor/chrono wrappers, the deprecated Julian-year alias,
+  and the approximate/fixed-point TT-to-UTC helpers. Use tempoch's generic
+  APIs and qtty's constants directly. Remove `EopValues::jd_ut1`, which
+  represented UTC/UT1 coordinates with a TT phantom type.
+
+### Changed
+
+- TLE propagation consistently uses civil UTC model minutes (1,440 per day),
+  rather than SI elapsed minutes. Each propagator retains one `TimeContext`;
+  its C API shares that snapshot and reports encoding/decoding failures.
+- CPF preserves native UTC civil leap-second labels and fractional seconds;
+  invalid leap-second dates report conversion errors.
+- Interpolate C04 UT1-TAI across leap boundaries, then recover DUT1 using
+  context-decoded UTC offsets; invalid EOP fields now report format errors.
+- Supplied DUT1 is applied relative to native UTC; the coarse IERS policy
+  derives DUT1 from the monthly UT1 model when observations are unavailable.
+- Earth-rotation, ERA, GMST/GAST and precise horizontal APIs carry
+  `JulianDate<UT1>` separately from TT. FFI decodes each scale explicitly.
+- Use published Principia 0.4 from crates.io. No tempoch 0.7 dependency remains.
+  Pin tempoch-core's native UTC offset API and split-coordinate civil
+  precision fixes at `9b6d90e` pending release; UTC history stays upstream.
+- Remove the redundant `gmst_default` alias; use `gmst_from_tt`.
+
 ## [0.12.0] - 2026-09-30
 
 ### Added
