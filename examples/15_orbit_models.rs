@@ -60,10 +60,7 @@ fn main() {
         mean_motion_pos.y(),
         mean_motion_pos.z(),
     );
-    println!(
-        "   radius = {:.12}\n",
-        mean_motion_pos.distance()
-    );
+    println!("   radius = {:.12}\n", mean_motion_pos.distance());
 
     // 3. ConicOrbit
     let halley_like = ConicOrbit::try_new(
@@ -118,10 +115,7 @@ fn main() {
     // 4. PreparedOrbit
     let prepared = PreparedOrbit::try_from(kepler).expect("valid prepared orbit");
     let prepared_pos = prepared.position_at(jd);
-    let delta = ((kepler_pos.x() - prepared_pos.x()).powi(2)
-        + (kepler_pos.y() - prepared_pos.y()).powi(2)
-        + (kepler_pos.z() - prepared_pos.z()).powi(2))
-    .sqrt();
+    let delta = kepler_pos.distance_to(&prepared_pos);
     println!("4. PreparedOrbit");
     println!(
         "   prepared radius = {:.12} AU",

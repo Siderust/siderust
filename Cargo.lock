@@ -10,9 +10,9 @@ checksum = "320119579fcad9c21884f5c4861d16174d0e06250625266f50fe6898340abefa"
 
 [[package]]
 name = "affn"
-version = "0.10.0"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c25a6b73983cee27bbaa7d3f08d6d2d266984effbadc7ae7089b383615845539"
+checksum = "c92c8eb95d800244fc4d8d01951bb0984f482189b65cfaa28219553ba6487304"
 dependencies = [
  "affn-derive",
  "qtty",
@@ -21,9 +21,9 @@ dependencies = [
 
 [[package]]
 name = "affn-derive"
-version = "0.10.0"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "634a1cfa19b14594b9bcdd5d136d981abe2645b556322b8002c9ba5936d3c14e"
+checksum = "22c0ace8749730770c7df1e9eb5aaf4bd59aeebcd00e8f1d0f3787eaec7a9f8a"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -192,7 +192,7 @@ checksum = "6a1f896587b6f2c069c73d2f0913e2d590c3990285cd2f0b6aa02b786b4c679c"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 3.0.7",
+ "syn 3.0.8",
 ]
 
 [[package]]
@@ -234,9 +234,9 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.7.0"
+version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "50a649af8a827553c29fb0cb4bd4a6f1a0dd695bd3232b9bc98bd9c8a3ffbb8b"
+checksum = "6651c9ed80effdc7db0ff72512157f901af5e3549e341e24b1dd4887d836d838"
 dependencies = [
  "find-msvc-tools",
  "shlex",
@@ -631,7 +631,7 @@ checksum = "9fb9654ba8355388abeb8dcb4fc62f511300867002afc858860463bdd9fe0c44"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 3.0.7",
+ "syn 3.0.8",
 ]
 
 [[package]]
@@ -972,9 +972,8 @@ dependencies = [
 
 [[package]]
 name = "keplerian"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "928bdb660c65a5288f5bfd80b5262b46e5e4fb6a52e3ec6c51b502e3e116dde0"
+version = "0.4.0"
+source = "git+https://github.com/Siderust/keplerian.git?rev=45bad1d40c91f9bbe85c3f88bb3024bfdd9f8e03#45bad1d40c91f9bbe85c3f88bb3024bfdd9f8e03"
 dependencies = [
  "affn",
  "qtty",
@@ -1161,9 +1160,8 @@ checksum = "d6790f58c7ff633d8771f42965289203411a5e5c68388703c06e14f24770b41e"
 
 [[package]]
 name = "optica"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a168b2762e9a5ccf51dc51e4d4871dda76eff02ea151dcf78991df9d20f2fa55"
+version = "0.4.0"
+source = "git+https://github.com/Siderust/optica.git?rev=8fbf20151855f8da94a10eb0ea1b44c49ad33fdd#8fbf20151855f8da94a10eb0ea1b44c49ad33fdd"
 dependencies = [
  "affn",
  "qtty",
@@ -1247,9 +1245,8 @@ dependencies = [
 
 [[package]]
 name = "principia"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "73ef4a0aca535f802cc987f3af750b09e4c4250348a61ee88c5d87771a5fee23"
+version = "0.5.0"
+source = "git+https://github.com/Siderust/principia.git?rev=0f5aedcb81706bbfc8a6240095d1d3321c437d52#0f5aedcb81706bbfc8a6240095d1d3321c437d52"
 dependencies = [
  "affn",
  "qtty",
@@ -1631,14 +1628,14 @@ checksum = "e7a5d71263a5a7d47b41f6b3f06ba276f10cc18b0931f1799f710578e2309348"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 3.0.7",
+ "syn 3.0.8",
 ]
 
 [[package]]
 name = "serde_json"
-version = "1.0.152"
+version = "1.0.154"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1741ab7a6cc54a03a89b5d563ed60075c277d9e3cfa73ad0c1f23f23974703c6"
+checksum = "e7e9cc8b1b85264074fbcc02a88680c4096b1e47df8f739dceb03bf482f04bd6"
 dependencies = [
  "itoa",
  "memchr",
@@ -1675,7 +1672,7 @@ checksum = "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba"
 
 [[package]]
 name = "siderust"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "affn",
  "approx",
@@ -1723,7 +1720,7 @@ dependencies = [
 
 [[package]]
 name = "siderust-ffi"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "affn",
  "cbindgen",
@@ -1793,9 +1790,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "3.0.7"
+version = "3.0.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d62a2e0561533f2ca2561d0cf27fd9fedb640a1bf2616ff5d5c80d99017faadc"
+checksum = "01016da373cd8f7ef12624f796309f5c31ba8d646dd08856c02cd741d823c622"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1831,17 +1828,16 @@ dependencies = [
 
 [[package]]
 name = "tempoch"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1816e003419cee3eac31a35ad88f328cb32d9a887408eb4efb3ab9274a65740"
+version = "0.9.0"
+source = "git+https://github.com/Siderust/tempoch.git?rev=8738e233b489b7a4e6b6ec1ada10138bed5908bf#8738e233b489b7a4e6b6ec1ada10138bed5908bf"
 dependencies = [
  "tempoch-core",
 ]
 
 [[package]]
 name = "tempoch-core"
-version = "0.8.0"
-source = "git+https://github.com/Siderust/tempoch.git?rev=9b6d90e6acbb0f753e075f1de7dd91006d917005#9b6d90e6acbb0f753e075f1de7dd91006d917005"
+version = "0.9.0"
+source = "git+https://github.com/Siderust/tempoch.git?rev=8738e233b489b7a4e6b6ec1ada10138bed5908bf#8738e233b489b7a4e6b6ec1ada10138bed5908bf"
 dependencies = [
  "affn",
  "chrono",
@@ -1851,9 +1847,8 @@ dependencies = [
 
 [[package]]
 name = "tempoch-ffi"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3688a848c13b92120f139fc5f5521b1ef668835f375aa96c6db183bfce143745"
+version = "0.9.0"
+source = "git+https://github.com/Siderust/tempoch.git?rev=8738e233b489b7a4e6b6ec1ada10138bed5908bf#8738e233b489b7a4e6b6ec1ada10138bed5908bf"
 dependencies = [
  "cbindgen",
  "chrono",
@@ -1900,7 +1895,7 @@ checksum = "fe5197923287db20a58125f0bc85c062f7f2c892de97b18c356f9efb14b28524"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 3.0.7",
+ "syn 3.0.8",
 ]
 
 [[package]]
@@ -2134,7 +2129,7 @@ dependencies = [
  "bumpalo",
  "proc-macro2",
  "quote",
- "syn 3.0.7",
+ "syn 3.0.8",
  "wasm-bindgen-shared",
 ]
 

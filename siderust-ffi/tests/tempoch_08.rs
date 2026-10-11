@@ -8,7 +8,7 @@ use tempoch_ffi::{
 
 #[test]
 fn civil_utc_day_formats_use_the_08_abi() {
-    assert_eq!(tempoch_ffi_version(), 800);
+    assert_eq!(tempoch_ffi_version(), 900);
     for (format, raw) in [
         (TempochFormatTag::JD, 2457754.5),
         (TempochFormatTag::MJD, 57754.0),

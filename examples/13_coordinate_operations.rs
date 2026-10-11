@@ -91,8 +91,7 @@ fn main() {
     );
     println!(
         "  angle_to (Cartesian)         = {:.6} = {:.4}",
-        angle_rad,
-        angle_deg
+        angle_rad, angle_deg
     );
     println!("  angular_separation (Vincenty) = {:.4}°", sep);
     println!(
@@ -120,11 +119,9 @@ fn main() {
     );
 
     // Anti-Polaris: opposite direction on the sky
-    let anti_polaris = spherical::direction::EquatorialMeanJ2000::new(
-        polaris.ra() + 180.0*DEG,
-        -polaris.dec(),
-    )
-    .to_cartesian();
+    let anti_polaris =
+        spherical::direction::EquatorialMeanJ2000::new(polaris.ra() + 180.0 * DEG, -polaris.dec())
+            .to_cartesian();
     println!(
         "dot(Polaris, anti-Polaris)          = {:.6}  (must be -1)\n",
         polaris_cart.dot(&anti_polaris)
