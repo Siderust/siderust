@@ -56,7 +56,7 @@ cargo run --example 10_time_periods
 
 - `11_serde_serialization`: JSON round-trips for time and coordinate values.
 - `12_runtime_ephemeris`: runtime JPL ephemeris loading and DE feature checks.
-- `18_lisa_pod`: load LISA CCSDS OEM samples and compute a synthetic inter-spacecraft range residual.
+- `18_lisa_pod`: load LISA CCSDS OEM samples and compute a light-time-corrected inter-spacecraft range.
 
 ```bash
 cargo run --example 11_serde_serialization --features serde

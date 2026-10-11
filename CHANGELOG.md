@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking changes
 
+- Upgrade `affn` to `0.11`. Public geometry types and traits now use this version;
+  downstream crates must use the same compatible `affn` version.
 - Adopt `tempoch` and `tempoch-ffi` 0.8.0 and `principia` 0.4.0. UTC JD/MJD
   are civil coordinates with 86,400 nominal seconds per day. Construction,
   conversion and extraction use upstream fallible context-aware APIs;
@@ -35,9 +37,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Earth-rotation, ERA, GMST/GAST and precise horizontal APIs carry
   `JulianDate<UT1>` separately from TT. FFI decodes each scale explicitly.
 - Use published Principia 0.4 from crates.io. No tempoch 0.7 dependency remains.
-  Pin tempoch-core's native UTC offset API and split-coordinate civil
-  precision fixes at `9b6d90e` pending release; UTC history stays upstream.
+  The native UTC offset API and split-coordinate civil precision fixes are
+  available in tempoch 0.9; UTC history stays upstream.
 - Remove the redundant `gmst_default` alias; use `gmst_from_tt`.
+- Upgrade `keplerian` and `optica` to `0.4`, `principia` to `0.5`, and
+  `tempoch` / `tempoch-ffi` to `0.9`, including the Siderust FFI dependencies.
+- Resolve the upgraded dependencies from crates.io; remove all temporary Git patches
+  and the unused FFI `tokio` dependency.
+- Synchronize the Siderust FFI ABI version with package version `0.13.0` (1300).
+- Use the typed distance API in the orbit example instead of applying scalar powers
+  to dimensional quantities.
 
 ## [0.12.0] - 2026-09-30
 

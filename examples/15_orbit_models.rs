@@ -34,12 +34,12 @@ fn main() {
     let kepler_pos = kepler.kepler_position(jd);
     println!("1. KeplerianOrbit");
     println!(
-        "   heliocentric position = ({:.12}, {:.12}, {:.12}) AU",
-        kepler_pos.x().value(),
-        kepler_pos.y().value(),
-        kepler_pos.z().value(),
+        "   heliocentric position = ({:.12}, {:.12}, {:.12})",
+        kepler_pos.x(),
+        kepler_pos.y(),
+        kepler_pos.z(),
     );
-    println!("   radius = {:.12} AU\n", kepler_pos.distance().value());
+    println!("   radius = {:.12}\n", kepler_pos.distance());
 
     // 2. MeanMotionOrbit
     let mean_motion = MeanMotionOrbit::try_new(
@@ -55,15 +55,12 @@ fn main() {
     let mean_motion_pos = mean_motion.position_at(jd).expect("valid propagation");
     println!("2. MeanMotionOrbit");
     println!(
-        "   heliocentric position = ({:.12}, {:.12}, {:.12}) AU",
-        mean_motion_pos.x().value(),
-        mean_motion_pos.y().value(),
-        mean_motion_pos.z().value(),
+        "   heliocentric position = ({:.12}, {:.12}, {:.12})",
+        mean_motion_pos.x(),
+        mean_motion_pos.y(),
+        mean_motion_pos.z(),
     );
-    println!(
-        "   radius = {:.12} AU\n",
-        mean_motion_pos.distance().value()
-    );
+    println!("   radius = {:.12}\n", mean_motion_pos.distance());
 
     // 3. ConicOrbit
     let halley_like = ConicOrbit::try_new(
@@ -110,22 +107,16 @@ fn main() {
         }
     );
     println!(
-        "   elliptic radius  = {:.12} AU | hyperbolic radius = {:.12} AU\n",
-        halley_pos.distance().value(),
-        hyperbolic_pos.distance().value(),
+        "   elliptic radius  = {:.12} | hyperbolic radius = {:.12}\n",
+        halley_pos.distance(),
+        hyperbolic_pos.distance(),
     );
 
     // 4. PreparedOrbit
     let prepared = PreparedOrbit::try_from(kepler).expect("valid prepared orbit");
     let prepared_pos = prepared.position_at(jd);
-    let delta = ((kepler_pos.x().value() - prepared_pos.x().value()).powi(2)
-        + (kepler_pos.y().value() - prepared_pos.y().value()).powi(2)
-        + (kepler_pos.z().value() - prepared_pos.z().value()).powi(2))
-    .sqrt();
+    let delta = kepler_pos.distance_to(&prepared_pos);
     println!("4. PreparedOrbit");
-    println!(
-        "   prepared radius = {:.12} AU",
-        prepared_pos.distance().value()
-    );
+    println!("   prepared radius = {:.12}", prepared_pos.distance());
     println!("   chord delta vs direct Keplerian = {:.3e}", delta);
 }

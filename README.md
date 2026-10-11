@@ -126,7 +126,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-siderust = "0.9"
+siderust = "0.13"
 ```
 
 VSOP87/ELP2000 coefficients, nutation tables, and EOP data are provided by
@@ -144,7 +144,7 @@ JPL DE440/DE441 (and other NAIF BSP kernels) are provided at **runtime** via [`R
 
 ```toml
 [dependencies]
-siderust = { version = "0.9", features = ["runtime-data"] }
+siderust = { version = "0.13", features = ["runtime-data"] }
 ```
 
 ```rust
@@ -161,7 +161,7 @@ VSOP87-only (explicit):
 
 ```toml
 [dependencies]
-siderust = { version = "0.9", default-features = false }
+siderust = { version = "0.13", default-features = false }
 ```
 
 Combine with other features (for example `serde`):
@@ -393,7 +393,7 @@ Big thanks to **Màrius Montón** ([@mariusmm](https://github.com/mariusmm)) for
 
 ### Time coordinates (0.13 migration)
 
-Siderust uses `tempoch` 0.8.0. `siderust::time::JulianDate` defaults to TT;
+Siderust uses `tempoch` 0.9.0. `siderust::time::JulianDate` defaults to TT;
 use `tempoch::JulianDate<UTC>` for civil UTC coordinates. UTC JD/MJD require
 fallible conversion with a shared data snapshot:
 
@@ -413,10 +413,9 @@ TLE model offsets use 1,440 nominal minutes per civil day. Scalar Serde uses
 civil UTC coordinates and a fresh default context; use upstream tagged split
 representations for leap instants and explicit snapshots for reproducibility.
 
-Principia 0.4.0 resolves from crates.io and shares tempoch 0.8 with Siderust.
+Principia 0.5.0 shares tempoch 0.9 and affn 0.11 with Siderust. All dependencies
+resolve from crates.io without Git patches.
 
-The native `TimeContext::tai_minus_utc` API and split-coordinate UTC civil
-conversion fixes are pinned from tempoch-core revision `9b6d90e` pending an
-upstream release. This preserves nanoseconds at leap boundaries and keeps
-UTC history and historical frequency offsets in tempoch. Principia has no
-Git patch.
+Tempoch 0.9 provides the native `TimeContext::tai_minus_utc` API and
+split-coordinate UTC civil conversions. This preserves nanoseconds at leap
+boundaries and keeps UTC history and historical frequency offsets upstream.

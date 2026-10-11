@@ -11,8 +11,6 @@
 //! Run with: `cargo run --example 13_coordinate_operations`
 #![allow(clippy::print_stdout)]
 
-use std::f64::consts::PI;
-
 use siderust::coordinates::spherical;
 use siderust::qtty::*;
 
@@ -75,9 +73,9 @@ fn main() {
     let polaris_cart = polaris.to_cartesian();
     let sirius_cart = sirius.to_cartesian();
 
-    // angle_to returns radians
+    // angle_to returns a typed angle in radians
     let angle_rad = polaris_cart.angle_to(&sirius_cart);
-    let angle_deg = angle_rad * 180.0 / PI;
+    let angle_deg = angle_rad.to::<Degree>();
 
     println!(
         "Polaris cartesian: ({:.4}, {:.4}, {:.4})",
@@ -92,13 +90,13 @@ fn main() {
         sirius_cart.z()
     );
     println!(
-        "  angle_to (Cartesian)         = {:.6} rad = {:.4}°",
+        "  angle_to (Cartesian)         = {:.6} = {:.4}",
         angle_rad, angle_deg
     );
     println!("  angular_separation (Vincenty) = {:.4}°", sep);
     println!(
         "  Difference                   = {:.2e}°  (near machine epsilon)\n",
-        (angle_deg - sep.value()).abs()
+        (angle_deg - sep).abs()
     );
 
     // =========================================================================
@@ -121,11 +119,9 @@ fn main() {
     );
 
     // Anti-Polaris: opposite direction on the sky
-    let anti_polaris = spherical::direction::EquatorialMeanJ2000::new(
-        Degrees::new(polaris.ra().value() + 180.0),
-        Degrees::new(-polaris.dec().value()),
-    )
-    .to_cartesian();
+    let anti_polaris =
+        spherical::direction::EquatorialMeanJ2000::new(polaris.ra() + 180.0 * DEG, -polaris.dec())
+            .to_cartesian();
     println!(
         "dot(Polaris, anti-Polaris)          = {:.6}  (must be -1)\n",
         polaris_cart.dot(&anti_polaris)
