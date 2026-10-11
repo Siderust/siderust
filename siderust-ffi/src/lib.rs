@@ -67,10 +67,9 @@ pub use twilight::*;
 pub use types::*;
 
 /// Returns the siderust-ffi ABI version (major*10000 + minor*100 + patch).
-#[allow(clippy::erasing_op, clippy::identity_op)]
 #[no_mangle]
 pub extern "C" fn siderust_ffi_version() -> u32 {
-    0 * 10000 + 14 * 100 + 0 // 0.14.0
+    1400 // 0.14.0
 }
 
 #[cfg(test)]
@@ -80,7 +79,7 @@ mod tests {
     #[test]
     fn version_returns_expected_value() {
         let v = siderust_ffi_version();
-        // 0.14.0 → 0*10000 + 12*100 + 0 = 1400
+        // 0.14.0 → 0*10000 + 14*100 + 0 = 1400
         assert_eq!(v, 1400);
     }
 }
