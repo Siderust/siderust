@@ -1248,7 +1248,8 @@ dependencies = [
 [[package]]
 name = "principia"
 version = "0.4.0"
-source = "git+https://github.com/Siderust/principia?rev=7ef0c30#7ef0c3016d2d0ed3007170b80de9fb250448eb6d"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "73ef4a0aca535f802cc987f3af750b09e4c4250348a61ee88c5d87771a5fee23"
 dependencies = [
  "affn",
  "qtty",
