@@ -213,7 +213,3 @@ workspace = true
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
-
-# Temporary release bridge: remove after principia 0.6.0 is published.
-[patch.crates-io]
-principia = { git = "https://github.com/Siderust/principia.git", rev = "15ad371f92a51042256918bee81f847206e3714e" }
