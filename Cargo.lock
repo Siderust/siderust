@@ -1247,9 +1247,8 @@ dependencies = [
 
 [[package]]
 name = "principia"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ea827b982c419ed89b2e8dfb0abde7d68bd3c7e5263b3430a72bdcde9e7bca2c"
+version = "0.6.0"
+source = "git+https://github.com/Siderust/principia.git?rev=15ad371f92a51042256918bee81f847206e3714e#15ad371f92a51042256918bee81f847206e3714e"
 dependencies = [
  "affn",
  "qtty",
@@ -1675,7 +1674,7 @@ checksum = "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba"
 
 [[package]]
 name = "siderust"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "affn",
  "approx",
@@ -1723,7 +1722,7 @@ dependencies = [
 
 [[package]]
 name = "siderust-ffi"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "affn",
  "cbindgen",
@@ -1830,18 +1829,18 @@ dependencies = [
 
 [[package]]
 name = "tempoch"
-version = "0.9.0"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e002565331f423a3cc428f4c9615653f3c8f39bdd399eb76c41efeb96c48ebb5"
+checksum = "8c5ee225276e09e209e8e2f0dbb454f4e515cbc7b424af5760b3288db94ed1a5"
 dependencies = [
  "tempoch-core",
 ]
 
 [[package]]
 name = "tempoch-core"
-version = "0.9.0"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "37320805d32dea837e0a6106a3cbb3f526219964d64f5d068de920ff699d14b0"
+checksum = "8feac6430d091604aee6cc36f539b4698c720273ce3dd2afdbfdb02410256369"
 dependencies = [
  "affn",
  "chrono",
@@ -1851,9 +1850,9 @@ dependencies = [
 
 [[package]]
 name = "tempoch-ffi"
-version = "0.9.0"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e6eb672ae02e1f075320371066d29411dd34f9e62c017322e1f184d7224ef24a"
+checksum = "b2dcd5156422c03b0ecea69b973415d07e6100fe37f7aa4503e8bb9b43f51841"
 dependencies = [
  "cbindgen",
  "chrono",

@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.0] - 2026-10-12
+
+### Changed
+
+- Temporarily pin Principia to the 0.6.0 preparation commit until its crates.io release.
+
+- **Breaking:** upgrade `tempoch` and `tempoch-ffi` to 0.10 and `principia` to 0.6, sharing public time types throughout the dependency graph.
+- Synchronize `siderust` and `siderust-ffi` at 0.14.0 and advance the reported C API version to 1400.
+
 ## [0.13.0] - Unreleased
 
 ### Breaking changes

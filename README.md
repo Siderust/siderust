@@ -393,7 +393,7 @@ Big thanks to **Màrius Montón** ([@mariusmm](https://github.com/mariusmm)) for
 
 ### Time coordinates (0.13 migration)
 
-Siderust uses `tempoch` 0.9.0. `siderust::time::JulianDate` defaults to TT;
+Siderust uses `tempoch` 0.10.0. `siderust::time::JulianDate` defaults to TT;
 use `tempoch::JulianDate<UTC>` for civil UTC coordinates. UTC JD/MJD require
 fallible conversion with a shared data snapshot:
 
@@ -413,7 +413,7 @@ TLE model offsets use 1,440 nominal minutes per civil day. Scalar Serde uses
 civil UTC coordinates and a fresh default context; use upstream tagged split
 representations for leap instants and explicit snapshots for reproducibility.
 
-Principia 0.5.0 shares tempoch 0.9 and affn 0.11 with Siderust. All dependencies
+Principia 0.6.0 shares tempoch 0.10 and affn 0.11 with Siderust. All dependencies
 resolve from crates.io without Git patches.
 
 Tempoch 0.9 provides the native `TimeContext::tai_minus_utc` API and
