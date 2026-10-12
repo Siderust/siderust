@@ -21,7 +21,7 @@ broken_intra_doc_links = "deny"
 
 [package]
 name = "siderust"
-version = "0.13.0"
+version = "0.14.0"
 edition = "2021"
 authors = ["VPRamon <vallespuigramon@gmail.com>"]
 description = "High-precision astronomy and satellite mechanics in Rust."
@@ -121,9 +121,9 @@ affn = { version = "0.11", default-features = false, features = ["astro", "alloc
 cheby = { version = "0.4.2", default-features = false, features = ["alloc", "approx", "calculus"] }
 keplerian = { version = "0.4", default-features = false, features = ["alloc"] }
 optica = { version = "0.4", default-features = false, features = ["alloc"] }
-principia = { version = "0.5", default-features = false, features = ["alloc"] }
+principia = { version = "0.6", default-features = false, features = ["alloc"] }
 qtty = { version = "0.8", default-features = false, features = ["alloc", "astro", "density", "frequency", "radiometry", "satellite"] }
-tempoch = { version = "0.9", default-features = false, features = ["alloc"] }
+tempoch = { version = "0.10", default-features = false, features = ["alloc"] }
 siderust-archive = { version = "0.1.5", default-features = false, features = ["jpl", "vsop", "elp", "nutation", "gravity", "atmosphere", "pluto", "time"] }
 
 thiserror = { version = "2", default-features = false }
