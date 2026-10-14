@@ -9,7 +9,7 @@
 //! models (Krisciunas–Schaefer 1991 phase law and Jones et al. 2013
 //! workflow). Provides a smooth wavelength‑dependent full‑Moon geometric
 //! albedo, the phase‑angle attenuation normalized to 1 at full Moon, and
-//! a top‑of‑atmosphere reflected lunar spectral radiance computed from
+//! a top-of-atmosphere disc-integrated lunar spectral irradiance computed from
 //! incident solar spectral irradiance and the geometric Moon distance.
 //!
 //! ## Technical scope
@@ -100,42 +100,78 @@ pub fn lunar_albedo_jones2013(phase_angle: Radians, wavelength: Nanometers) -> A
     Albedos::new(a * p)
 }
 
-/// Top-of-atmosphere lunar spectral radiance from incident solar irradiance.
+/// Spectral irradiance unit, W m⁻² nm⁻¹, expressed using qtty unit algebra.
+pub type LunarSpectralIrradianceUnit = crate::qtty::Per<
+    crate::qtty::Per<crate::qtty::unit::Watt, crate::qtty::unit::SquareMeter>,
+    crate::qtty::unit::Nanometer,
+>;
+
+/// Disc-integrated top-of-atmosphere lunar spectral irradiance.
 ///
-/// `solar_irradiance_w_m2_nm` is the solar spectral irradiance at Earth in
-/// `W·m⁻²·nm⁻¹` (kept as a raw `f64` because the matching spectral-irradiance
-/// unit is not yet exposed by `qtty`). The output is a typed lunar spectral
-/// radiance in `W·m⁻²·sr⁻¹·nm⁻¹`, scaled by lunar solid angle and actual
-/// Moon distance.
+/// Jones et al. (2013), Eq. (1), uses a *fixed reference* lunar solid angle
+/// and one distance correction. Equivalently, with Ω(D) ≃ π(R/D)²,
+/// `E_moon = E_sun A(α,λ) Ω(D)/π = E_sun A(α,λ) (R/D)²`.
+/// The disc-average radiance `E_sun A/π` is distance invariant; integrating
+/// it over the apparent disc introduces the inverse-square dilution once.
+/// This quantity illuminates the scattering column as a point-source beam.
+/// A downstream phase function per steradian converts it to sky radiance;
+/// do not multiply by the lunar solid angle a second time.
+///
+/// The smooth albedo and phase approximations remain those of this module,
+/// rather than the full ROLO fit. Solar irradiance is held fixed at the Moon
+/// (Earth's value is the approximation); solar-distance variation is external.
 ///
 /// # Arguments
-///
-/// * `solar_irradiance_w_m2_nm`, solar spectral irradiance at Earth, `W·m⁻²·nm⁻¹`.
-/// * `wavelength`, photon wavelength.
-/// * `phase_angle`, Sun–Moon–observer phase angle.
-/// * `moon_distance`, geometric Earth–Moon distance.
+/// * `solar_irradiance_w_m2_nm` — incident solar irradiance in W m⁻² nm⁻¹.
+/// * `wavelength` — photon wavelength.
+/// * `phase_angle` — Sun–Moon–observer phase angle.
+/// * `moon_distance` — observer–Moon distance, positive.
 ///
 /// # Returns
+/// Irradiance in W m⁻² nm⁻¹; NaN for nonfinite inputs or nonpositive distance.
+pub fn reflected_lunar_spectral_irradiance_jones2013(
+    solar_irradiance_w_m2_nm: f64,
+    wavelength: Nanometers,
+    phase_angle: Radians,
+    moon_distance: Kilometers,
+) -> crate::qtty::Quantity<LunarSpectralIrradianceUnit> {
+    let distance = moon_distance.value();
+    if !solar_irradiance_w_m2_nm.is_finite()
+        || !wavelength.is_finite()
+        || !phase_angle.is_finite()
+        || !distance.is_finite()
+        || distance <= 0.0
+    {
+        return crate::qtty::Quantity::new(f64::NAN);
+    }
+    let albedo = lunar_albedo_jones2013(phase_angle, wavelength).value();
+    let radius_ratio: f64 = MEAN_MOON_RADIUS / moon_distance;
+    crate::qtty::Quantity::new(solar_irradiance_w_m2_nm * radius_ratio.powi(2) * albedo)
+}
+
+/// Legacy compatibility wrapper for lunar beam irradiance.
 ///
-/// Reflected lunar spectral radiance at the top of the atmosphere; `NaN`
-/// if any input is non‑finite or `moon_distance ≤ 0`.
+/// **Historical unit error:** despite its name and radiance unit marker,
+/// this helper's numeric value is disc-integrated irradiance in W m⁻² nm⁻¹.
+/// Use [`reflected_lunar_spectral_irradiance_jones2013`] for a dimensionally
+/// correct typed API. The old signature is retained for source compatibility;
+/// it does not describe the surface radiance or an additional per-sr source.
+/// The erroneous second inverse-square dilution has been removed.
+/// Arguments and invalid-input behavior follow the irradiance helper.
 pub fn reflected_lunar_spectral_radiance_jones2013(
     solar_irradiance_w_m2_nm: f64,
     wavelength: Nanometers,
     phase_angle: Radians,
     moon_distance: Kilometers,
 ) -> WattsPerSquareMeterSteradianNanometer {
-    let distance = moon_distance.value();
-    if !solar_irradiance_w_m2_nm.is_finite() || !distance.is_finite() || distance <= 0.0 {
-        return WattsPerSquareMeterSteradianNanometer::new(f64::NAN);
-    }
-    let albedo = lunar_albedo_jones2013(phase_angle, wavelength).value();
-    let radius_ratio: f64 = MEAN_MOON_RADIUS / moon_distance;
-    let omega_over_pi = radius_ratio.powi(2);
-    let distance_ratio: f64 = MEAN_MOON_DISTANCE / moon_distance;
-    let distance_scale = distance_ratio.powi(2);
     WattsPerSquareMeterSteradianNanometer::new(
-        solar_irradiance_w_m2_nm * omega_over_pi * albedo * distance_scale,
+        reflected_lunar_spectral_irradiance_jones2013(
+            solar_irradiance_w_m2_nm,
+            wavelength,
+            phase_angle,
+            moon_distance,
+        )
+        .value(),
     )
 }
 
@@ -172,5 +208,66 @@ mod tests {
             MEAN_MOON_DISTANCE,
         );
         assert!(l.value() > 0.0);
+    }
+    #[test]
+    fn beam_irradiance_obeys_disc_geometry_and_inverse_square_law() {
+        let wave = Nanometers::new(551.0);
+        let phase = Degrees::new(30.0).to::<Radian>();
+        let albedo = lunar_albedo_jones2013(phase, wave).value();
+        let reference =
+            reflected_lunar_spectral_irradiance_jones2013(1.8, wave, phase, MEAN_MOON_DISTANCE);
+        for d in [350_000.0, 384_400.0, 405_000.0, 768_800.0] {
+            let actual =
+                reflected_lunar_spectral_irradiance_jones2013(1.8, wave, phase, Kilometers::new(d));
+            // Independent disc-radiance × solid-angle construction.
+            let disc_radiance = 1.8 * albedo / core::f64::consts::PI;
+            let omega = core::f64::consts::PI * (1_737.4 / d).powi(2);
+            assert!((actual.value() / (disc_radiance * omega) - 1.0).abs() < 1e-14);
+            assert!((actual.value() / reference.value() - (384_400.0 / d).powi(2)).abs() < 1e-14);
+            let legacy =
+                reflected_lunar_spectral_radiance_jones2013(1.8, wave, phase, Kilometers::new(d));
+            assert_eq!(legacy.value(), actual.value());
+        }
+        // Compile-time dimensional check: irradiance integrated over wavelength
+        // is a power per area, not a radiance per steradian.
+        let band = reference * Nanometers::new(10.0);
+        assert!((band.value() / reference.value() - 10.0).abs() < 1e-14);
+    }
+
+    #[test]
+    fn lunar_beam_zero_illumination_and_invalid_inputs() {
+        let wave = Nanometers::new(550.0);
+        let phase = Radians::new(0.0);
+        assert_eq!(
+            reflected_lunar_spectral_irradiance_jones2013(0.0, wave, phase, MEAN_MOON_DISTANCE,)
+                .value(),
+            0.0
+        );
+        for distance in [0.0, -1.0, f64::NAN, f64::INFINITY] {
+            assert!(reflected_lunar_spectral_irradiance_jones2013(
+                1.0,
+                wave,
+                phase,
+                Kilometers::new(distance),
+            )
+            .value()
+            .is_nan());
+        }
+        assert!(reflected_lunar_spectral_irradiance_jones2013(
+            1.0,
+            Nanometers::new(f64::NAN),
+            phase,
+            MEAN_MOON_DISTANCE,
+        )
+        .value()
+        .is_nan());
+        assert!(reflected_lunar_spectral_irradiance_jones2013(
+            1.0,
+            wave,
+            Radians::new(f64::NAN),
+            MEAN_MOON_DISTANCE,
+        )
+        .value()
+        .is_nan());
     }
 }

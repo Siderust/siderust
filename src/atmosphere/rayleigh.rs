@@ -57,7 +57,8 @@ const SEA_LEVEL_PRESSURE: Hectopascals = Hectopascals::new(1013.25);
 /// # Inputs
 ///
 /// - `wavelength` — typed wavelength.
-/// - `surface_pressure` — surface pressure (typed [`Hectopascals`]).
+/// - `surface_pressure` — pressure at the reference height zero (typed
+///   [`Hectopascals`]). With observer-local pressure, set `observer_altitude = 0`.
 /// - `observer_altitude` — observatory altitude above sea level
 ///   (typed [`Kilometers`]).
 /// - `scale_height` — atmospheric column scale height (typed
@@ -65,6 +66,11 @@ const SEA_LEVEL_PRESSURE: Hectopascals = Hectopascals::new(1013.25);
 ///   value used by NSB and `darknsb`.
 ///
 /// # Returns
+///
+/// The effective local column is proportional to
+/// `surface_pressure * exp(-observer_altitude / scale_height)`. Do not supply
+/// both local pressure and nonzero altitude: that reduces the column twice.
+/// [`super::AtmosphereProfile`] stores local pressure and uses zero here.
 ///
 /// Vertical Rayleigh optical depth at the supplied wavelength, as a typed
 /// [`OpticalDepths`] value.
