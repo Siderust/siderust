@@ -114,7 +114,9 @@ impl AtmosphereProfile {
         let tau_r = rayleigh_optical_depth_bodhaine99(
             lambda,
             self.surface_pressure,
-            self.observer_altitude,
+            // The profile stores observer-local pressure, hence the column
+            // already includes the altitude reduction (hydrostatic p/g).
+            Kilometers::new(0.0),
             self.rayleigh_scale_height,
         );
         let tau_m = mie_optical_depth(&self.mie_params, lambda);
@@ -131,6 +133,29 @@ impl AtmosphereProfile {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn local_pressure_is_not_reduced_again_by_observer_altitude() {
+        let mut profile = AtmosphereProfile::EL_PARANAL;
+        let elevated = profile.optical_depth(Nanometers::new(550.0));
+        profile.observer_altitude = Kilometers::new(0.0);
+        assert_eq!(elevated, profile.optical_depth(Nanometers::new(550.0)));
+        // Equivalent barometric parameterizations must give the same Rayleigh
+        // column: reference pressure + altitude versus local pressure + zero.
+        let height = Kilometers::new(2.635);
+        let local = Hectopascals::new(1013.25 * (-2.635_f64 / 8.0).exp());
+        let reference = rayleigh_optical_depth_bodhaine99(
+            Nanometers::new(550.0),
+            Hectopascals::new(1013.25),
+            height,
+            DEFAULT_SCALE_HEIGHT,
+        );
+        profile.surface_pressure = local;
+        profile.observer_altitude = height;
+        let actual = profile.optical_depth(Nanometers::new(550.0))
+            - mie_optical_depth(&profile.mie_params, Nanometers::new(550.0));
+        assert!((actual.value() - reference.value()).abs() < 1e-15);
+    }
 
     #[test]
     fn presets_have_typed_units() {
