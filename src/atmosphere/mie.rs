@@ -41,7 +41,7 @@
 use crate::ext_qtty::length::Nanometers;
 use crate::qtty::OpticalDepths;
 #[cfg(not(feature = "std"))]
-use crate::qtty::{Scalar, Transcendental};
+use crate::qtty::{Real, Scalar, Transcendental};
 use alloc::string::ToString;
 use optica::data::{DataSource, Provenance};
 

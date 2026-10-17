@@ -25,7 +25,7 @@
 use crate::atmosphere::Transmittances;
 use crate::qtty::{Airmasses, OpticalDepths};
 #[cfg(not(feature = "std"))]
-use crate::qtty::{Scalar, Transcendental};
+use crate::qtty::{Real, Scalar, Transcendental};
 
 /// Slant-path transmission `T = exp(-X · τ)`.
 ///
