@@ -46,6 +46,10 @@ jobs:
       - run: cargo check -p siderust --lib --no-default-features --features serde
       - run: cargo check -p siderust --lib --target thumbv7em-none-eabihf --no-default-features
       - run: cargo check -p siderust --lib --target thumbv7em-none-eabihf --no-default-features --features serde
+      - run: cargo check -p siderust --lib --no-default-features --features atmosphere
+      - run: cargo check -p siderust --lib --no-default-features --features atmosphere,serde
+      - run: cargo check -p siderust --lib --target thumbv7em-none-eabihf --no-default-features --features atmosphere
+      - run: cargo check -p siderust --lib --target thumbv7em-none-eabihf --no-default-features --features atmosphere,serde
       - run: cargo test -p siderust --test observatory_catalog_no_default --no-default-features --features std
 
   fmt:

@@ -56,6 +56,7 @@
 pub mod airglow;
 pub mod airmass;
 pub mod extinction;
+pub mod layered;
 pub mod mie;
 #[cfg(feature = "photometry")]
 pub mod ozone;
@@ -77,3 +78,8 @@ pub use profile::AtmosphereProfile;
 pub use rayleigh::{rayleigh_optical_depth_bodhaine99, rayleigh_phase, DEFAULT_SCALE_HEIGHT};
 pub use scattering::TabulatedPhaseFunction;
 pub use scattering::{PhaseFunction, RayleighPhaseFunction, ScatteringFactor};
+
+pub use layered::{
+    AtmosphericColumnMedium, AtmosphericOpticalDepth, AtmosphericOptics, LayeredAtmosphere,
+    LayeredAtmosphereError,
+};
