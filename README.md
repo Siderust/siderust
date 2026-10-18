@@ -5,27 +5,60 @@
 [![CI](https://github.com/Siderust/siderust/actions/workflows/github-ci.yml/badge.svg)](https://github.com/Siderust/siderust/actions/workflows/github-ci.yml)
 [![License: AGPL-3.0-only](https://img.shields.io/badge/license-AGPL--3.0--only-blue)](LICENSE)
 
+> **Type-safe astronomy and satellite mechanics in Rust.**
 
-> **Typed astronomy & satellite mechanics in safe Rust.**
+Siderust brings coordinate transformations, planetary and lunar ephemerides, time scales, and observation/orbit analysis into one Rust crate. Reference centers, frames, and physical units are represented in types, making many invalid combinations compile-time errors.
 
-Siderust provides ephemerides, coordinate transforms, time-scale handling, and orbit-analysis building blocks for scientific applications. The primary Rust implementation avoids `unsafe`; allocation behavior depends on the enabled subsystems and is documented at the module level. External reference fixtures are being expanded, so scientific claims should be read against the validation tests that ship with the crate.
+**[API documentation](https://docs.rs/siderust) · [Runnable examples](examples/README.md) · [Crates.io](https://crates.io/crates/siderust) · [Report an issue](https://github.com/Siderust/siderust/issues)**
 
----
+## Quick Start
 
-## Table of Contents
+Add Siderust to a Rust project:
 
-1. [Supported Feature Flags](#supported-feature-flags)
-2. [Features](#features)
-3. [Installation](#installation)
-4. [Coordinate Systems](#coordinate-systems)
-5. [Units & Physical Quantities](#units--physical-quantities)
-6. [Quick Start](#quick-start)
-7. [Examples](#examples)
-8. [Crate Layout](#crate-layout)
-9. [Roadmap](#roadmap)
-10. [Contributing](#contributing)
-11. [License](#license)
-12. [Acknowledgments](#acknowledgments)
+```bash
+cargo add siderust
+```
+
+Calculate the Earth–Mars separation at the J2000 epoch using the bundled VSOP87 model:
+
+```rust
+use siderust::bodies::solar_system::{Earth, Mars};
+use siderust::ephemeris::VSOP87;
+use siderust::time::J2000;
+
+fn main() {
+    let earth = Earth::vsop87a(J2000);
+    let mars = Mars::vsop87a(J2000);
+
+    println!("Earth–Mars separation at J2000: {}", earth.distance_to(&mars));
+}
+```
+
+Or run a complete example from the repository:
+
+```bash
+git clone https://github.com/Siderust/siderust.git
+cd siderust
+cargo run --example 08_solar_system
+```
+
+No external JPL kernel is required for these VSOP87 examples. For more workflows, see the [example gallery](examples/README.md).
+
+## Why Siderust?
+
+- **Catch coordinate mistakes early.** Positions carry their reference center, frame, and units in Rust types; incompatible coordinate operations cannot be mixed silently.
+- **Start without downloading large datasets.** Analytical VSOP87 planetary and ELP2000 lunar ephemerides are available by default; JPL DE4xx BSP kernels can be loaded separately at runtime.
+- **Go beyond ephemerides.** Work with coordinate transformations, observatory sites, altitude windows, TLE/SGP4 workflows, and optional precise orbit determination.
+- **Choose your environment.** Default builds use `std`; `default-features = false` supports `no_std` with `alloc` for suitable integrations.
+
+**Scientific use:** Accuracy and coverage depend on the chosen model, epoch, time data, and reference frame. See the [tests](tests/), [dataset guidance](doc/datasets.md), and [benchmark methodology](benches/README.md) before selecting a backend for a precision-sensitive workflow.
+
+## Documentation map
+
+- **Getting started:** [Installation](#installation) · [Examples](#examples) · [Supported feature flags](#supported-feature-flags)
+- **Core concepts:** [Features](#features) · [Coordinate systems](#coordinate-systems) · [Units and physical quantities](#units--physical-quantities)
+- **Data and internals:** [Scientific archive](#scientific-archive-submodule) · [Crate layout](#crate-layout) · [Benchmarks](benches/README.md)
+- **Community:** [Roadmap](#roadmap) · [Contributing](#contributing) · [License](#license) · [Acknowledgments](#acknowledgments)
 
 ---
 
@@ -61,7 +94,7 @@ Siderust provides ephemerides, coordinate transforms, time-scale handling, and o
 | **Physical Units**      | Strongly typed `Mass`, `Length`, `Angle`, `Velocity`, `Duration` & more via the [`qtty`](https://crates.io/crates/qtty) crate, dimensional correctness at compile time.       |
 | **Celestial Mechanics** | VSOP87 & ELP2000 theories, Pluto (Meeus/Williams), light‑time & aberration, nutation & precession, apparent Sun & Moon, culmination searches, SGP4/TLE propagation.         |
 | **Ephemeris Backends**  | Pluggable `Ephemeris` / `DynEphemeris` traits: `Vsop87Ephemeris` (always available) and [`RuntimeEphemeris`](https://docs.rs/siderust/latest/siderust/ephemeris/struct.RuntimeEphemeris.html) for JPL DE4xx BSP files at runtime. |
-| **Altitude API**        | Unified `AltitudeProvider` trait for Sun, Moon, stars, and arbitrary ICRS directions; find crossings, culminations, [`altitude_ranges`], [`above_threshold`], and [`below_threshold`] periods.|
+| **Altitude API**        | Unified `AltitudeProvider` trait for Sun, Moon, stars, and arbitrary ICRS directions; find crossings, culminations, `altitude_ranges`, `above_threshold`, and `below_threshold` periods.|
 | **Catalogs & Bodies**   | Built‑in Sun→Neptune, asteroids (Ceres, Bennu, Apophis), comets (Halley, Encke, Hale-Bopp), a starter star catalog, typed Gaia DR3 raw/domain ingestion, + helpers for custom datasets. |
 | **Starlight & Photometry** | HEALPix stellar surface-brightness maps, S10 diagnostics, passband-aware Gaia XP sampled-spectrum photon-flux integration, and typed passband-integrated stellar source records. |
 | **Observatories**       | TOML-backed built-in and runtime-extensible sites using one typed `Observatory` model.                                                                                       |
@@ -126,7 +159,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-siderust = "0.13"
+siderust = "0.14"
 ```
 
 VSOP87/ELP2000 coefficients, nutation tables, and EOP data are provided by
@@ -144,7 +177,7 @@ JPL DE440/DE441 (and other NAIF BSP kernels) are provided at **runtime** via [`R
 
 ```toml
 [dependencies]
-siderust = { version = "0.13", features = ["runtime-data"] }
+siderust = { version = "0.14", features = ["runtime-data"] }
 ```
 
 ```rust
@@ -161,14 +194,14 @@ VSOP87-only (explicit):
 
 ```toml
 [dependencies]
-siderust = { version = "0.13", default-features = false }
+siderust = { version = "0.14", default-features = false }
 ```
 
 Combine with other features (for example `serde`):
 
 ```toml
 [dependencies]
-siderust = { version = "0.9", features = ["runtime-data", "serde"] }
+siderust = { version = "0.14", features = ["runtime-data", "serde"] }
 ```
 
 ### JPL datasets (runtime, not compile-time features)
@@ -264,33 +297,12 @@ Common unit types: `AstronomicalUnit` (`Au`), `Kilometer` (`Km`), `Meter`,
 
 ---
 
-## Quick Start
-
-```rust
-use siderust::{
-    bodies::Mars,
-    time::JulianDate,
-};
-use chrono::prelude::*;
-
-// 1. Select an epoch (UTC now → JD)
-let jd = JulianDate::from_utc(Utc::now());
-
-// 2. Compute barycentric ecliptic coordinates via VSOP87
-let mars = Mars::vsop87e(jd);
-
-// 3. Print Mars's barycentric ecliptic position
-println!("{}", mars.position);
-```
-
----
-
 ## Examples
 
 The `examples/` directory is a curated tour of the crate’s major building blocks
 (coordinates, transforms, altitude periods, ephemeris backends, serialization).
 
-- Browse: `examples/README.md`
+- Browse: [examples/README.md](examples/README.md)
 - Run one: `cargo run --example 01_basic_coordinates`
 
 Feature-gated examples:
@@ -361,14 +373,18 @@ the downstream crate's responsibility.
 
 ## Contributing
 
-Contributions of algorithms, bug fixes or docs are welcome! Please:
+Contributions are welcome, including documentation fixes, runnable examples, reference-data comparisons, and bug reports. Start with the [open issues](https://github.com/Siderust/siderust/issues) or the [examples](examples/README.md).
 
-1. Fork & clone (`git clone`)
-2. Create a feature branch
-3. Run **all** tests & clippy (`cargo test && cargo clippy -- -D warnings`)
-4. Open a PR with a clear description
+1. Fork and clone the repository; create a feature branch.
+2. Follow the [authoring conventions](doc/conventions.md) for public APIs and scientific documentation.
+3. Run `cargo test && cargo clippy -- -D warnings` and add tests for behavioral changes.
+4. Open a pull request describing the problem, approach, and validation performed.
+
+For numerical discrepancies, please include the epoch, reference center/frame, units, selected model, and an independent reference when available.
 
 By participating you agree to follow the [Rust Code of Conduct](https://www.rust-lang.org/policies/code-of-conduct).
+
+If Siderust helps your work, [star the repository](https://github.com/Siderust/siderust) or share a reproducible example to help others discover it.
 
 ---
 
