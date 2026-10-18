@@ -296,6 +296,49 @@ fn column_fraction_conservation_local_pressure_and_no_double_height() {
 }
 
 #[test]
+fn profile_height_conversion_is_strict_and_preserves_columns() {
+    let cases = [
+        (1.001, 1001.0, 2001.0),
+        (2.396, 2396.0, 3396.0),
+        (-1.234, -1234.0, -234.0),
+    ];
+    for (kilometers, first_edge, top) in cases {
+        let mut profile = AtmosphereProfile::EL_PARANAL;
+        profile.observer_altitude = Kilometers::new(kilometers);
+        let converted = from_profile(profile, &[first_edge, top], &[1.], &[1.]).unwrap();
+        let tau = converted
+            .vertical_optical_depth(
+                Nanometers::new(500.),
+                Meters::new(first_edge),
+                Meters::new(top),
+            )
+            .unwrap();
+        assert!(tau.extinction().value().is_finite());
+        let mut alternate = profile;
+        alternate.observer_altitude = Kilometers::new(first_edge / 1000.0);
+        let alternate = from_profile(alternate, &[first_edge, top], &[1.], &[1.]).unwrap();
+        assert_eq!(
+            tau,
+            alternate
+                .vertical_optical_depth(
+                    Nanometers::new(500.),
+                    Meters::new(first_edge),
+                    Meters::new(top),
+                )
+                .unwrap()
+        );
+    }
+
+    let profile = AtmosphereProfile::EL_PARANAL;
+    assert!(from_profile(profile, &[1001.0 + 1e-9, 2001.0], &[1.], &[1.]).is_err());
+    for height in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+        let mut invalid = profile;
+        invalid.observer_altitude = Kilometers::new(height);
+        assert!(from_profile(invalid, &[1001.0, 2001.0], &[1.], &[1.]).is_err());
+    }
+}
+
+#[test]
 fn fractions_and_profile_parameters_are_checked() {
     let p = AtmosphereProfile::EL_PARANAL;
     let e = [2635., 4000., 10000.];

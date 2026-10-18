@@ -229,7 +229,8 @@ impl LayeredAtmosphere {
     /// Fractions for each constituent must sum to one within
     /// `8*n*f64::EPSILON`; only rounding within that allowance is normalized.
     /// Local pressure is passed to Bodhaine with **zero additional altitude**.
-    /// The first edge must equal the profile observer altitude in meters (MSL).
+    /// The first edge must equal the profile observer altitude in meters (MSL),
+    /// within a small floating-point conversion tolerance.
     /// The original profile is retained for inspection; no site defaults change.
     /// Molecular absorption is zero here; literal layers can supply it explicitly.
     pub fn from_profile(
@@ -247,7 +248,7 @@ impl LayeredAtmosphere {
             || !p.rayleigh_scale_height.value().is_finite()
             || p.rayleigh_scale_height.value() <= 0.0
             || !p.observer_altitude.value().is_finite()
-            || p.observer_altitude.to::<Meter>() != edges[0]
+            || !same_height(p.observer_altitude.to::<Meter>(), edges[0])
             || !p.mie_params.tau0.value().is_finite()
             || p.mie_params.tau0.value() < 0.0
             || !p.mie_params.alpha.is_finite()
@@ -424,6 +425,18 @@ fn nonnegative(value: f64) -> Result<()> {
         Ok(())
     }
 }
+
+fn same_height(a: Meters, b: Meters) -> bool {
+    let a = a.value();
+    let b = b.value();
+    if !a.is_finite() || !b.is_finite() {
+        return false;
+    }
+    let difference = (a - b).abs();
+    let scale = a.abs().max(b.abs()).max(1.0);
+    difference <= 4.0 * f64::EPSILON * scale
+}
+
 fn coefficients(absorption: f64, scattering: f64) -> Result<OpticalCoefficients<Meter>> {
     let c = OpticalCoefficients::try_new(absorption, scattering)
         .map_err(|_| LayeredAtmosphereError::Coefficients)?;

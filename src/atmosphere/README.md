@@ -62,9 +62,13 @@ vertical distribution or aerosol scale height is inferred from a site preset.
 
 Edges are absolute meters in one declared datum (MSL for site profiles), ordered
 and contiguous by construction. Ground and observer are the first edge; the top
-is finite. Internal edges select the layer above; the final edge belongs to the
-last layer. Partial vertical optical depths use exact constant-layer products,
-with checked sums and no query allocation, quadrature, extrapolation or clamping.
+is finite. Profile construction compares that first edge with the observer's
+kilometer value after conversion to meters using a finite, four-machine-epsilon
+relative/absolute tolerance. This accepts representation-only conversion
+rounding but rejects real height differences; it never moves an edge. Internal
+edges select the layer above; the final edge belongs to the last layer. Partial
+vertical optical depths use exact constant-layer products, with checked sums and
+no query allocation, quadrature, extrapolation or clamping.
 See the compiling example on `LayeredAtmosphere`.
 
 Aerosol extinction is split by explicit SSA; vacuum is valid and its stored Optica
