@@ -48,3 +48,40 @@ transmittances are never exposed as bare `f64`.
   1033-1039.
 - European Southern Observatory. SkyCalc and Advanced Cerro Paranal Sky Model.
   <https://www.eso.org/sci/software/pipelines/skytools/skycalc>
+
+## Layered optical columns
+
+`LayeredAtmosphere` adds finite, horizontally uniform, plane-parallel columns
+without changing `AtmosphereProfile`. `AtmosphericOptics` groups existing Optica
+coefficients into Rayleigh, aerosol and molecular absorption. Literal layers
+are wavelength independent over an explicit caller-declared domain; `from_profile`
+uses the existing Bodhaine/Patat wavelength laws over 360–570 nm and **explicit**
+constituent layer fractions and aerosol SSA. Fractions must sum to one within
+`8*n*f64::EPSILON`; only that rounding allowance is normalized. No measured
+vertical distribution or aerosol scale height is inferred from a site preset.
+
+Edges are absolute meters in one declared datum (MSL for site profiles), ordered
+and contiguous by construction. Ground and observer are the first edge; the top
+is finite. Profile construction compares that first edge with the observer's
+kilometer value after conversion to meters using a finite, four-machine-epsilon
+relative/absolute tolerance. This accepts representation-only conversion
+rounding but rejects real height differences; it never moves an edge. Internal
+edges select the layer above; the final edge belongs to the last layer. Partial
+vertical optical depths use exact constant-layer products, with checked sums and
+no query allocation, quadrature, extrapolation or clamping.
+See the compiling example on `LayeredAtmosphere`.
+
+Aerosol extinction is split by explicit SSA; vacuum is valid and its stored Optica
+SSA=0 remains an undefined-ratio sentinel. Complete constituent states and totals
+are validated, including public-field mutation and sum overflow. Profile columns
+use local pressure plus zero additional altitude correction. Unsupported domains
+and invalid numerical states return `LayeredAtmosphereError`.
+
+This height API does not implement an infallible `Medium`. `at_origin` explicitly
+binds AFFN center parameters and an absolute origin height to a borrowed Optica
+`TryMedium` implementation in the local Horizontal frame. It rejects center
+mismatches, nonfinite positions and out-of-domain heights/wavelengths. It never
+guesses a geoid conversion from ellipsoidal to MSL height. Optica rays and path
+integrators remain available; its infallible-medium optical-depth integrator is
+not used to discard errors from this fallible column. These primitives do not perform angular integration,
+scattering transport, surface reflection or empirical site calibration.
