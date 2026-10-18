@@ -225,6 +225,9 @@ pub use event::lunar::photometry::{
     lunar_albedo_jones2013, lunar_full_moon_albedo_jones2013, lunar_phase_attenuation_jones2013,
     reflected_lunar_spectral_irradiance_jones2013, reflected_lunar_spectral_radiance_jones2013,
 };
+pub use event::lunar::position_angle::{
+    moon_bright_limb_position_angle_geocentric, moon_bright_limb_position_angle_topocentric,
+};
 
 // ---------------------------------------------------------------------------
 // Convenience re‑exports: target abstractions

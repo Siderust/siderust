@@ -5,13 +5,15 @@
 //!
 //! Shows:
 //! 1) how to get moon phase properties at a given instant,
-//! 2) how to find windows where illumination is in a given range.
+//! 2) how to find windows where illumination is in a given range,
+//! 3) bright-limb orientation and the opposite greatest defect of illumination.
 //!
 //! Run with:
-//! `cargo run --example 07_moon_phase -- [YYYY-MM-DD] [lat_deg] [lon_deg] [height_m]`
+//! `cargo run --example 07_moon_properties -- [YYYY-MM-DD] [lat_deg] [lon_deg] [height_m]`
 #![allow(clippy::print_stdout)]
 
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
+use siderust::bodies::solar_system::Moon;
 use siderust::coordinates::centers::Geodetic;
 use siderust::coordinates::frames::ECEF;
 use siderust::ephemeris::Vsop87Ephemeris;
@@ -19,7 +21,7 @@ use siderust::event::lunar::phase::{
     find_phase_events, illumination_range, moon_phase_geocentric, moon_phase_topocentric,
     PhaseSearchOpts,
 };
-use siderust::qtty::{Days, Degree, Degrees, IlluminationFractions, Meter, Quantity};
+use siderust::qtty::{Days, Degree, Degrees, IlluminationFractions, Meter, Quantity, Radians};
 use siderust::time::{Interval, JulianDate, ModifiedJulianDate};
 
 fn print_periods(label: &str, periods: &[Interval<ModifiedJulianDate>]) {
@@ -71,6 +73,20 @@ fn main() {
     let mjd = jd.to::<siderust::time::MJD>();
     let window = Interval::new(mjd, mjd + Days::new(35.0));
     let opts = PhaseSearchOpts::default();
+
+    // Bright limb and opposite greatest defect, both relative to celestial north.
+    if let Some(bright) = Moon::bright_limb_position_angle_geocentric(jd) {
+        println!("Geocentric bright limb: {}", bright.to::<Degree>());
+        let defect = (bright + Radians::HALF_TURN).normalize();
+        println!("Geocentric greatest defect: {}", defect.to::<Degree>());
+    }
+    if let Some(bright) = Moon::bright_limb_position_angle_topocentric(jd, site) {
+        println!("Topocentric bright limb: {}", bright.to::<Degree>());
+        println!(
+            "Topocentric greatest defect: {}",
+            (bright + Radians::HALF_TURN).normalize().to::<Degree>()
+        );
+    }
 
     // 1) Point-in-time phase properties.
     let geo = moon_phase_geocentric::<Vsop87Ephemeris>(jd);

@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add backend-generic geocentric and topocentric lunar bright-limb position
+  angles and thin `Moon` convenience methods. Both bodies use the selected
+  ephemeris and a shared observer/frame; affn computes the north-through-east
+  bearing and returns `None` for undefined orientations. Greatest defect is
+  derived by adding a typed half-turn without reevaluating the ephemeris.
+
 - Add `LayeredAtmosphere`, explicit constituent optics and exact partial vertical
   optical-depth columns over Optica coefficients. Validate spectral/height domains,
   aerosol SSA, mutated coefficient states and overflow. Profile mapping requires
@@ -20,6 +26,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a 95% line coverage gate for the normalized-table implementation.
 
 ### Changed
+
+- **Breaking:** upgrade the public affn dependency to 0.12 across the workspace,
+  retaining its features. Update Keplerian, Optica, Principia, and Tempoch for
+  compatible public geometry types; temporarily patch their migration revisions
+  until the corresponding releases are published.
+- Synchronize `siderust` and `siderust-ffi` at 0.15.0, including the internal
+  dependency requirement and reported C API version 1500.
 
 - Reuse Optica's Rayleigh phase kernel behind the existing atmospheric API.
   Generic `TabulatedPhaseFunction` correction tables retain clamping behavior.

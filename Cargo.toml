@@ -21,7 +21,7 @@ broken_intra_doc_links = "deny"
 
 [package]
 name = "siderust"
-version = "0.14.1"
+version = "0.15.0"
 edition = "2021"
 authors = ["VPRamon <vallespuigramon@gmail.com>"]
 description = "High-precision astronomy and satellite mechanics in Rust."
@@ -117,13 +117,13 @@ bench-internals = []
 
 [dependencies]
 # Alloc is always enabled: siderust is an orchestration crate built around Vec/String.
-affn = { version = "0.11", default-features = false, features = ["astro", "alloc"] }
+affn = { version = "0.12", default-features = false, features = ["astro", "alloc"] }
 cheby = { version = "0.4.2", default-features = false, features = ["alloc", "approx", "calculus"] }
-keplerian = { version = "0.4", default-features = false, features = ["alloc"] }
-optica = { version = "0.4", default-features = false, features = ["alloc"] }
-principia = { version = "0.6", default-features = false, features = ["alloc"] }
+keplerian = { version = "0.5", default-features = false, features = ["alloc"] }
+optica = { version = "0.5", default-features = false, features = ["alloc"] }
+principia = { version = "0.7", default-features = false, features = ["alloc"] }
 qtty = { version = "0.8", default-features = false, features = ["alloc", "astro", "density", "frequency", "radiometry", "satellite"] }
-tempoch = { version = "0.10", default-features = false, features = ["alloc"] }
+tempoch = { version = "0.11", default-features = false, features = ["alloc"] }
 siderust-archive = { version = "0.1.5", default-features = false, features = ["jpl", "vsop", "elp", "nutation", "gravity", "atmosphere", "pluto", "time"] }
 
 thiserror = { version = "2", default-features = false }
@@ -213,3 +213,13 @@ workspace = true
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
+
+# Temporary until the affn 0.12 migration releases are published.
+# Tempoch #22, Keplerian #8, Optica #5, Principia #8.
+[patch.crates-io]
+keplerian = { git = "https://github.com/Siderust/keplerian", rev = "90fbf181f4359cf441766ec2939f690411808601" }
+optica = { git = "https://github.com/Siderust/optica", rev = "e16da001318cf8df74258f64a803c42a56b56fd4" }
+principia = { git = "https://github.com/Siderust/principia", rev = "62bf0ad036f0043f758c8142c094c8d211187218" }
+tempoch = { git = "https://github.com/Siderust/tempoch", rev = "f42aacf51f4a3b4fd87236fa78499e19759f3ba1" }
+tempoch-core = { git = "https://github.com/Siderust/tempoch", rev = "f42aacf51f4a3b4fd87236fa78499e19759f3ba1" }
+tempoch-ffi = { git = "https://github.com/Siderust/tempoch", rev = "f42aacf51f4a3b4fd87236fa78499e19759f3ba1" }
