@@ -21,21 +21,23 @@
 //!
 //! ## Technical scope
 //!
-//! The two backend-generic functions return `Option<qtty::Radians>` and delegate
+//! The center- and backend-generic function returns `Option<qtty::Radians>`
+//! and delegates
 //! all bearing geometry and singularity detection to
 //! [`affn::spherical::Direction::position_angle_to`]. Coincident or antipodal
 //! directions, an undefined lunar north reference at a celestial pole, or a
 //! vanishing numerical tangent return `None` according to affn's policy.
-//! [`Moon`](crate::bodies::solar_system::Moon) provides default-backend wrappers.
+//! [`Moon`](crate::bodies::solar_system::Moon) provides a default-backend wrapper.
 //!
 //! The greatest defect of illumination is opposite the bright limb. Derive it
 //! from an already computed angle without evaluating the ephemeris again:
 //!
 //! ```rust
-//! use siderust::{moon_bright_limb_position_angle_geocentric, ephemeris::Vsop87Ephemeris};
+//! use siderust::{moon_bright_limb_position_angle, ephemeris::Vsop87Ephemeris};
 //! use siderust::qtty::Radians;
+//! use siderust::coordinates::centers::Geocentric;
 //!
-//! let bright = moon_bright_limb_position_angle_geocentric::<Vsop87Ephemeris>(siderust::J2000);
+//! let bright = moon_bright_limb_position_angle::<Vsop87Ephemeris, Geocentric>(siderust::J2000);
 //! let defect = bright.map(|angle| (angle + Radians::HALF_TURN).normalize());
 //! assert!(defect.is_some());
 //! ```
@@ -48,7 +50,7 @@
 //! - Siderust (2026). affn spherical bearing primitive:
 //!   <https://github.com/Siderust/affn/issues/34>.
 
-use crate::coordinates::centers::{Geocentric, Geodetic, Topocentric};
+use crate::coordinates::centers::{Geocentric, Geodetic, ReferenceCenter, Topocentric};
 use crate::coordinates::frames;
 use crate::coordinates::transform::centers::position::to_topocentric::to_topocentric_with;
 use crate::coordinates::transform::ext::PositionAstroExt;
@@ -58,91 +60,144 @@ use crate::ephemeris::Ephemeris;
 use crate::qtty::{AstronomicalUnit, Kilometer, Radians};
 use crate::time::JulianDate;
 
-/// Geocentric bright-limb position angle with compile-time ephemeris backend `E`.
+/// Observation center supported by the lunar bright-limb calculation.
 ///
-/// Both geometric directions use the true equator/equinox of date and Earth's
-/// centre. See the [module documentation](self) for corrections and limitations.
+/// Implemented for [`Geocentric`] and [`Topocentric`]. The associated input
+/// requires an observer site only for a topocentric calculation; dispatch is
+/// monomorphized with no runtime center selection.
 ///
-/// # Arguments
-///
-/// * `jd`: Observation epoch as a TT Julian Date.
-///
-/// # Returns
-///
-/// Angle north through east in `[0, 2π)`, or `None` for undefined geometry
-/// as determined by affn (including coincident/antipodal directions and poles).
-///
-/// # Examples
-///
-/// ```rust
-/// use siderust::{moon_bright_limb_position_angle_geocentric, ephemeris::Vsop87Ephemeris};
-/// let angle = moon_bright_limb_position_angle_geocentric::<Vsop87Ephemeris>(siderust::J2000);
-/// assert!(angle.unwrap().is_finite());
-/// ```
-pub fn moon_bright_limb_position_angle_geocentric<E: Ephemeris>(jd: JulianDate) -> Option<Radians> {
-    let ctx = AstroContext::<E>::default();
-    let (moon, sun) = geocentric_equatorial::<E>(jd);
-    let moon_true = moon.to_frame_with::<frames::EquatorialTrueOfDate, _>(&jd, &ctx);
-    let sun_true = sun.to_frame_with::<frames::EquatorialTrueOfDate, _>(&jd, &ctx);
-    spherical::Position::from_cartesian(&moon_true)
-        .direction()
-        .position_angle_to(&spherical::Position::from_cartesian(&sun_true).direction())
+/// See [`moon_bright_limb_position_angle`] for examples and scientific conventions.
+pub trait LunarObservationCenter: ReferenceCenter {
+    /// Observation input: TT [`JulianDate`] for [`Geocentric`], or
+    /// `(JulianDate, Geodetic<ECEF>)` for [`Topocentric`].
+    type Input;
+
+    /// Calculate the bearing with compile-time ephemeris backend `E`.
+    ///
+    /// # Arguments
+    ///
+    /// * `input`: Epoch and, for [`Topocentric`], geodetic observer site.
+    ///
+    /// # Returns
+    ///
+    /// Radians north through east in `[0, 2π)`, or `None` for undefined geometry
+    /// under affn's singularity policy. Both bodies use backend `E`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use siderust::{LunarObservationCenter, coordinates::centers::Geocentric};
+    /// use siderust::ephemeris::Vsop87Ephemeris;
+    /// let angle = Geocentric::bright_limb_position_angle::<Vsop87Ephemeris>(siderust::J2000);
+    /// assert!(angle.unwrap().is_finite());
+    /// ```
+    fn bright_limb_position_angle<E: Ephemeris>(input: Self::Input) -> Option<Radians>;
 }
 
-/// Topocentric bright-limb position angle with compile-time ephemeris backend `E`.
+impl LunarObservationCenter for Geocentric {
+    type Input = JulianDate;
+
+    fn bright_limb_position_angle<E: Ephemeris>(jd: Self::Input) -> Option<Radians> {
+        let ctx = AstroContext::<E>::default();
+        let (moon, sun) = geocentric_equatorial::<E>(jd);
+        let moon_true = moon.to_frame_with::<frames::EquatorialTrueOfDate, _>(&jd, &ctx);
+        let sun_true = sun.to_frame_with::<frames::EquatorialTrueOfDate, _>(&jd, &ctx);
+        spherical::Position::from_cartesian(&moon_true)
+            .direction()
+            .position_angle_to(&spherical::Position::from_cartesian(&sun_true).direction())
+    }
+}
+
+impl LunarObservationCenter for Topocentric {
+    type Input = (JulianDate, Geodetic<frames::ECEF>);
+
+    fn bright_limb_position_angle<E: Ephemeris>((jd, site): Self::Input) -> Option<Radians> {
+        let ctx = AstroContext::<E>::default();
+        let (moon, sun) = geocentric_equatorial::<E>(jd);
+        let moon_topo = to_topocentric_with(&moon, site, jd, &ctx);
+        let sun_topo = to_topocentric_with(&sun, site, jd, &ctx);
+        let rotation = crate::coordinates::transform::providers::frame_rotation_with::<
+            frames::EquatorialMeanJ2000,
+            frames::EquatorialTrueOfDate,
+            _,
+        >(jd, &ctx);
+        let moon_true =
+            cartesian::Position::<Topocentric, frames::EquatorialTrueOfDate, Kilometer>::from_array(
+                site,
+                rotation * *moon_topo.as_array(),
+            );
+        let sun_true = cartesian::Position::<
+            Topocentric,
+            frames::EquatorialTrueOfDate,
+            AstronomicalUnit,
+        >::from_array(site, rotation * *sun_topo.as_array());
+        spherical::Position::from_cartesian(&moon_true)
+            .direction()
+            .position_angle_to(&spherical::Position::from_cartesian(&sun_true).direction())
+    }
+}
+
+/// Lunar bright-limb position angle with compile-time backend `E` and center `C`.
 ///
-/// Both directions share the observer origin and true equator/equinox of date.
-/// Parallax is applied to both the Moon and Sun. See the
-/// [module documentation](self) for the correction model and limitations.
+/// Both bodies share the selected observation origin and true equator/equinox
+/// of date. The topocentric implementation applies parallax to both bodies.
+/// See the [module documentation](self) for applied and omitted corrections.
 ///
 /// # Arguments
 ///
-/// * `jd`: Observation epoch as a TT Julian Date.
-/// * `site`: Observer's geodetic longitude, latitude, and height in ECEF.
+/// * `input`: TT [`JulianDate`] for [`Geocentric`], or
+///   `(JulianDate, Geodetic<ECEF>)` for [`Topocentric`].
 ///
 /// # Returns
 ///
-/// Angle north through east in `[0, 2π)`, or `None` when affn determines
-/// that the orientation is undefined. This is relative to celestial north,
-/// rather than the local zenith; no parallactic-angle rotation is applied.
+/// Radians north through east in `[0, 2π)`, or `None` when affn determines
+/// that the orientation is undefined. This refers to celestial north;
+/// no rotation towards the observer's local zenith is applied.
 ///
 /// # Examples
 ///
 /// ```rust
-/// use siderust::{moon_bright_limb_position_angle_topocentric, ephemeris::Vsop87Ephemeris};
-/// use siderust::coordinates::{centers::Geodetic, frames::ECEF};
+/// use siderust::{moon_bright_limb_position_angle, ephemeris::Vsop87Ephemeris};
+/// use siderust::coordinates::{centers::{Geocentric, Geodetic, Topocentric}, frames::ECEF};
 /// use siderust::qtty::{Degrees, Meters};
+/// let jd = siderust::J2000;
 /// let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
-/// let angle = moon_bright_limb_position_angle_topocentric::<Vsop87Ephemeris>(siderust::J2000, site);
-/// assert!(angle.unwrap().is_finite());
+/// let geo = moon_bright_limb_position_angle::<Vsop87Ephemeris, Geocentric>(jd);
+/// let topo = moon_bright_limb_position_angle::<Vsop87Ephemeris, Topocentric>((jd, site));
+/// assert!(geo.unwrap().is_finite() && topo.unwrap().is_finite());
 /// ```
-pub fn moon_bright_limb_position_angle_topocentric<E: Ephemeris>(
-    jd: JulianDate,
-    site: Geodetic<frames::ECEF>,
+///
+/// Unsupported centers cannot be selected:
+///
+/// ```compile_fail,E0277
+/// use siderust::{moon_bright_limb_position_angle, ephemeris::Vsop87Ephemeris};
+/// use siderust::coordinates::centers::Heliocentric;
+/// let _ = moon_bright_limb_position_angle::<Vsop87Ephemeris, Heliocentric>(siderust::J2000);
+/// ```
+///
+/// A topocentric observation requires its site at compile time:
+///
+/// ```compile_fail,E0308
+/// use siderust::{moon_bright_limb_position_angle, ephemeris::Vsop87Ephemeris};
+/// use siderust::coordinates::centers::Topocentric;
+/// let _ = moon_bright_limb_position_angle::<Vsop87Ephemeris, Topocentric>(siderust::J2000);
+/// ```
+/// A geocentric observation accepts only the epoch:
+///
+/// ```compile_fail,E0308
+/// use siderust::{moon_bright_limb_position_angle, ephemeris::Vsop87Ephemeris};
+/// use siderust::coordinates::{centers::{Geocentric, Geodetic}, frames::ECEF};
+/// use siderust::qtty::{Degrees, Meters};
+/// let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(0.0), Meters::new(0.0));
+/// let _ = moon_bright_limb_position_angle::<Vsop87Ephemeris, Geocentric>((siderust::J2000, site));
+/// ```
+pub fn moon_bright_limb_position_angle<E: Ephemeris, C: LunarObservationCenter>(
+    input: C::Input,
 ) -> Option<Radians> {
-    let ctx = AstroContext::<E>::default();
-    let (moon, sun) = geocentric_equatorial::<E>(jd);
-    let moon_topo = to_topocentric_with(&moon, site, jd, &ctx);
-    let sun_topo = to_topocentric_with(&sun, site, jd, &ctx);
-    let rotation = crate::coordinates::transform::providers::frame_rotation_with::<
-        frames::EquatorialMeanJ2000,
-        frames::EquatorialTrueOfDate,
-        _,
-    >(jd, &ctx);
-    let moon_true =
-        cartesian::Position::<Topocentric, frames::EquatorialTrueOfDate, Kilometer>::from_array(
-            site,
-            rotation * *moon_topo.as_array(),
-        );
-    let sun_true = cartesian::Position::<Topocentric, frames::EquatorialTrueOfDate, AstronomicalUnit>::from_array(
-        site, rotation * *sun_topo.as_array(),
-    );
-    spherical::Position::from_cartesian(&moon_true)
-        .direction()
-        .position_angle_to(&spherical::Position::from_cartesian(&sun_true).direction())
+    C::bright_limb_position_angle::<E>(input)
 }
 
-// Compute each ephemeris state once; negate Earth–Sun to obtain Sun–Earth.
+// Compute each state once; negate heliocentric Earth to obtain geocentric Sun.
 fn geocentric_equatorial<E: Ephemeris>(
     jd: JulianDate,
 ) -> (
@@ -256,20 +311,20 @@ mod tests {
         );
         MOON_CALLS.store(0, Ordering::SeqCst);
         EARTH_CALLS.store(0, Ordering::SeqCst);
-        let north = moon_bright_limb_position_angle_geocentric::<Cardinal<0>>(jd).unwrap();
+        let north = moon_bright_limb_position_angle::<Cardinal<0>, Geocentric>(jd).unwrap();
         assert!(north.wrap_signed().abs() < Radians::new(1e-12));
         let north_topo =
-            moon_bright_limb_position_angle_topocentric::<Cardinal<0>>(jd, centre).unwrap();
+            moon_bright_limb_position_angle::<Cardinal<0>, Topocentric>((jd, centre)).unwrap();
         assert!(north_topo.wrap_signed().abs() < Radians::new(1e-12));
         for (geo, topo, expected) in [
             (
-                moon_bright_limb_position_angle_geocentric::<Cardinal<1>>(jd),
-                moon_bright_limb_position_angle_topocentric::<Cardinal<1>>(jd, centre),
+                moon_bright_limb_position_angle::<Cardinal<1>, Geocentric>(jd),
+                moon_bright_limb_position_angle::<Cardinal<1>, Topocentric>((jd, centre)),
                 90.0,
             ),
             (
-                moon_bright_limb_position_angle_geocentric::<Cardinal<2>>(jd),
-                moon_bright_limb_position_angle_topocentric::<Cardinal<2>>(jd, centre),
+                moon_bright_limb_position_angle::<Cardinal<2>, Geocentric>(jd),
+                moon_bright_limb_position_angle::<Cardinal<2>, Topocentric>((jd, centre)),
                 270.0,
             ),
         ] {
@@ -281,11 +336,11 @@ mod tests {
             }
         }
         assert_eq!(
-            moon_bright_limb_position_angle_geocentric::<Cardinal<3>>(jd),
+            moon_bright_limb_position_angle::<Cardinal<3>, Geocentric>(jd),
             None
         );
         assert_eq!(
-            moon_bright_limb_position_angle_topocentric::<Cardinal<3>>(jd, centre),
+            moon_bright_limb_position_angle::<Cardinal<3>, Topocentric>((jd, centre)),
             None,
         );
         let surface = Geodetic::<frames::ECEF>::new(
@@ -293,10 +348,10 @@ mod tests {
             Degrees::new(48.0),
             Meters::new(500.0),
         );
-        let custom_topo = normalized(moon_bright_limb_position_angle_topocentric::<Cardinal<1>>(
-            jd, surface,
+        let custom_topo = normalized(moon_bright_limb_position_angle::<Cardinal<1>, Topocentric>(
+            (jd, surface),
         ));
-        let default_topo = Moon::bright_limb_position_angle_topocentric(jd, surface).unwrap();
+        let default_topo = Moon::bright_limb_position_angle::<Topocentric>((jd, surface)).unwrap();
         assert_ne!(custom_topo, default_topo);
         assert_eq!(MOON_CALLS.load(Ordering::SeqCst), 9);
         assert_eq!(EARTH_CALLS.load(Ordering::SeqCst), 9);
@@ -309,7 +364,10 @@ mod tests {
         // 1992-04-12 00:00 TT: chi = 285.0 degrees (rounded to 0.1 degree).
         // Allow 0.1 degree for rounding and the differing ephemeris/corrections.
         let jd = JulianDate::new(2_448_724.5);
-        let angle = normalized(moon_bright_limb_position_angle_geocentric::<DefaultEphemeris>(jd));
+        let angle = normalized(moon_bright_limb_position_angle::<
+            DefaultEphemeris,
+            Geocentric,
+        >(jd));
         assert!((angle.to::<Degree>() - Degrees::new(285.0)).abs() < Degrees::new(0.1));
         let defect = (angle + Radians::HALF_TURN).normalize();
         assert!((defect.to::<Degree>() - Degrees::new(105.0)).abs() < Degrees::new(0.1));
@@ -355,17 +413,23 @@ mod tests {
             JulianDate::new(2_460_409.25),
             JulianDate::new(2_460_394.8),
         ] {
-            let geo =
-                normalized(moon_bright_limb_position_angle_geocentric::<DefaultEphemeris>(jd));
-            assert_eq!(Some(geo), Moon::bright_limb_position_angle_geocentric(jd));
+            let geo = normalized(moon_bright_limb_position_angle::<
+                DefaultEphemeris,
+                Geocentric,
+            >(jd));
+            assert_eq!(
+                Some(geo),
+                Moon::bright_limb_position_angle::<Geocentric>(jd)
+            );
             let mut topocentric = [Radians::new(0.0); 3];
             for (i, site) in sites.iter().enumerate() {
-                let topo = normalized(moon_bright_limb_position_angle_topocentric::<
+                let topo = normalized(moon_bright_limb_position_angle::<
                     DefaultEphemeris,
-                >(jd, *site));
+                    Topocentric,
+                >((jd, *site)));
                 assert_eq!(
                     Some(topo),
-                    Moon::bright_limb_position_angle_topocentric(jd, *site)
+                    Moon::bright_limb_position_angle::<Topocentric>((jd, *site))
                 );
                 assert!((geo - topo).abs() > Radians::new(1e-6));
                 topocentric[i] = topo;

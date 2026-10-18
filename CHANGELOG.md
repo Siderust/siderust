@@ -8,11 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add backend-generic geocentric and topocentric lunar bright-limb position
-  angles and thin `Moon` convenience methods. Both bodies use the selected
-  ephemeris and a shared observer/frame; affn computes the north-through-east
-  bearing and returns `None` for undefined orientations. Greatest defect is
-  derived by adding a typed half-turn without reevaluating the ephemeris.
+- Add `moon_bright_limb_position_angle::<E, C>(input)` and the default-backend
+  `Moon::bright_limb_position_angle::<C>(input)`. `LunarObservationCenter`
+  dispatches at compile time: `Geocentric` takes a TT Julian Date; `Topocentric`
+  takes `(JulianDate, Geodetic<ECEF>)`. Both bodies use the selected ephemeris
+  and a shared observer/frame; affn computes the north-through-east bearing
+  and returns `None` for undefined orientations. Greatest defect is derived by
+  adding a typed half-turn without reevaluating the ephemeris.
 
 - Add `LayeredAtmosphere`, explicit constituent optics and exact partial vertical
   optical-depth columns over Optica coefficients. Validate spectral/height domains,

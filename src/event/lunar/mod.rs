@@ -23,7 +23,7 @@
 //! - `moon_equations`: high‑level `Moon::*` API on top of the engines.
 //! - `phase`: phase angle, illuminated fraction, phase events
 //!   (new/first‑quarter/full/last‑quarter), illumination period finders.
-//! - `position_angle`: geocentric and topocentric bright-limb orientation.
+//! - `position_angle`: bright-limb orientation selected through center types.
 //! - `photometry`: empirical lunar reflectance / phase attenuation models.
 //!
 //! All period‑finding delegates to `crate::event::search::intervals`

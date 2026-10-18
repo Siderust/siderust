@@ -14,7 +14,7 @@
 
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use siderust::bodies::solar_system::Moon;
-use siderust::coordinates::centers::Geodetic;
+use siderust::coordinates::centers::{Geocentric, Geodetic, Topocentric};
 use siderust::coordinates::frames::ECEF;
 use siderust::ephemeris::Vsop87Ephemeris;
 use siderust::event::lunar::phase::{
@@ -75,12 +75,12 @@ fn main() {
     let opts = PhaseSearchOpts::default();
 
     // Bright limb and opposite greatest defect, both relative to celestial north.
-    if let Some(bright) = Moon::bright_limb_position_angle_geocentric(jd) {
+    if let Some(bright) = Moon::bright_limb_position_angle::<Geocentric>(jd) {
         println!("Geocentric bright limb: {}", bright.to::<Degree>());
         let defect = (bright + Radians::HALF_TURN).normalize();
         println!("Geocentric greatest defect: {}", defect.to::<Degree>());
     }
-    if let Some(bright) = Moon::bright_limb_position_angle_topocentric(jd, site) {
+    if let Some(bright) = Moon::bright_limb_position_angle::<Topocentric>((jd, site)) {
         println!("Topocentric bright limb: {}", bright.to::<Degree>());
         println!(
             "Topocentric greatest defect: {}",
