@@ -12,7 +12,9 @@
 //! topocentric parallax (~1° at horizon for the Moon), J2000 → mean‑of‑date
 //! precession, and mean‑of‑date → true‑of‑date nutation, then horizon
 //! transformation. Phase geometry is delegated to
-//! [`crate::event::lunar::phase`].
+//! [`crate::event::lunar::phase`]. Bright-limb orientation is delegated to
+//! [`crate::event::lunar::position_angle`], which documents the geometric
+//! correction model and greatest-defect derivation.
 //!
 //! ## Technical scope
 //!
@@ -176,6 +178,47 @@ impl Moon {
 // ===========================================================================
 
 impl Moon {
+    /// Bright-limb orientation with compile-time observation center `C`.
+    ///
+    /// Uses `DefaultEphemeris`. For a different backend, call
+    /// [`crate::moon_bright_limb_position_angle`].
+    ///
+    /// # Arguments
+    ///
+    /// * `input`: TT [`JulianDate`] for [`Geocentric`], or
+    ///   `(JulianDate, Geodetic<ECEF>)` for [`Topocentric`].
+    ///
+    /// # Returns
+    ///
+    /// Radians north through east in `[0, 2π)`, or `None` for undefined
+    /// orientation. See [`crate::event::lunar::position_angle`] for the
+    /// true-of-date frame, corrections, and greatest-defect derivation.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use siderust::bodies::solar_system::Moon;
+    /// use siderust::coordinates::{centers::{Geocentric, Geodetic, Topocentric}, frames::ECEF};
+    /// use siderust::qtty::{Degrees, Meters};
+    /// let jd = siderust::J2000;
+    /// let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
+    /// assert!(Moon::bright_limb_position_angle::<Geocentric>(jd).is_some());
+    /// assert!(Moon::bright_limb_position_angle::<Topocentric>((jd, site)).is_some());
+    /// ```
+    ///
+    /// Unsupported centers are rejected at compile time:
+    ///
+    /// ```compile_fail,E0277
+    /// use siderust::bodies::solar_system::Moon;
+    /// use siderust::coordinates::centers::Heliocentric;
+    /// let _ = Moon::bright_limb_position_angle::<Heliocentric>(siderust::J2000);
+    /// ```
+    pub fn bright_limb_position_angle<C: super::position_angle::LunarObservationCenter>(
+        input: C::Input,
+    ) -> Option<crate::qtty::Radians> {
+        super::position_angle::moon_bright_limb_position_angle::<DefaultEphemeris, C>(input)
+    }
+
     /// Geocentric Moon phase geometry at `time`, using the compile-time
     /// `DefaultEphemeris` backend.
     ///

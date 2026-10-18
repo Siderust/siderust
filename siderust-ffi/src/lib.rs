@@ -69,7 +69,7 @@ pub use types::*;
 /// Returns the siderust-ffi ABI version (major*10000 + minor*100 + patch).
 #[no_mangle]
 pub extern "C" fn siderust_ffi_version() -> u32 {
-    1401 // 0.14.1
+    1500 // 0.15.0
 }
 
 #[cfg(test)]
@@ -79,7 +79,7 @@ mod tests {
     #[test]
     fn version_returns_expected_value() {
         let v = siderust_ffi_version();
-        // 0.14.1 → 0*10000 + 14*100 + 1 = 1401
-        assert_eq!(v, 1401);
+        // 0.15.0 → 0*10000 + 15*100 + 0 = 1500
+        assert_eq!(v, 1500);
     }
 }
