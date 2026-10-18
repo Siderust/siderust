@@ -185,6 +185,19 @@ jobs:
       - name: Coverage gate (≥90% lines)
         run: cargo +nightly llvm-cov --workspace --all-features --doctests --no-run --fail-under-lines 90
 
+      - name: Strict phase table coverage (≥95% lines)
+        run: |
+          cargo +nightly llvm-cov report --json --output-path phase-coverage.json
+          python3 - <<'PYCODE'
+          import json
+          with open("phase-coverage.json") as report:
+              files = json.load(report)["data"][0]["files"]
+          phase = next(f for f in files if f["filename"].endswith("/src/atmosphere/normalized_phase.rs"))
+          lines = phase["summary"]["lines"]
+          print(f"Strict phase table line coverage: {lines['percent']:.2f}%")
+          assert lines["percent"] >= 95, lines
+          PYCODE
+
       - name: Upload coverage HTML
         if: always()
         uses: actions/upload-artifact@v4

@@ -36,6 +36,56 @@ The public surface uses typed `qtty` values throughout: zenith angles,
 wavelengths, pressures, heights, airmasses, optical depths, and
 transmittances are never exposed as bare `f64`.
 
+## Scattering phase conventions
+
+`NormalizedPhaseTable` is the strict atmospheric option. Construct it with
+positive ascending typed `Nanometers`, ascending typed `Radians` covering
+exactly `[0, PI]`, and typed Optica `ScatteringFactor` values in angular-row-major
+order (`values[iy * nx + ix]`). Optica checks finite monotone axes, dimensions,
+and the two-sample minimum per axis. Siderust checks the physical domain,
+finite nonnegative values, and each slice's unity normalization:
+
+```text
+2π ∫[0,π] P(θ) sin(θ) dθ = 1
+```
+
+The angle is between photon propagation directions. Values from external data
+normalized to a 4π integral must explicitly be divided by 4π before construction.
+Construction rejects unnormalized data; it never guesses or corrects a convention.
+
+Normalization integrates the actual linear angular segments analytically.
+A midpoint formulation, a small-interval Taylor series, and compensated summation
+avoid cancellation in narrow segments and accumulation error in large tables.
+The absolute integral tolerance is `1e-6`: it allows small discretization errors
+in sufficiently resolved analytic samples and exceeds ordinary f64 roundoff.
+It does not establish agreement with an unresolved analytic function, especially
+near HG's singular limits. Linear wavelength interpolation preserves normalization
+because it forms convex combinations of normalized angular slices, subject to
+floating-point rounding. See the compiling example on `NormalizedPhaseTable`.
+
+`try_phase` accepts exact boundaries and rejects nonfinite coordinates and all
+out-of-domain queries. It uses Optica `PhaseTable::try_interp_at` with
+`OutOfRange::Error`; no queries allocate. Neither infallible phase trait is
+implemented. Optica's infallible `interp_at` and `PhaseModel::Tabulated.phase`
+can clamp even with an Error policy, so they do not provide this contract.
+
+`TabulatedPhaseFunction` remains the generic correction-table API: it accepts
+incomplete or unnormalized data and clamps queries. Its Siderust
+`PhaseFunction` trait and `ScatteringFactor` marker are distinct Rust types from
+Optica's similarly named trait and marker. The strict adapter uses the Optica
+marker consistently. Both markers are dimensionless numerical representations;
+physical phase densities are per solid angle (`sr^-1`). Consumers needing typed
+reciprocal-solid-angle densities must explicitly convert at that seam.
+
+Use the existing `siderust::optica::phase` analytic models directly:
+`RayleighPhaseFunction`, `HenyeyGreensteinPhaseFunction`, and
+`DoubleHenyeyGreensteinPhaseFunction`. Their densities integrate to unity.
+HG's `try_new` validates parameters; positive `g` means forward scattering,
+negative `g` backward scattering, and zero isotropic scattering. Analytic models
+assume wavelength independence and do not validate query coordinates. Very strong
+peaks require adequate numerical resolution. The existing Siderust Rayleigh API
+now delegates to Optica's kernel through an explicit marker conversion.
+
 ## References
 
 - Bodhaine, B. A., Wood, N. B., Dutton, E. G., and Slusser, J. R. (1999).
