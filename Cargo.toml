@@ -213,13 +213,3 @@ workspace = true
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
-
-# Temporary until the affn 0.12 migration releases are published.
-# Tempoch #22, Keplerian #8, Optica #5, Principia #8.
-[patch.crates-io]
-keplerian = { git = "https://github.com/Siderust/keplerian", rev = "90fbf181f4359cf441766ec2939f690411808601" }
-optica = { git = "https://github.com/Siderust/optica", rev = "e16da001318cf8df74258f64a803c42a56b56fd4" }
-principia = { git = "https://github.com/Siderust/principia", rev = "62bf0ad036f0043f758c8142c094c8d211187218" }
-tempoch = { git = "https://github.com/Siderust/tempoch", rev = "f42aacf51f4a3b4fd87236fa78499e19759f3ba1" }
-tempoch-core = { git = "https://github.com/Siderust/tempoch", rev = "f42aacf51f4a3b4fd87236fa78499e19759f3ba1" }
-tempoch-ffi = { git = "https://github.com/Siderust/tempoch", rev = "f42aacf51f4a3b4fd87236fa78499e19759f3ba1" }
