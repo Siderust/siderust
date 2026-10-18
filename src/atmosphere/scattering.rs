@@ -18,11 +18,13 @@
 //! - a generic [`PhaseFunction`] trait,
 //! - the closed-form [`RayleighPhaseFunction`], and
 //! - a tabulated implementation [`TabulatedPhaseFunction`] for empirical
-//!   or Mie phase functions, backed by [`optica::grid::Grid2D`].
+//!   or Mie phase functions, backed by [`optica::grid::Grid2D`], and
+//! - [`super::NormalizedPhaseTable`] for strict unity-normalized atmospheric
+//!   data with fallible queries (using Optica's distinct value marker).
 //!
 //! ## Technical scope
 //!
-//! All phase-function evaluators take typed [`Nanometers`] wavelengths
+//! The legacy phase-function evaluators take typed [`Nanometers`] wavelengths
 //! and typed [`crate::qtty::Radians`] scattering angles, and return typed
 //! [`Quantity<ScatteringFactor>`] values.
 //!
@@ -77,7 +79,7 @@ impl PhaseFunction for RayleighPhaseFunction {
 /// Generic tabulated phase or correction function over wavelength and
 /// scattering angle, backed by a [`optica::grid::Grid2D`].
 ///
-/// Evaluation is infalible: out-of-range queries are clamped to the nearest
+/// Evaluation is infallible: out-of-range queries are clamped to the nearest
 /// endpoint. Construct with [`from_raw_row_major`](Self::from_raw_row_major).
 #[derive(Debug, Clone)]
 pub struct TabulatedPhaseFunction {

@@ -18,6 +18,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Import QTTY's `Real` trait in the existing Mie/extinction no-std paths, so
   `atmosphere` builds without `std`; add host/embedded feature checks.
 
+## [Unreleased]
+
+### Added
+
+- Add `atmosphere::NormalizedPhaseTable`, a typed adapter over Optica phase
+  tables with finite nonnegative data, positive wavelengths, full angular
+  coverage, analytic interpolant normalization checks, and strict fallible queries.
+- Add independent analytic phase regressions, numerical edge-case tests, and
+  a 95% line coverage gate for the normalized-table implementation.
+
+### Changed
+
+- Reuse Optica's Rayleigh phase kernel behind the existing atmospheric API.
+  Generic `TabulatedPhaseFunction` correction tables retain clamping behavior.
+
 ## [0.14.1] - 2026-10-14
 
 ### Added

@@ -38,9 +38,9 @@ use crate::atmosphere::ScatteringFactor;
 use crate::ext_qtty::pressure::Hectopascals;
 use crate::ext_qtty::Quantity;
 use crate::qtty::unit::Micrometer;
-use crate::qtty::{Kilometers, Nanometers, OpticalDepths, Radians};
 #[cfg(not(feature = "std"))]
-use crate::qtty::{Real, Scalar, Transcendental};
+use crate::qtty::Real;
+use crate::qtty::{Kilometers, Nanometers, OpticalDepths, Radians};
 
 /// Default scale height of the dry-atmosphere column (`8 km`).
 ///
@@ -104,8 +104,7 @@ pub fn rayleigh_optical_depth_bodhaine99(
 /// scattering angle `theta`.
 #[inline]
 pub fn rayleigh_phase(theta: Radians) -> Quantity<ScatteringFactor> {
-    let c = theta.cos();
-    Quantity::<ScatteringFactor>::new(3.0 / (16.0 * core::f64::consts::PI) * (1.0 + c * c))
+    Quantity::new(optica::phase::rayleigh_phase(theta).value())
 }
 
 #[cfg(test)]

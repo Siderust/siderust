@@ -38,6 +38,9 @@
 //! - [`airglow`] — Van Rhijn airglow emission-layer geometry.
 //! - [`scattering`] — phase-function traits and Rayleigh / tabulated
 //!   helpers; defines the dimensionless [`ScatteringFactor`] unit.
+//! - [`NormalizedPhaseTable`] — strict atmospheric phase tables using Optica's
+//!   grid and distinct scattering marker; unity normalization is validated on
+//!   the angular interpolant and queries return explicit domain errors.
 //! - [`extinction`] — Beer–Lambert transmission `exp(-X · τ)`.
 //! - [`profile`] — [`AtmosphereProfile`]: site-bound aggregate of
 //!   Rayleigh + Mie optical depth. Ozone is kept separate; apply
@@ -58,6 +61,7 @@ pub mod airmass;
 pub mod extinction;
 pub mod layered;
 pub mod mie;
+mod normalized_phase;
 #[cfg(feature = "photometry")]
 pub mod ozone;
 pub mod profile;
@@ -72,6 +76,7 @@ pub use airmass::{
 };
 pub use extinction::transmission;
 pub use mie::{mie_optical_depth, MieParams};
+pub use normalized_phase::{NormalizedPhaseError, NormalizedPhaseTable};
 #[cfg(feature = "photometry")]
 pub use ozone::transmission_table;
 pub use profile::AtmosphereProfile;
