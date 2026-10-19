@@ -18,8 +18,6 @@ use crate::coordinates::cartesian::{position, velocity};
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar};
 use qtty::length::Kilometer;
-use qtty::time::Second;
-use qtty::Per;
 use tempoch::{JulianDate, UTC};
 
 /// Velocity unit alias used by the SGP4 propagator: kilometres per second.
@@ -36,7 +34,7 @@ use tempoch::{JulianDate, UTC};
 /// let v: Quantity<KilometerPerSecond> = Quantity::new(7.5);
 /// assert!((v.value() - 7.5).abs() < 1e-12);
 /// ```
-pub type KilometerPerSecond = Per<Kilometer, Second>;
+pub type KilometerPerSecond = qtty::KmPerSecond;
 
 /// Geocentric **TEME** Cartesian position with kilometre units.
 ///

@@ -8,9 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add SGP4 public API Criterion benchmarks and a standalone upstream-backend
-  parity diagnostic. Document the `sgp4` 2.4.0 half-day resonance boundary
-  discrepancy that blocks migration; retain the validated numerical core.
+- Add explicit Tempoch `TimeContext` constructors for SGP4 propagators,
+  preserving typed QTTY mean-motion and propagation-offset conversions.
 
 - Full Vallado/AFSPC SGP4/SDP4 propagation for the pending **0.15.0** release,
   replacing the secular J2 approximation with a native Rust numerical core

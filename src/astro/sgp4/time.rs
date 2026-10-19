@@ -5,6 +5,7 @@
 use super::Sgp4Error;
 use alloc::string::ToString;
 use chrono::{NaiveDateTime, Timelike};
+use qtty::Minutes;
 use core::f64::consts::{PI, TAU};
 #[cfg(not(feature = "std"))]
 use qtty::{Real, Scalar, Transcendental};
@@ -12,11 +13,11 @@ use qtty::{Real, Scalar, Transcendental};
 pub(super) fn minutes_between(
     epoch: NaiveDateTime,
     target: NaiveDateTime,
-) -> Result<f64, Sgp4Error> {
+) -> Result<Minutes, Sgp4Error> {
     target
         .signed_duration_since(epoch)
         .num_nanoseconds()
-        .map(|ns| ns as f64 / 60e9)
+        .map(|ns| Minutes::new(ns as f64 / 60e9))
         .ok_or_else(|| {
             Sgp4Error::TimeConversion("nominal UTC offset exceeds nanosecond calendar range".into())
         })
@@ -24,7 +25,7 @@ pub(super) fn minutes_between(
 
 pub(super) fn offset_epoch(
     epoch: NaiveDateTime,
-    minutes: crate::qtty::Minutes,
+    minutes: Minutes,
 ) -> Result<NaiveDateTime, Sgp4Error> {
     // Tempoch is the canonical finite/range validator for typed durations.
     let exact = tempoch::ExactDuration::try_from_quantity(minutes)

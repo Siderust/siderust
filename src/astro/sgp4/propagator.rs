@@ -115,6 +115,12 @@ impl TlePropagator {
         Self::from_tle_with_model(tle, GravityModel::default())
     }
 
+    /// Initialise using a caller-provided, owned Tempoch time-data snapshot
+    /// and the default WGS-72 gravity model.
+    pub fn from_tle_with_context(tle: &TLE, context: TimeContext) -> Result<Self, Sgp4Error> {
+        Self::from_tle_with_model_and_context(tle, GravityModel::default(), context)
+    }
+
     /// Initialise the propagator from a [`TLE`] under an explicit
     /// [`GravityModel`].
     ///
@@ -131,7 +137,16 @@ impl TlePropagator {
     /// let _ = TlePropagator::from_tle_with_model(&tle, GravityModel::Wgs84).unwrap();
     /// ```
     pub fn from_tle_with_model(tle: &TLE, model: GravityModel) -> Result<Self, Sgp4Error> {
-        let context = TimeContext::new();
+        Self::from_tle_with_model_and_context(tle, model, TimeContext::new())
+    }
+
+    /// Initialise with an explicit gravity model and a caller-owned Tempoch
+    /// time-data snapshot, retained for all subsequent epoch conversions.
+    pub fn from_tle_with_model_and_context(
+        tle: &TLE,
+        model: GravityModel,
+        context: TimeContext,
+    ) -> Result<Self, Sgp4Error> {
         let elements = tle_to_elements(tle, &context)?;
         let constants = Constants::new(&elements, model)?;
         let epoch_jd_utc = tle
@@ -267,15 +282,15 @@ impl TlePropagator {
         let target = tempoch::Time::<UTC>::try_from_chrono_with(datetime.and_utc(), &self.context)
             .and_then(|t| t.to_with::<tempoch::JD>(&self.context))
             .map_err(|e| Sgp4Error::TimeConversion(e.to_string()))?;
-        self.propagate_internal(dt_minutes.value(), target)
+        self.propagate_internal(dt_minutes, target)
     }
 
     fn propagate_internal(
         &self,
-        dt_minutes: f64,
+        dt_minutes: Minutes,
         target_jd_utc: JulianDate<UTC>,
     ) -> Result<TemeState, Sgp4Error> {
-        let (position, velocity) = self.constants.propagate(Minutes::new(dt_minutes))?;
+        let (position, velocity) = self.constants.propagate(dt_minutes)?;
         Ok(TemeState::from_arrays(target_jd_utc, position, velocity))
     }
 }

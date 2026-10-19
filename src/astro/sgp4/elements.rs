@@ -9,6 +9,8 @@
 use crate::formats::tle::TLE;
 use alloc::format;
 use chrono::Timelike;
+use qtty::angular_rate::AngularRate;
+use qtty::unit::{Minute, Radian};
 
 use super::Sgp4Error;
 
@@ -67,6 +69,14 @@ pub(crate) fn tle_to_elements(
             details: "inclination outside [0, 180] degrees".into(),
         });
     }
+    // Preserve the legacy initializer's rejection of extreme mean motions:
+    // the original multiply-by-PI normalization overflowed above this bound.
+    if tle.mean_motion.value() > f64::MAX / core::f64::consts::PI {
+        return Err(Sgp4Error::InvalidElements {
+            details: "mean motion exceeds finite normalized range".into(),
+        });
+    }
+    let mean_motion: AngularRate<Radian, Minute> = tle.mean_motion.to();
     Ok(NativeElements {
         datetime,
         orbit: super::model::Orbit {
@@ -75,7 +85,7 @@ pub(crate) fn tle_to_elements(
             node: tle.raan.to::<qtty::unit::Radian>().value(),
             argp: tle.argument_of_perigee.to::<qtty::unit::Radian>().value(),
             m: tle.mean_anomaly.to::<qtty::unit::Radian>().value(),
-            n: tle.mean_motion.value() * core::f64::consts::PI / 720.0,
+            n: mean_motion.value(),
         },
         bstar: tle.bstar,
     })
