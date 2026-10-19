@@ -20,12 +20,17 @@
 //! gravitational parameter approach in a future extension.
 
 use crate::astro::conic::{ConicError, ConicKind, ConicOrbit, MeanMotionOrbit};
-use crate::astro::orbit::{KeplerianOrbit, OrientationTrig, PreparedOrbit};
+use crate::astro::orbit::{orbital_rotation, KeplerianOrbit, PreparedOrbit};
 use crate::astro::units::heliocentric_period_days;
 use crate::coordinates::cartesian::position::EclipticMeanJ2000;
 use crate::qtty::*;
 use crate::time::JulianDate;
-use keplerian::anomaly::{eccentric_from_mean, hyperbolic_from_mean, AnomalyOptions, MeanAnomaly};
+use affn::conic::ConicOrientation;
+use affn::ops::Rotation3;
+use keplerian::anomaly::{
+    eccentric_from_mean, hyperbolic_from_mean, true_from_eccentric, true_from_hyperbolic,
+    AnomalyOptions, EccentricAnomaly, HyperbolicAnomaly, MeanAnomaly,
+};
 use keplerian::Eccentricity;
 
 /// Gaussian gravitational constant `k` in AU^{3/2} d^{-1}.
@@ -73,21 +78,15 @@ fn solve_hyperbolic_anomaly(mean_anomaly_radians: f64, eccentricity: f64) -> Opt
     .map(|h| h.value())
 }
 
-/// Like [`rotate_to_ecliptic`] but uses precomputed sin/cos values from
-/// [`OrientationTrig`].
+/// Applies affn's cached perifocal-to-ecliptic rotation.
 #[inline]
 pub(crate) fn rotate_to_ecliptic_precomputed(
     radius_au: f64,
-    trig: &OrientationTrig,
+    rotation: &Rotation3,
     true_anomaly_radians: f64,
 ) -> EclipticMeanJ2000<AstronomicalUnit> {
-    // argument of latitude u = ω + ν
     let (sin_nu, cos_nu) = true_anomaly_radians.sin_cos();
-    let sin_u = trig.sin_omega() * cos_nu + trig.cos_omega() * sin_nu;
-    let cos_u = trig.cos_omega() * cos_nu - trig.sin_omega() * sin_nu;
-    let x = radius_au * (trig.cos_node() * cos_u - trig.sin_node() * sin_u * trig.cos_i());
-    let y = radius_au * (trig.sin_node() * cos_u + trig.cos_node() * sin_u * trig.cos_i());
-    let z = radius_au * sin_u * trig.sin_i();
+    let [x, y, z] = rotation.apply_array([radius_au * cos_nu, radius_au * sin_nu, 0.0]);
     EclipticMeanJ2000::new(
         AstronomicalUnits::new(x),
         AstronomicalUnits::new(y),
@@ -103,17 +102,15 @@ pub(crate) fn rotate_to_ecliptic(
     longitude_of_ascending_node: Degrees,
     true_anomaly_radians: f64,
 ) -> EclipticMeanJ2000<AstronomicalUnit> {
-    let (sin_i, cos_i) = inclination.sin_cos();
-    let (sin_u, cos_u) =
-        (argument_of_periapsis.to::<Radian>() + Radians::new(true_anomaly_radians)).sin_cos();
-    let (sin_node, cos_node) = longitude_of_ascending_node.sin_cos();
-    let x = radius_au * (cos_node * cos_u - sin_node * sin_u * cos_i);
-    let y = radius_au * (sin_node * cos_u + cos_node * sin_u * cos_i);
-    let z = radius_au * sin_u * sin_i;
-    EclipticMeanJ2000::new(
-        AstronomicalUnits::new(x),
-        AstronomicalUnits::new(y),
-        AstronomicalUnits::new(z),
+    let orientation = ConicOrientation::new(
+        inclination,
+        longitude_of_ascending_node,
+        argument_of_periapsis,
+    );
+    rotate_to_ecliptic_precomputed(
+        radius_au,
+        &orbital_rotation(&orientation),
+        true_anomaly_radians,
     )
 }
 
@@ -125,10 +122,11 @@ pub(crate) fn elliptic_true_anomaly_and_radius(
     eccentricity: f64,
     semi_major_axis_au: f64,
 ) -> (f64, f64) {
-    let true_anomaly = 2.0
-        * ((1.0 + eccentricity).sqrt() * (eccentric_anomaly * 0.5).tan()
-            / (1.0 - eccentricity).sqrt())
-        .atan();
+    let true_anomaly = true_from_eccentric(
+        EccentricAnomaly::new(eccentric_anomaly),
+        Eccentricity::new_unchecked(eccentricity),
+    )
+    .value();
     let radius = semi_major_axis_au * (1.0 - eccentricity * eccentric_anomaly.cos());
     (true_anomaly, radius)
 }
@@ -144,7 +142,7 @@ pub fn calculate_mean_motion_position(
     let eccentricity = geometry.shape().eccentricity();
     let orientation = geometry.orientation();
 
-    let trig = OrientationTrig::from_orientation(orientation);
+    let trig = orbital_rotation(orientation);
     let dt_days = (julian_date.raw() - orbit.epoch.raw()).value();
     let mean_anomaly_rad =
         (orbit.mean_motion.value().to_radians() * dt_days).rem_euclid(core::f64::consts::TAU);
@@ -166,7 +164,7 @@ pub fn calculate_conic_position(
     let periapsis_distance = geometry.shape().periapsis_distance().value();
     let eccentricity = geometry.shape().eccentricity();
     let orientation = geometry.orientation();
-    let trig = OrientationTrig::from_orientation(orientation);
+    let trig = orbital_rotation(orientation);
     match kind {
         ConicKind::Elliptic => {
             let semi_major_axis = periapsis_distance / (1.0 - eccentricity);
@@ -191,9 +189,11 @@ pub fn calculate_conic_position(
                 orbit.mean_anomaly_at_epoch.to::<Radian>().value() + mean_motion * dt_days;
             let hyperbolic_anomaly = solve_hyperbolic_anomaly(mean_anomaly, eccentricity)
                 .ok_or(ConicError::HyperbolicSolverFailed)?;
-            let true_anomaly = 2.0
-                * ((eccentricity + 1.0).sqrt() * (hyperbolic_anomaly * 0.5).sinh())
-                    .atan2((eccentricity - 1.0).sqrt() * (hyperbolic_anomaly * 0.5).cosh());
+            let true_anomaly = true_from_hyperbolic(
+                HyperbolicAnomaly::new(hyperbolic_anomaly),
+                Eccentricity::new_unchecked(eccentricity),
+            )
+            .value();
             let radius = semi_major_axis * (eccentricity * hyperbolic_anomaly.cosh() - 1.0);
 
             Ok(rotate_to_ecliptic_precomputed(radius, &trig, true_anomaly))
@@ -337,7 +337,7 @@ pub fn calculate_prepared_position(
         prepared.elements().shape().semi_major_axis().value(),
     );
 
-    rotate_to_ecliptic_precomputed(radius, prepared.orientation_trig(), true_anomaly)
+    rotate_to_ecliptic_precomputed(radius, prepared.orientation_rotation(), true_anomaly)
 }
 
 impl PreparedOrbit {
@@ -575,5 +575,63 @@ mod tests {
         assert!((direct.x() - cached.x()).abs() < AstronomicalUnits::new(1e-12));
         assert!((direct.y() - cached.y()).abs() < AstronomicalUnits::new(1e-12));
         assert!((direct.z() - cached.z()).abs() < AstronomicalUnits::new(1e-12));
+    }
+}
+
+#[cfg(test)]
+mod consolidation_regressions {
+    use super::*;
+
+    #[test]
+    fn canonical_anomaly_preserves_legacy_elliptic_positions_at_wraps() {
+        for e in [0.0, 1e-12, 0.8, 0.999999, 1.0 - f64::EPSILON] {
+            for angle in [
+                -1e12,
+                -20.0,
+                -core::f64::consts::PI,
+                -1e-9,
+                0.0,
+                1e-9,
+                core::f64::consts::PI,
+                20.0,
+                1e12,
+            ] {
+                let legacy =
+                    2.0 * (((1.0 + e).sqrt() * (angle * 0.5).tan()) / (1.0 - e).sqrt()).atan();
+                let (nu, r) = elliptic_true_anomaly_and_radius(Radians::new(angle), e, 2.0);
+                assert!((nu.sin() - legacy.sin()).abs() < 3e-14, "e={e}, E={angle}");
+                assert!((nu.cos() - legacy.cos()).abs() < 3e-14);
+                assert_eq!(r, 2.0 * (1.0 - e * angle.cos()));
+            }
+        }
+    }
+
+    #[test]
+    fn affn_rotation_preserves_legacy_coordinates_and_unit_scaling() {
+        for (i, node, omega) in [(0.0, 0.0, 0.0), (180.0, 359.9, -20.0), (34.0, -70.0, 123.0)] {
+            for nu in [-20.0, 0.0, core::f64::consts::PI, 1e6] {
+                let inc = Degrees::new(i);
+                let lan = Degrees::new(node);
+                let arg = Degrees::new(omega);
+                let (si, ci) = inc.sin_cos();
+                let (su, cu) = (arg.to::<Radian>() + Radians::new(nu)).sin_cos();
+                let (sn, cn) = lan.sin_cos();
+                let old = [
+                    2.0 * (cn * cu - sn * su * ci),
+                    2.0 * (sn * cu + cn * su * ci),
+                    2.0 * su * si,
+                ];
+                let actual = rotate_to_ecliptic(2.0, inc, arg, lan, nu);
+                // Large angular addition in the legacy expression loses argument bits.
+                let tol = if nu.abs() > 1e5 { 1e-9 } else { 3e-14 };
+                for (a, b) in actual.as_array().iter().zip(old) {
+                    assert!((a.value() - b).abs() < tol);
+                }
+                let scaled = rotate_to_ecliptic(4.0, inc, arg, lan, nu);
+                for (a, b) in actual.as_array().iter().zip(scaled.as_array()) {
+                    assert!((2.0 * a.value() - b.value()).abs() < 1e-14);
+                }
+            }
+        }
     }
 }

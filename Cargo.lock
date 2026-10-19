@@ -10,9 +10,7 @@ checksum = "320119579fcad9c21884f5c4861d16174d0e06250625266f50fe6898340abefa"
 
 [[package]]
 name = "affn"
-version = "0.12.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2a0b360b4990eaa67ad4413f407cfcd0d7f37f246456118d16ff9bdada7026f3"
+version = "0.12.1"
 dependencies = [
  "affn-derive",
  "qtty",
@@ -22,8 +20,6 @@ dependencies = [
 [[package]]
 name = "affn-derive"
 version = "0.12.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "167a4b6fa3749c5a3b77c33061dc4ad2fcd84e38954c1db519a6be2c46381929"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -972,9 +968,7 @@ dependencies = [
 
 [[package]]
 name = "keplerian"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c848d0dcbff6c2993d10628f8b6b6ad3594c3781d6eed69cd0c95a8e70412dc4"
+version = "0.5.1"
 dependencies = [
  "affn",
  "qtty",
@@ -1830,18 +1824,14 @@ dependencies = [
 
 [[package]]
 name = "tempoch"
-version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9371b02bb9a518a19350f6d3c8bb60a49393bcfcc3feaae73623c89770c78e83"
+version = "0.11.1"
 dependencies = [
  "tempoch-core",
 ]
 
 [[package]]
 name = "tempoch-core"
-version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f6b107754254d4650aa5c0bb7ada266951451539bc010b6cd1d8620219dfe889"
+version = "0.11.1"
 dependencies = [
  "affn",
  "chrono",
@@ -1851,9 +1841,7 @@ dependencies = [
 
 [[package]]
 name = "tempoch-ffi"
-version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cbb6fc02b15bdc3a9bfe2cdf311419703195e80af5569ed9db2f1564e4754a0c"
+version = "0.11.1"
 dependencies = [
  "cbindgen",
  "chrono",

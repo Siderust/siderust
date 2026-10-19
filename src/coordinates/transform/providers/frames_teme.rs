@@ -7,6 +7,12 @@
 //! It shares the true equator of date but uses a simplified equinox
 //! definition (the "equation of the equinoxes" shortcut).
 //!
+//! These providers rotate independent vectors and positions. They do not
+//! implement a full coordinate-velocity state conversion: time-dependent frame
+//! changes require `v_B = R v_A + Rdot r_A`, and moving origins additionally
+//! require origin velocity terms. Neither a vector rotation nor affn's
+//! `BlockDiagRotation6` supplies those terms.
+//!
 //! The rotation chain is:
 //!
 //! ```text
