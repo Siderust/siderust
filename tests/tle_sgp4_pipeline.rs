@@ -108,7 +108,7 @@ fn explicit_time_context_preserves_typed_sgp4_results() {
         TimeContext::new(),
     )
     .unwrap();
-    let offset = qtty::Minutes::new(60.25);
+    let offset = siderust::qtty::Minutes::new(60.25);
     let baseline = default.propagate_minutes(offset).unwrap();
     let state = explicit.propagate_minutes(offset).unwrap();
     assert_eq!(state.position(), baseline.position());
