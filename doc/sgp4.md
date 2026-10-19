@@ -91,9 +91,13 @@ dependency. The existing downstream vectors are included upstream.
 selection; callers needing those previous results must select `Wgs84`
 explicitly. No spod source changes or release publication are included.
 
-## Upstream backend migration investigation
+## External backend status
 
-Migration to Rust `sgp4` 2.4.0 is blocked by its half-day resonance boundary
-behavior at eccentricity exactly 0.715. The validated implementation described
-above remains in place. See [the audit](sgp4-backend-audit.md) for unchanged
-reference failures, a standalone reproducer, and preliminary benchmarks.
+The validated native kernel remains in place pending a corrected upstream
+`sgp4` release. In `sgp4` 2.4.0, the half-day resonance `G520` polynomial
+uses `e < 0.715`, whereas Vallado C++ uses `e <= 0.715` for that branch.
+Exactly 15 of the 315 independent synthetic reference states fail at the
+boundary, by up to 0.110733 km and 2.38195e-5 km/s. Correcting this operator
+in an isolated experiment restores parity. No experimental backend, fork or
+diagnostic executable is included as a production dependency. See
+[PR #112](https://github.com/Siderust/siderust/pull/112) for the investigation.
