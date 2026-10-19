@@ -6,7 +6,7 @@ use super::Sgp4Error;
 use alloc::string::ToString;
 use chrono::{NaiveDateTime, Timelike};
 use core::f64::consts::{PI, TAU};
-use qtty::Minutes;
+use crate::qtty::Minutes;
 #[cfg(not(feature = "std"))]
 use qtty::{Real, Scalar, Transcendental};
 
