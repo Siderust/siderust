@@ -3,10 +3,10 @@
 
 //! Nominal UTC calendar arithmetic for SGP4, independent of SI leap durations.
 use super::Sgp4Error;
+use crate::qtty::Minutes;
 use alloc::string::ToString;
 use chrono::{NaiveDateTime, Timelike};
 use core::f64::consts::{PI, TAU};
-use crate::qtty::Minutes;
 #[cfg(not(feature = "std"))]
 use qtty::{Real, Scalar, Transcendental};
 
