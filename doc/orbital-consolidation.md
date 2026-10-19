@@ -78,10 +78,10 @@ ln -s /your/checkouts/affn .local-deps/affn
 # Siderust additionally needs:
 ln -s /your/checkouts/keplerian .local-deps/keplerian
 ln -s /your/checkouts/tempoch .local-deps/tempoch
-cargo tree -i affn
-cargo tree -i keplerian
-cargo tree -i tempoch-core
-cargo tree -i tempoch-ffi
+cargo tree --workspace -i affn
+cargo tree --workspace -i keplerian
+cargo tree --workspace -i tempoch-core
+cargo tree --workspace -i tempoch-ffi
 ```
 
 The review revisions are pinned in the workflow rather than following moving
@@ -129,10 +129,10 @@ cargo update -p affn
 # Siderust:
 cargo update -p affn -p keplerian -p tempoch -p tempoch-core -p tempoch-ffi
 cargo tree -d
-cargo tree -i affn
-cargo tree -i keplerian
-cargo tree -i tempoch-core
-cargo tree -i tempoch-ffi
+cargo tree --workspace -i affn
+cargo tree --workspace -i keplerian
+cargo tree --workspace -i tempoch-core
+cargo tree --workspace -i tempoch-ffi
 cargo metadata --format-version 1 --locked > registry-metadata.json
 # Each coordinated package must have source=registry+... (not null/path/git),
 # with the intended version, and only one selected version per package.
@@ -181,7 +181,7 @@ excluded; Markdown figures include changelogs/design documents):
 | affn | 6,895 → 6,952 | 0 → 0 | 0 → 0 | 1,288 → 1,338 |
 | keplerian | 1,522 → 1,620 | 0 → 0 | 0 → 0 | 169 → 207 |
 | tempoch | 7,480 → 7,576 | 0 → 0 | 612 → 612 | 1,110 → 1,168 |
-| siderust | 36,831 → 36,888 | 1,695 → 1,695 | 2,006 → 2,006 | 3,697 → 3,918 |
+| siderust | 36,831 → 36,888 | 1,695 → 1,695 | 2,006 → 2,006 | 3,697 → 3,921 |
 
 ## Validation
 
@@ -197,7 +197,10 @@ unchanged CI feature/coverage jobs. New independent comparisons preserve legacy
 anomaly positions and rotations at wraps, circular/high-e/near-parabolic limits,
 negative/large angles and scaled lengths. Existing tests cover large propagation
 intervals, hyperbolic orbits, catalogs, frames/centers, Serde and the C ABI.
-CI check links and final results are recorded in the PR descriptions.
+All local runtime tests, 310 doctests (26 pre-existing ignores), and the
+no_std/Serde/embedded matrix pass. A transient /tmp-backed linker failure was
+resolved by using disk-backed TMPDIR and two doctest threads; no source/test
+change was needed. CI check links and final results are in the PR descriptions.
 
 ## Remaining risks and follow-ups
 
