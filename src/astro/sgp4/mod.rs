@@ -18,7 +18,7 @@
 //!
 //! Inputs are typed TLE **mean** elements, not osculating Kepler elements.
 //! Outputs are geocentric TEME kilometres and kilometres per second; use the
-//! coordinate transformation infrastructure for other frames (and EOP data
+//! independent-vector transformation infrastructure for other frames (and EOP data
 //! where required). This replaces the previous secular J2 approximation;
 //! numerical results intentionally change, including at epoch.
 //!
@@ -53,6 +53,10 @@
 //! assert!(state.position().distance().value() > 6_500.0);
 //! assert!(state.velocity().magnitude().value() > 5.0);
 //! ```
+//!
+//! Full coordinate-velocity conversion between time-dependent frames additionally
+//! needs `Rdot r` and, for translating origins, origin velocity. The frame
+//! rotation providers and `BlockDiagRotation6` alone do not provide that map.
 
 #![forbid(unsafe_code)]
 

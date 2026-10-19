@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Reuse keplerian eccentricity validation in the SGP4 TLE adapter and retain only
+  the calendar epoch after model initialization, dropping the redundant full
+  NativeElements copy. Preserve UTC nominal-minute semantics, all gravity modes,
+  public typed states and unchanged numerical/FFI reference gates.
+
 - Consolidate elliptic/hyperbolic true-anomaly conversion in keplerian and
   perifocal rotation in affn. PreparedOrbit caches affn rotation coefficients;
   public orbital types, Serde formats, coordinate return types and FFI stay stable.

@@ -38,7 +38,7 @@ pub(crate) fn tle_to_elements(
             "leap-second label is outside the SGP4 time grid",
         ));
     }
-    if !tle.eccentricity.is_finite() || !(0.0..1.0).contains(&tle.eccentricity) {
+    if keplerian::Eccentricity::new_elliptic(tle.eccentricity).is_err() {
         return Err(Sgp4Error::InvalidElements {
             details: format!("eccentricity outside [0, 1): {}", tle.eccentricity),
         });

@@ -33,7 +33,7 @@ Input TLE mean elements must not be replaced with osculating elements.
 SGP4 uses mean motion and BSTAR; TLE mean-motion derivatives are metadata
 and are not integrated independently. Output is **geocentric TEME** position
 in km and velocity in km/s, using the existing `affn`/`qtty` types. Existing
-coordinate transforms provide other frames, with appropriate Earth orientation
+independent-vector transforms provide other frames, with appropriate Earth orientation
 data. This upgrade intentionally changes results from the simplified
 propagator, including the epoch state.
 
@@ -101,3 +101,28 @@ boundary, by up to 0.110733 km and 2.38195e-5 km/s. Correcting this operator
 in an isolated experiment restores parity. No experimental backend, fork or
 diagnostic executable is included as a production dependency. See
 [PR #112](https://github.com/Siderust/siderust/pull/112) for the investigation.
+
+## Shared API integration
+
+This branch incorporates [orbital API PR #114](https://github.com/Siderust/siderust/pull/114)
+through a normal merge, preserving the existing SGP4 history. Merge #114 before
+#112, then merge any registry-cleanup commits from main normally. Temporary
+root path patches and pinned CI checkouts are shared with #114; see
+[orbital consolidation](orbital-consolidation.md) for exact release steps.
+
+The propagator retains its owned Tempoch context, initialized constants, model,
+calendar epoch and UTC JD epoch. It no longer keeps a second copy of the complete
+TLE initialization record after the constants have consumed it. The two epoch
+representations have distinct purposes: exact nominal calendar offsets and the
+existing public UTC JD accessor. Eccentricity range validation reuses keplerian's
+scalar validator; it does not convert TLE mean elements to two-body elements.
+
+Tempoch's existing calendar/ExactDuration APIs preserve the 1,440 nominal UTC
+minutes/day contract. No new shared state wrapper or arithmetic layer was accepted
+upstream; the existing typed TemeState and its UTC boundary stay intact.
+
+Frame providers rotate positions and independent vectors. A full coordinate
+velocity needs `v_B = R v_A + Rdot r_A`, with separate origin-velocity terms
+for moving centers. Neither EOP inputs alone nor a `BlockDiagRotation6` yields
+that complete map; no untested TEME full-state conversion is promised here.
+The native SGP4/SDP4 kernel, WGS constants and AFSPC/IAU initialization are unchanged.

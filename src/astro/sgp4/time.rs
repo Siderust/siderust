@@ -2,6 +2,11 @@
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! Nominal UTC calendar arithmetic for SGP4, independent of SI leap durations.
+//!
+//! Reuses Tempoch's explicit-context UTC bridge and ExactDuration validation;
+//! see `doc/orbital-consolidation.md` and Tempoch's nominal-civil-UTC decision.
+//! The model-specific minute/error adapters stay here. Time<UTC> subtraction
+//! measures elapsed SI time and cannot replace these nominal calendar offsets.
 use super::Sgp4Error;
 use crate::qtty::Minutes;
 use alloc::string::ToString;

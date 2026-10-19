@@ -211,3 +211,28 @@ A real rotating-frame state conversion still needs tested astronomical Rdot and
 origin-velocity data; the documentation now states this limitation explicitly.
 Neither item blocks reviewing this generic API consolidation. Release sequencing
 and removal of temporary patches require maintainer action after publication.
+
+## Existing SGP4 PR #112 integration
+
+PR #112 incorporates PR #114 through normal merge commit `98d090a`, preserving
+all prior commits. Its additional change replaces the retained `NativeElements`
+record with only the calendar UTC epoch, and delegates the identical scalar
+elliptic-eccentricity check to keplerian. No Vallado numerical kernel code changes.
+UTC adapters continue using Tempoch's documented existing APIs. TemeState retains
+its public typed accessors and UTC contract; frame-state documentation is corrected.
+
+Against the pre-task #112 revision `0464b2f`, Siderust production LOC is
+**40,126 → 40,088 (-38)**. Including affn/keplerian/Tempoch, the alternate
+SGP4-branch ecosystem total is **54,583 → 54,543 (-40)**. These are an alternative
+to the main-based table, not additional deletions to add to it. Dropping the
+retained initialization record removes redundant data even though it does not
+change physical line count. The 828 physical lines of native model/deep-space
+kernel are unchanged and remain owned by the SGP4 implementation pending #98.
+
+The unchanged acceptance suite passes: 33 Vallado satellites / 666 successful
+states / two expected divergences, 48 independent IAU and 315 synthetic states,
+all three gravity modes, near-Earth/deep-space/resonance cases, positive/negative
+and fractional offsets, leap boundaries and FFI buffer/error contracts. Component
+tolerances remain strictly <1e-6 km and <1e-9 km/s. Fixture files and numerical
+reference tests are identical to the pre-task revision. Complete workspace and
+Actions checks are recorded on the existing PR; no new SGP4 PR is created.

@@ -18,7 +18,7 @@ use crate::qtty::Minutes;
 use alloc::string::ToString;
 use tempoch::{JulianDate, TimeContext, UTC};
 
-use super::elements::{tle_to_elements, NativeElements};
+use super::elements::tle_to_elements;
 use super::model::Constants;
 use super::state::TemeState;
 use super::Sgp4Error;
@@ -82,7 +82,7 @@ pub enum GravityModel {
 pub struct TlePropagator {
     context: TimeContext,
     constants: Constants,
-    elements: NativeElements,
+    epoch_calendar_utc: chrono::NaiveDateTime,
     model: GravityModel,
     epoch_jd_utc: JulianDate<UTC>,
 }
@@ -156,7 +156,7 @@ impl TlePropagator {
         Ok(Self {
             context,
             constants,
-            elements,
+            epoch_calendar_utc: elements.datetime,
             model,
             epoch_jd_utc,
         })
@@ -243,7 +243,7 @@ impl TlePropagator {
             .try_to_chrono_with(&self.context)
             .map_err(|e| Sgp4Error::TimeConversion(e.to_string()))?
             .naive_utc();
-        let minutes = super::time::minutes_between(self.elements.datetime, datetime)?;
+        let minutes = super::time::minutes_between(self.epoch_calendar_utc, datetime)?;
         self.propagate_internal(minutes, target_jd_utc)
     }
 
@@ -278,7 +278,7 @@ impl TlePropagator {
                 "minutes offset is non-finite".into(),
             ));
         }
-        let datetime = super::time::offset_epoch(self.elements.datetime, dt_minutes)?;
+        let datetime = super::time::offset_epoch(self.epoch_calendar_utc, dt_minutes)?;
         let target = tempoch::Time::<UTC>::try_from_chrono_with(datetime.and_utc(), &self.context)
             .and_then(|t| t.to_with::<tempoch::JD>(&self.context))
             .map_err(|e| Sgp4Error::TimeConversion(e.to_string()))?;
