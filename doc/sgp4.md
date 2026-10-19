@@ -87,3 +87,10 @@ dependency. The existing downstream vectors are included upstream.
 `Wgs72Iau` intentionally fixes the downstream initializer's accidental WGS-84
 selection; callers needing those previous results must select `Wgs84`
 explicitly. No spod source changes or release publication are included.
+
+## Upstream backend migration investigation
+
+Migration to Rust `sgp4` 2.4.0 is blocked by its half-day resonance boundary
+behavior at eccentricity exactly 0.715. The validated implementation described
+above remains in place. See [the audit](sgp4-backend-audit.md) for unchanged
+reference failures, a standalone reproducer, and preliminary benchmarks.
