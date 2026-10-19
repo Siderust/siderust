@@ -117,13 +117,13 @@ bench-internals = []
 
 [dependencies]
 # Alloc is always enabled: siderust is an orchestration crate built around Vec/String.
-affn = { version = "0.12", default-features = false, features = ["astro", "alloc"] }
+affn = { version = "0.12.1", default-features = false, features = ["astro", "alloc"] }
 cheby = { version = "0.4.2", default-features = false, features = ["alloc", "approx", "calculus"] }
-keplerian = { version = "0.5", default-features = false, features = ["alloc"] }
+keplerian = { version = "0.5.1", default-features = false, features = ["alloc"] }
 optica = { version = "0.5", default-features = false, features = ["alloc"] }
 principia = { version = "0.7", default-features = false, features = ["alloc"] }
 qtty = { version = "0.8", default-features = false, features = ["alloc", "astro", "density", "frequency", "radiometry", "satellite"] }
-tempoch = { version = "0.11", default-features = false, features = ["alloc"] }
+tempoch = { version = "0.11.1", default-features = false, features = ["alloc"] }
 siderust-archive = { version = "0.1.5", default-features = false, features = ["jpl", "vsop", "elp", "nutation", "gravity", "atmosphere", "pluto", "time"] }
 
 thiserror = { version = "2", default-features = false }
@@ -213,3 +213,11 @@ workspace = true
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
+
+# Temporary coordinated release; see doc/orbital-consolidation.md.
+[patch.crates-io]
+affn = { path = ".local-deps/affn" }
+keplerian = { path = ".local-deps/keplerian" }
+tempoch = { path = ".local-deps/tempoch/tempoch" }
+tempoch-core = { path = ".local-deps/tempoch/tempoch-core" }
+tempoch-ffi = { path = ".local-deps/tempoch/tempoch-ffi" }
