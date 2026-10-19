@@ -1,6 +1,6 @@
-//! Propagate the Vallado demo satellite (NORAD 5) from its TLE using SGP4.
+//! Propagate the Vallado demo satellite (NORAD 5) from its TLE using native Vallado SGP4.
 //!
-//! Run with: `cargo run --example 17_sgp4_from_tle --features pod`
+//! Run with: `cargo run --example 17_sgp4_from_tle`
 
 #![allow(clippy::print_stdout)]
 

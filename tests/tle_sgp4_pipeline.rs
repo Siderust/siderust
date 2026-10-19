@@ -4,7 +4,7 @@
 //! End-to-end smoke test for the typed TLE → SGP4 → TEME pipeline.
 //!
 //! This is the canonical "the typed boundary holds" check for
-//! `siderust-pod`. It exercises:
+//! Siderust. It exercises:
 //!
 //! 1. [`parse_tle`] consuming a published Vallado SGP4 Verification TLE.
 //! 2. [`TlePropagator::from_tle_with_model`] adapting the TLE to the

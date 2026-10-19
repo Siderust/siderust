@@ -43,7 +43,6 @@ required-features = ["pod"]
 [[example]]
 name = "17_sgp4_from_tle"
 path = "examples/17_sgp4_from_tle.rs"
-required-features = ["pod"]
 
 [[example]]
 name = "18_lisa_pod"
@@ -58,7 +57,6 @@ required-features = ["pod"]
 [[test]]
 name = "tle_sgp4_pipeline"
 path = "tests/tle_sgp4_pipeline.rs"
-required-features = ["pod"]
 
 [[test]]
 name = "spice_context"

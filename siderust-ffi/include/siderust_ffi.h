@@ -1787,6 +1787,7 @@ siderust_status_t siderust_tle_parse(const char *line1,
 //
 // * `tle`           — TLE handle (not consumed; caller still owns it).
 // * `gravity_model` — 0 = WGS-72 (default), 1 = WGS-72/IAU, 2 = WGS-84.
+//   Other values retain the WGS-72 default.
 // * `out`           — receives a `*mut SiderustSgp4` on success.
 //
 // # Returns

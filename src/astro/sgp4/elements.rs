@@ -1,35 +1,23 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Native TLE mean-element record used by the propagator.
+//! Adapt typed TLE mean elements to the native normalized numerical model.
 //!
 //! Callers always interact with the typed [`crate::formats::tle::TLE`]
-//! record. This module copies the SGP4-relevant fields into a compact
-//! crate-private representation with radians and revolutions-per-day scalars
-//! for the numerical core.
+//! record. The numerical model uses normalized Earth-radius/minute units.
 
 use crate::formats::tle::TLE;
 use alloc::format;
-use chrono::Datelike;
+use chrono::Timelike;
 
 use super::Sgp4Error;
 
-/// Native copy of the TLE fields needed by the propagator.
-///
-/// Angles are stored in radians. Mean motion and derivatives keep the TLE
-/// convention of revolutions per day and its time derivatives.
+/// Compact model inputs; angles are radians and mean motion is rad/min.
 #[derive(Clone, Debug)]
-pub(crate) struct NativeElements {
-    pub(crate) epoch_jd_utc: tempoch::JulianDate<tempoch::UTC>,
-    pub(crate) inclination_rad: f64,
-    pub(crate) raan_rad: f64,
-    pub(crate) eccentricity: f64,
-    pub(crate) argument_of_perigee_rad: f64,
-    pub(crate) mean_anomaly_rad: f64,
-    pub(crate) mean_motion_rev_per_day: f64,
-    pub(crate) mean_motion_dot_rev_per_day2: f64,
-    pub(crate) mean_motion_ddot_rev_per_day3: f64,
-    pub(crate) bstar: f64,
+pub(super) struct NativeElements {
+    pub datetime: chrono::NaiveDateTime,
+    pub orbit: super::model::Orbit,
+    pub bstar: f64,
 }
 
 /// Convert a typed [`TLE`] into native propagation elements.
@@ -43,9 +31,10 @@ pub(crate) fn tle_to_elements(
         .map_err(|e| Sgp4Error::TimeConversion(format!("TLE epoch → chrono failed: {e:?}")))?;
     // SGP4 wants a NaiveDateTime in UTC.
     let datetime = dt_utc.naive_utc();
-    // Sanity-check the year: AFSPC epoch encoding loses precision before 1957.
-    if datetime.year() < 1950 {
-        return Err(Sgp4Error::InvalidEpoch("year < 1950 not representable"));
+    if datetime.nanosecond() >= 1_000_000_000 {
+        return Err(Sgp4Error::InvalidEpoch(
+            "leap-second label is outside the SGP4 time grid",
+        ));
     }
     if !tle.eccentricity.is_finite() || !(0.0..1.0).contains(&tle.eccentricity) {
         return Err(Sgp4Error::InvalidElements {
@@ -58,19 +47,36 @@ pub(crate) fn tle_to_elements(
         });
     }
 
+    // Validate all independently mutable numerical inputs before initialization.
+    if [
+        tle.inclination.value(),
+        tle.raan.value(),
+        tle.argument_of_perigee.value(),
+        tle.mean_anomaly.value(),
+        tle.bstar,
+    ]
+    .iter()
+    .any(|v| !v.is_finite())
+    {
+        return Err(Sgp4Error::InvalidElements {
+            details: "non-finite angle or BSTAR".into(),
+        });
+    }
+    if !(0.0..=180.0).contains(&tle.inclination.value()) {
+        return Err(Sgp4Error::InvalidElements {
+            details: "inclination outside [0, 180] degrees".into(),
+        });
+    }
     Ok(NativeElements {
-        epoch_jd_utc: tle
-            .epoch
-            .to_with::<tempoch::JD>(ctx)
-            .map_err(|e| Sgp4Error::TimeConversion(format!("TLE epoch → UTC JD: {e}")))?,
-        inclination_rad: tle.inclination.value().to_radians(),
-        raan_rad: tle.raan.value().to_radians(),
-        eccentricity: tle.eccentricity,
-        argument_of_perigee_rad: tle.argument_of_perigee.value().to_radians(),
-        mean_anomaly_rad: tle.mean_anomaly.value().to_radians(),
-        mean_motion_rev_per_day: tle.mean_motion.value(),
-        mean_motion_dot_rev_per_day2: tle.mean_motion_dot,
-        mean_motion_ddot_rev_per_day3: tle.mean_motion_ddot,
+        datetime,
+        orbit: super::model::Orbit {
+            e: tle.eccentricity,
+            i: tle.inclination.to::<qtty::unit::Radian>().value(),
+            node: tle.raan.to::<qtty::unit::Radian>().value(),
+            argp: tle.argument_of_perigee.to::<qtty::unit::Radian>().value(),
+            m: tle.mean_anomaly.to::<qtty::unit::Radian>().value(),
+            n: tle.mean_motion.value() * core::f64::consts::PI / 720.0,
+        },
         bstar: tle.bstar,
     })
 }

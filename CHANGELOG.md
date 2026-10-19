@@ -8,6 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Full Vallado/AFSPC SGP4/SDP4 propagation for the pending **0.15.0** release,
+  replacing the secular J2 approximation with a native Rust numerical core
+  using the existing affn/qtty/tempoch stack, without a new dependency. Preserve
+  typed TLE, minutes, UTC epochs and geocentric TEME states, the `Sgp4Propagator` alias and FFI model codes. Include BSTAR drag,
+  periodic terms, lunar/solar perturbations and deep-space resonances.
+- Validate all 668 Vallado verification cases and 363 independent C++ reference
+  states at component errors below 1e-6 km / 1e-9 km/s. Explicitly select
+  WGS-72/AFSPC, WGS-72/IAU or WGS-84/IAU; the WGS-72/IAU path does not use
+  an implicit WGS-84 default. Retain `no_std + alloc` and embedded support.
+- Preserve nominal UTC-minute semantics across leap seconds and avoid large
+  Julian-date subtraction. Reject invalid elements, leap-second labels,
+  non-finite/out-of-range offsets and divergent states. Document scalar JD
+  precision and the approximately ±292-year calendar-offset limit. Predictions
+  intentionally differ from the former J2 approximation, including at epoch.
+  See `doc/sgp4.md` for numerical conventions and downstream migration notes.
+
 - Add `moon_bright_limb_position_angle::<E, C>(input)` and the default-backend
   `Moon::bright_limb_position_angle::<C>(input)`. `LunarObservationCenter`
   dispatches at compile time: `Geocentric` takes a TT Julian Date; `Topocentric`
