@@ -158,6 +158,13 @@ Siderust remains AGPL-3.0-only, version 0.15.0; any eventual commercial
 redistribution must retain independent third-party notices. No upstream
 implementation is attributed to Siderust or copied into its production source.
 
+While awaiting an upstream correction, Siderust independently added explicit
+`TimeContext` constructors, typed QTTY angular-rate/minute conversions, and a
+shared velocity-unit alias in commit `a86a1bb`. These changes do not replace
+the native numerical core. Upstream issue creation was attempted via the
+connected GitHub integration but rejected with HTTP 403; an authorized
+upstream fork or additional app permissions are required to submit the fix.
+
 The native baseline and restored native code pass all nine numerical tests,
 both pipeline tests, and both FFI tests (all three model codes and output-buffer
 preservation on failure). The standalone audit passes Clippy. Workspace

@@ -115,7 +115,6 @@ fn explicit_time_context_preserves_typed_sgp4_results() {
     assert_eq!(state.velocity(), baseline.velocity());
     assert_eq!(state.epoch(), baseline.epoch());
     assert_eq!(explicit.gravity_model(), GravityModel::Wgs84);
-    let default_model = TlePropagator::from_tle_with_context(&tle, TimeContext::new())
-        .unwrap();
+    let default_model = TlePropagator::from_tle_with_context(&tle, TimeContext::new()).unwrap();
     assert_eq!(default_model.gravity_model(), GravityModel::Wgs72);
 }

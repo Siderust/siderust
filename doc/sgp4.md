@@ -40,7 +40,10 @@ propagator, including the epoch state.
 ## Time and errors
 
 Use `propagate_minutes(qtty::Minutes::new(offset))` (the Siderust `qtty`
-re-export) or `propagate_at(JulianDate<UTC>)`. Both use 1440 nominal minutes per
+re-export) or `propagate_at(JulianDate<UTC>)`. Callers with a custom Tempoch
+snapshot can use `TlePropagator::from_tle_with_context(&tle, context)` or
+`TlePropagator::from_tle_with_model_and_context(&tle, model, context)`;
+the propagator owns that snapshot for all epoch conversions. Both use 1440 nominal minutes per
 civil UTC day; a leap insertion does not add an SGP4 model second. Tempoch
 performs UTC/calendar validation and validates typed duration conversions.
 Leap-second labels are rejected because they have no scalar civil JD
