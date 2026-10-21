@@ -35,11 +35,11 @@
 //!   length unit `U`.  Constructed via the infallible `new` (trusted constants)
 //!   or the validated `try_new` (user/deserialized data).
 //! - [`PreparedOrbit`] — precomputed version for repeated propagation: caches
-//!   mean motion as a typed [`AngularRate<Radian, Day>`], orientation trig, and
+//!   mean motion as a typed [`AngularRate<Radian, Day>`], orientation rotation, and
 //!   M₀ in radians.  Mean motion is exposed through the typed accessor
 //!   [`PreparedOrbit::mean_motion`]; callers requiring the raw `f64` should
 //!   call `.value()` on the return value.
-//! - `OrientationTrig` — cached sin/cos of inclination, Ω, ω (crate-internal).
+//! - Cached affn rotation coefficients avoid repeated orientation rotationonometry.
 //!
 //! ## References
 //!
@@ -55,6 +55,7 @@ use crate::qtty::*;
 use crate::time::JulianDate;
 use affn::conic::{ConicOrientation, Elliptic, SemiMajorAxisParam, TypedSemiMajorAxisParam};
 use affn::frames::EclipticMeanJ2000;
+use affn::ops::Rotation3;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -181,59 +182,13 @@ impl<U: LengthUnit> KeplerianOrbit<U> {
 // PreparedOrbit — validated + precomputed for hot propagation
 // =============================================================================
 
-/// Precomputed orientation trig values for efficient repeated rotation to ecliptic.
-///
-/// These values are computed once from the three orbital orientation angles and
-/// reused on every propagation call, avoiding redundant `sin_cos()` evaluations.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub(crate) struct OrientationTrig {
-    sin_i: f64,
-    cos_i: f64,
-    sin_omega: f64,
-    cos_omega: f64,
-    sin_node: f64,
-    cos_node: f64,
-}
-
-impl OrientationTrig {
-    #[inline]
-    pub(crate) fn sin_i(&self) -> f64 {
-        self.sin_i
-    }
-    #[inline]
-    pub(crate) fn cos_i(&self) -> f64 {
-        self.cos_i
-    }
-    #[inline]
-    pub(crate) fn sin_omega(&self) -> f64 {
-        self.sin_omega
-    }
-    #[inline]
-    pub(crate) fn cos_omega(&self) -> f64 {
-        self.cos_omega
-    }
-    #[inline]
-    pub(crate) fn sin_node(&self) -> f64 {
-        self.sin_node
-    }
-    #[inline]
-    pub(crate) fn cos_node(&self) -> f64 {
-        self.cos_node
-    }
-
-    pub(crate) fn from_orientation(o: &ConicOrientation<EclipticMeanJ2000>) -> Self {
-        let (sin_i, cos_i) = o.inclination().sin_cos();
-        let (sin_omega, cos_omega) = o.argument_of_periapsis().sin_cos();
-        let (sin_node, cos_node) = o.longitude_of_ascending_node().sin_cos();
-        Self {
-            sin_i,
-            cos_i,
-            sin_omega,
-            cos_omega,
-            sin_node,
-            cos_node,
-        }
-    }
+/// Builds the perifocal-to-ecliptic rotation owned by affn.
+pub(crate) fn orbital_rotation(o: &ConicOrientation<EclipticMeanJ2000>) -> Rotation3 {
+    Rotation3::from_euler_zxz(
+        o.argument_of_periapsis().to::<Radian>(),
+        o.inclination().to::<Radian>(),
+        o.longitude_of_ascending_node().to::<Radian>(),
+    )
 }
 
 /// A validated, precomputed elliptic orbit optimized for repeated propagation.
@@ -273,8 +228,8 @@ pub struct PreparedOrbit {
     mean_motion: AngularRate<Radian, Day>,
     /// Precomputed mean anomaly at epoch in radians.
     m0_rad: f64,
-    /// Precomputed orientation trig.
-    trig: OrientationTrig,
+    /// Precomputed orientation rotation.
+    trig: Rotation3,
 }
 
 impl PreparedOrbit {
@@ -320,9 +275,9 @@ impl PreparedOrbit {
         self.m0_rad
     }
 
-    /// Precomputed orientation trig values.
+    /// Precomputed orientation rotation values.
     #[inline]
-    pub(crate) fn orientation_trig(&self) -> &OrientationTrig {
+    pub(crate) fn orientation_rotation(&self) -> &Rotation3 {
         &self.trig
     }
 
@@ -333,7 +288,7 @@ impl PreparedOrbit {
         let period_days = heliocentric_period_days(a);
         let mean_motion = AngularRate::<Radian, Day>::new(core::f64::consts::TAU / period_days);
         let m0_rad = orbit.mean_anomaly_at_epoch.to::<Radian>().value();
-        let trig = OrientationTrig::from_orientation(orbit.orientation());
+        let trig = orbital_rotation(orbit.orientation());
         Self {
             elements: orbit,
             mean_motion,

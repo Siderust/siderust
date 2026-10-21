@@ -6,6 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Consolidate elliptic/hyperbolic true-anomaly conversion in keplerian and
+  perifocal rotation in affn. PreparedOrbit caches affn rotation coefficients;
+  public orbital types, Serde formats, coordinate return types and FFI stay stable.
+- Use affn 0.12.1, keplerian 0.5.1 and tempoch 0.11.1 for the planned 0.15.0
+  release, resolved directly from crates.io without temporary Cargo patches
+  or dependency checkouts in CI.
+- Clarify that TEME vector rotation does not transform coordinate velocities.
+
+
 ### Added
 
 - Add `moon_bright_limb_position_angle::<E, C>(input)` and the default-backend
