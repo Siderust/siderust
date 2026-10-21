@@ -215,11 +215,3 @@ rustdoc-args = ["--cfg", "docsrs"]
 [[bench]]
 name = "sgp4"
 harness = false
-
-# Temporary coordinated release; see doc/orbital-consolidation.md.
-[patch.crates-io]
-affn = { path = ".local-deps/affn" }
-keplerian = { path = ".local-deps/keplerian" }
-tempoch = { path = ".local-deps/tempoch/tempoch" }
-tempoch-core = { path = ".local-deps/tempoch/tempoch-core" }
-tempoch-ffi = { path = ".local-deps/tempoch/tempoch-ffi" }
