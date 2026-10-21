@@ -12,11 +12,11 @@ If you are looking for benchmarking/profiling write-ups, see `benches/reports/RE
 - `doc/promises.md`: compatibility/behavior promises (what we guarantee).
 - `doc/datasets.md`: how embedded datasets and optional JPL backends work.
 - `doc/binding_strategy.md`: multi-language binding architecture (Python, Node.js, C/C++), FFI gap analysis, and hardening plan.
-- `doc/sgp4.md`: native Vallado SGP4/SDP4 numerical, time and gravity-model contract.
 
 ## Related docs elsewhere
 
 - `README.md`: user-facing overview and installation.
 - `examples/README.md`: runnable tour of features.
 - `src/coordinates/README.md`: coordinate architecture and invariants (module-level).
+- `src/astro/sgp4/README.md`: SGP4/SDP4 numerical and public API reference (module-level).
 - `benches/README.md`: benchmark entrypoints and how to run them.

@@ -32,6 +32,7 @@ What you will find here:
 - `light_deflection.rs`: relativistic deflection by the Sun and planets.
 - `proper_motion.rs`: catalogue-style proper-motion propagation.
 - `conic.rs`, `orbit.rs`: Keplerian and conic-orbit abstractions.
+- `sgp4/`: typed SGP4/SDP4 TLE propagation; see [the module reference](sgp4/README.md).
 - `orientation.rs`: IAU pole and prime-meridian rotation parameters for body
   frames.
 - `units.rs`: astronomy-specific scalar units not provided by `qtty`.
