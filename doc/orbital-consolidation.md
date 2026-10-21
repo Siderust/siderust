@@ -1,7 +1,8 @@
 # Orbital API consolidation and coordinated release
 
 Resolves Siderust #113 with upstream affn #36, keplerian #9 and tempoch #23.
-Siderust remains **0.15.0**. No crate has been published and no PR merged.
+Siderust remains **0.15.0**. Its PRs #114 and #112 are not yet merged; the
+upstream patch releases are available from crates.io.
 
 ## Baseline and ownership inventory
 
@@ -10,7 +11,7 @@ PR #112 was fast-forwarded from b776b8a to its latest remote 0464b2f, preserving
 seven existing commits. Its baseline CI passed all 11 jobs. The integration branch
 starts from latest main **57554f2**, not from the SGP4 branch.
 
-| Crate | Baseline manifest | Baseline commit | Prepared version |
+| Crate | Baseline manifest | Baseline commit | Integrated version |
 |---|---|---|---|
 | affn | 0.12.0 | 8c60a50 | 0.12.1 |
 | affn-derive | 0.12.0 | same repository | unchanged |
@@ -52,90 +53,32 @@ Tempoch full parallel validation exposed an existing test-only synthetic-table
 race. Thread-local overrides and unwind restoration isolate the fixtures without
 changing production runtime-data behavior or serializing/disabling the suite.
 
-## Reproducible unpublished dependency setup
+## Registry dependencies and integration order
 
-Keplerian's root `[patch.crates-io]` selects `.local-deps/affn`. Siderust's root
-patches select affn, keplerian, tempoch, tempoch-core and tempoch-ffi under
-`.local-deps/`. Patching the time core and FFI too prevents mixing a published
-component into the coordinated time family. Existing compatible constraints in
-principia/optica unify to these same patched versions; feature forwarding and
-`default-features = false` remain intact. Tempoch itself needs no unpublished
-upstream API, so it has no unnecessary patch.
+The upstream PRs affn #37, keplerian #10 and Tempoch #24 have merged.
+The integration uses published affn **0.12.1**, keplerian **0.5.1**, and
+tempoch / tempoch-core / tempoch-ffi **0.11.1**. Cargo resolves all of these
+directly from crates.io; `Cargo.lock` records their registry checksums.
+There is no root `[patch.crates-io]` override, local dependency checkout, or
+CI-only dependency substitution. Compatible transitive consumers continue
+to unify on one version of each crate family.
 
-`.local-deps/` is ignored. Developers can create local symlinks; clean CI uses
-separate checkouts of **exact committed SHAs** in every consuming CI job. No
-absolute path, external symlink, vendored copy or copied source is committed.
-The nested dependency's own root patch is ignored by Cargo; Siderust's root
-patch table supplies the full graph. See the marked checkout steps in
-`.github/workflows/github-ci.yml` and keplerian `.github/workflows/ci.yml`.
+1. Merge Siderust PR #114 before PR #112. The SGP4 branch already contains
+   this refactor in its ancestry, so refresh PR #112 against main after #114
+   is squash-merged and confirm its effective diff.
+2. Verify registry resolution and rerun the complete Rust/FFI, numerical,
+   no_std/Serde/embedded and coverage suites before releasing Siderust 0.15.0.
+   The native-versus-official SGP4 backend decision remains separate in #98.
 
-For local development, from each consumer root, for example:
-
-```sh
-mkdir -p .local-deps
-# Supply your checkout paths, or clone the PR revisions into these directories.
-ln -s /your/checkouts/affn .local-deps/affn
-# Siderust additionally needs:
-ln -s /your/checkouts/keplerian .local-deps/keplerian
-ln -s /your/checkouts/tempoch .local-deps/tempoch
-cargo tree --workspace -i affn
-cargo tree --workspace -i keplerian
-cargo tree --workspace -i tempoch-core
-cargo tree --workspace -i tempoch-ffi
-```
-
-The review revisions are pinned in the workflow rather than following moving
-branch heads. After upstream updates, intentionally update those SHAs and recheck
-the graph. Keep patches until the maintainer manually publishes the dependencies.
-
-## PR dependency and manual release checklist
-
-1. Review/merge [affn #37](https://github.com/Siderust/affn/pull/37), then manually
-   publish **affn 0.12.1**. affn-derive **0.12.0** is unchanged/already published;
-   do not use the tag workflow that blindly republishes it. Run
-   `cargo publish -p affn --locked` from the affn repository after review.
-2. In keplerian #10, after affn is indexed, remove only the root
-   `[patch.crates-io] affn` entry and all five marked affn CI checkout steps.
-   Keep its `affn = "0.12.1"` requirement. Update and commit Cargo.lock; run
-   normal registry verification below. Merge, then publish **keplerian 0.5.1**
-   with `cargo publish --locked`. The maintainer may merge this PR before
-   publication but must do the cleanup before packaging.
-3. Independently review/merge [Tempoch #24](https://github.com/Siderust/tempoch/pull/24).
-   Publish **tempoch-core 0.11.1**, then **tempoch 0.11.1**, then
-   **tempoch-ffi 0.11.1**, waiting for each registry update. Use `cargo publish
-   -p <package> --locked` per package or the reviewed repository release script
-   with its explicit FFI confirmation. No patch/CI dependency checkout needs
-   removal in this repository. Do not publish tempoch-validation.
-4. Once all dependencies are indexed, remove Siderust's entire temporary
-   `[patch.crates-io]` table (affn, keplerian, tempoch, tempoch-core, tempoch-ffi)
-   and the three marked dependency checkout steps from **every** job in
-   `.github/workflows/github-ci.yml`. Keep requirements **affn 0.12.1,
-   keplerian 0.5.1, tempoch 0.11.1, tempoch-ffi 0.11.1**. Remove ignored local
-   checkout directories only if desired. Update/commit Cargo.lock.
-5. Merge the Siderust #113 PR into main **before** the final SGP4 PR #112 merge.
-   PR #112 receives this branch through a normal merge, with no cherry-pick or
-   rewritten existing history. Carry registry-cleanup commits from main into
-   #112 with a normal merge so both use the same implementation and lockfile.
-6. Run final Siderust **v0.15.0** validation, including the unchanged SGP4 corpus,
-   all FFI tests, no_std/Serde/embedded builds, aggregate and strict phase coverage.
-   The maintainer decides the native-vs-official SGP4 backend strategy under #98.
-   Then manually publish siderust 0.15.0. siderust-ffi is currently publish=false.
-
-After removing patches in a consumer, verify actual crates.io resolution:
+To inspect the resolved graph and run the main local checks:
 
 ```sh
-# keplerian:
-cargo update -p affn
-# Siderust:
-cargo update -p affn -p keplerian -p tempoch -p tempoch-core -p tempoch-ffi
 cargo tree -d
 cargo tree --workspace -i affn
 cargo tree --workspace -i keplerian
 cargo tree --workspace -i tempoch-core
 cargo tree --workspace -i tempoch-ffi
 cargo metadata --format-version 1 --locked > registry-metadata.json
-# Each coordinated package must have source=registry+... (not null/path/git),
-# with the intended version, and only one selected version per package.
 cargo fmt --all -- --check
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 cargo check --workspace --all-features
@@ -143,8 +86,9 @@ SIDERUST_JPL_STUB=all cargo test --workspace --all-features
 SIDERUST_JPL_STUB=all cargo test --doc --workspace --all-features
 ```
 
-The JPL stub matches regular CI's documented policy: avoid multi-GB downloads;
-it does not alter orbital or SGP4 reference fixtures. No tolerances are relaxed.
+The metadata must show registry sources and the versions above, without
+duplicate versions of these families. The JPL stub matches normal CI and
+does not alter scientific reference fixtures.
 
 ## Maintained LOC
 
@@ -191,7 +135,7 @@ Unchanged local line-coverage gates pass: affn **91.01%** (85% required),
 keplerian **93.60%** (90%), Tempoch **94.41%** (90%). GitHub Actions additionally
 retains keplerian audit/deny and Miri; no test or threshold is disabled.
 
-Siderust validates the actual root-patched graph with all-feature workspace
+Siderust validates the registry-resolved dependency graph with all-feature workspace
 checks, tests and doctests, all-target Clippy, no_std/Serde/embedded builds and
 unchanged CI feature/coverage jobs. New independent comparisons preserve legacy
 anomaly positions and rotations at wraps, circular/high-e/near-parabolic limits,
@@ -209,5 +153,4 @@ migration concern. The validated native kernel stays in PR #112; no generic
 solver replaces it and none of its mathematics moves to another ecosystem crate.
 A real rotating-frame state conversion still needs tested astronomical Rdot and
 origin-velocity data; the documentation now states this limitation explicitly.
-Neither item blocks reviewing this generic API consolidation. Release sequencing
-and removal of temporary patches require maintainer action after publication.
+Neither item blocks reviewing this generic API consolidation. Merge #114 before #112, then complete final regression checks before release.
