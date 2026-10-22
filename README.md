@@ -58,7 +58,7 @@ No external JPL kernel is required for these VSOP87 examples. For more workflows
 - **Getting started:** [Installation](#installation) · [Examples](#examples) · [Supported feature flags](#supported-feature-flags)
 - **Core concepts:** [Features](#features) · [Coordinate systems](#coordinate-systems) · [Units and physical quantities](#units--physical-quantities)
 - **Data and internals:** [Scientific archive](#scientific-archive-submodule) · [Crate layout](#crate-layout) · [Benchmarks](benches/README.md)
-- **Community:** [Roadmap](#roadmap) · [Contributing](#contributing) · [License](#license) · [Acknowledgments](#acknowledgments)
+- **Community:** [Roadmap](#roadmap) · [Contributing](#contributing) · [Releasing](doc/releasing.md) · [License](#license) · [Acknowledgments](#acknowledgments)
 
 ---
 
@@ -92,7 +92,8 @@ No external JPL kernel is required for these VSOP87 examples. For more workflows
 | **Coordinate Systems**  | `Position` and spherical `Direction` types parameterised by `ReferenceCenter`, `ReferenceFrame`, and `Unit`. Compile‑time guarantees prevent mixing frames by accident.       |
 | **Target Tracking**     | `Target<T>` couples any coordinate with an observation epoch and optional `ProperMotion`, enabling extrapolation & filtering.                                                  |
 | **Physical Units**      | Strongly typed `Mass`, `Length`, `Angle`, `Velocity`, `Duration` & more via the [`qtty`](https://crates.io/crates/qtty) crate, dimensional correctness at compile time.       |
-| **Celestial Mechanics** | VSOP87 & ELP2000 theories, Pluto (Meeus/Williams), light‑time & aberration, nutation & precession, apparent Sun & Moon, culmination searches, SGP4/TLE propagation.         |
+| **Celestial Mechanics** | VSOP87 & ELP2000 theories, Pluto (Meeus/Williams), light‑time & aberration, nutation & precession, apparent Sun & Moon, culmination searches, full Vallado/AFSPC SGP4/SDP4 from TLE. |
+| **Planetary / lunar orientation** | Generic `body_orientation` over IAU body, ephemeris, geocentric/topocentric center, and equatorial sky frame; Mars/Saturn conveniences; lunar bright-limb position angle. |
 | **Ephemeris Backends**  | Pluggable `Ephemeris` / `DynEphemeris` traits: `Vsop87Ephemeris` (always available) and [`RuntimeEphemeris`](https://docs.rs/siderust/latest/siderust/ephemeris/struct.RuntimeEphemeris.html) for JPL DE4xx BSP files at runtime. |
 | **Altitude API**        | Unified `AltitudeProvider` trait for Sun, Moon, stars, and arbitrary ICRS directions; find crossings, culminations, `altitude_ranges`, `above_threshold`, and `below_threshold` periods.|
 | **Catalogs & Bodies**   | Built‑in Sun→Neptune, asteroids (Ceres, Bennu, Apophis), comets (Halley, Encke, Hale-Bopp), a starter star catalog, typed Gaia DR3 raw/domain ingestion, + helpers for custom datasets. |
@@ -159,7 +160,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-siderust = "0.14"
+siderust = "0.15"
 ```
 
 VSOP87/ELP2000 coefficients, nutation tables, and EOP data are provided by
@@ -177,7 +178,7 @@ JPL DE440/DE441 (and other NAIF BSP kernels) are provided at **runtime** via [`R
 
 ```toml
 [dependencies]
-siderust = { version = "0.14", features = ["runtime-data"] }
+siderust = { version = "0.15", features = ["runtime-data"] }
 ```
 
 ```rust
@@ -194,14 +195,14 @@ VSOP87-only (explicit):
 
 ```toml
 [dependencies]
-siderust = { version = "0.14", default-features = false }
+siderust = { version = "0.15", default-features = false }
 ```
 
 Combine with other features (for example `serde`):
 
 ```toml
 [dependencies]
-siderust = { version = "0.14", features = ["runtime-data", "serde"] }
+siderust = { version = "0.15", features = ["runtime-data", "serde"] }
 ```
 
 ### JPL datasets (runtime, not compile-time features)
@@ -407,9 +408,9 @@ The AGPL-3.0 ensures that:
 
 Big thanks to **Màrius Montón** ([@mariusmm](https://github.com/mariusmm)) for inviting me to his three-week Rust intro course at the Universitat Autònoma de Barcelona (UAB) in 2024 that nudge set this project in motion.
 
-### Time coordinates (0.13 migration)
+### Time coordinates
 
-Siderust uses `tempoch` 0.10.0. `siderust::time::JulianDate` defaults to TT;
+Siderust uses `tempoch` 0.11. `siderust::time::JulianDate` defaults to TT;
 use `tempoch::JulianDate<UTC>` for civil UTC coordinates. UTC JD/MJD require
 fallible conversion with a shared data snapshot:
 
@@ -429,9 +430,6 @@ TLE model offsets use 1,440 nominal minutes per civil day. Scalar Serde uses
 civil UTC coordinates and a fresh default context; use upstream tagged split
 representations for leap instants and explicit snapshots for reproducibility.
 
-Principia 0.6.0 shares tempoch 0.10 and affn 0.11 with Siderust. All dependencies
-resolve from crates.io without Git patches.
-
-Tempoch 0.9 provides the native `TimeContext::tai_minus_utc` API and
-split-coordinate UTC civil conversions. This preserves nanoseconds at leap
-boundaries and keeps UTC history and historical frequency offsets upstream.
+Public geometry and mechanics dependencies (`affn` 0.12, `principia` 0.7,
+`keplerian`, `optica`, and related crates) resolve from crates.io without Git
+patches.

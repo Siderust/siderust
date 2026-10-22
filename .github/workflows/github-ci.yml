@@ -52,6 +52,16 @@ jobs:
       - run: cargo check -p siderust --lib --target thumbv7em-none-eabihf --no-default-features --features atmosphere,serde
       - run: cargo test -p siderust --test observatory_catalog_no_default --no-default-features --features std
 
+  release-preflight:
+    name: Release preflight
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test -p siderust-release
+      - run: cargo build -p siderust-release
+      - run: target/debug/siderust-release validate
+
   fmt:
     name: Format
     runs-on: ubuntu-latest

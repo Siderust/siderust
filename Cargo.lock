@@ -1739,6 +1739,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "siderust-release"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "simd-adler32"
 version = "0.3.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"

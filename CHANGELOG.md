@@ -6,29 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
+## [0.15.0]
 
-- Reuse keplerian eccentricity validation in the SGP4 TLE adapter and retain only
-  the calendar epoch after model initialization, dropping the redundant full
-  NativeElements copy. Preserve UTC nominal-minute semantics, all gravity modes,
-  public typed states and unchanged numerical/FFI reference gates.
+### Breaking Changes
 
-- Consolidate elliptic/hyperbolic true-anomaly conversion in keplerian and
-  perifocal rotation in affn. PreparedOrbit caches affn rotation coefficients;
-  public orbital types, Serde formats, coordinate return types and FFI stay stable.
-- Clarify that TEME vector rotation does not transform coordinate velocities.
-- **Breaking:** upgrade the public affn dependency to 0.12 across the workspace,
-  retaining its features. Update Keplerian, Optica, Principia, and Tempoch for
-  compatible public geometry types.
-- Synchronize `siderust` and `siderust-ffi` at 0.15.0, including the internal
-  dependency requirement and reported C API version 1500.
-
-- Reuse Optica's Rayleigh phase kernel behind the existing atmospheric API.
-  Generic `TabulatedPhaseFunction` correction tables retain clamping behavior.
+- Upgrade the public `affn` dependency to 0.12 across the workspace, retaining
+  its features. Downstream crates that share public geometry types must use a
+  compatible `affn` version. Keplerian, Optica, Principia, and Tempoch are
+  updated for the same geometry stack.
 
 ### Added
 
-- Add a generic planetary physical-orientation API:
+- Generic planetary physical-orientation API:
   `body_orientation::<Body, E, C, F>(input)` over IAU body, `PlanetState`
   ephemeris, geocentric/topocentric center, and equatorial sky frame
   (`EquatorialTrueOfDate`, `EquatorialMeanJ2000`, `ICRS`). Convenience wrappers
@@ -38,47 +27,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   geometric positions share one backend; ring openings are frame-invariant;
   sky-plane bearings may be `None`. Validated against Meeus ch. 42/45.
 
-- Add explicit Tempoch `TimeContext` constructors for SGP4 propagators,
-  preserving typed QTTY mean-motion and propagation-offset conversions.
-
-- Full Vallado/AFSPC SGP4/SDP4 propagation for the pending **0.15.0** release,
-  replacing the secular J2 approximation with a native Rust numerical core
-  using the existing affn/qtty/tempoch stack, without a new dependency. Preserve
-  typed TLE, minutes, UTC epochs and geocentric TEME states, the `Sgp4Propagator` alias and FFI model codes. Include BSTAR drag,
-  periodic terms, lunar/solar perturbations and deep-space resonances.
-- Validate all 668 Vallado verification cases and 363 independent C++ reference
-  states at component errors below 1e-6 km / 1e-9 km/s. Explicitly select
-  WGS-72/AFSPC, WGS-72/IAU or WGS-84/IAU; the WGS-72/IAU path does not use
-  an implicit WGS-84 default. Retain `no_std + alloc` and embedded support.
-- Preserve nominal UTC-minute semantics across leap seconds and avoid large
-  Julian-date subtraction. Reject invalid elements, leap-second labels,
-  non-finite/out-of-range offsets and divergent states. Document scalar JD
+- Full Vallado/AFSPC SGP4/SDP4 propagation, replacing the secular J2
+  approximation with a native Rust numerical core on the existing
+  affn/qtty/tempoch stack (no new dependency). Preserves typed TLE, minutes,
+  UTC epochs and geocentric TEME states, the `Sgp4Propagator` alias, and FFI
+  model codes. Includes BSTAR drag, periodic terms, lunar/solar perturbations,
+  and deep-space resonances.
+- Validation against all 668 Vallado verification cases and 363 independent C++
+  reference states at component errors below 1e-6 km / 1e-9 km/s. Explicit
+  selection of WGS-72/AFSPC, WGS-72/IAU, or WGS-84/IAU (no implicit WGS-84
+  default on the WGS-72/IAU path). Retains `no_std + alloc` and embedded
+  support.
+- Nominal UTC-minute semantics across leap seconds without large Julian-date
+  subtraction. Rejects invalid elements, leap-second labels,
+  non-finite/out-of-range offsets, and divergent states. Documents scalar JD
   precision and the approximately ±292-year calendar-offset limit. Predictions
   intentionally differ from the former J2 approximation, including at epoch.
   See `src/astro/sgp4/README.md` for numerical conventions and API notes.
+- Explicit Tempoch `TimeContext` constructors for SGP4 propagators, preserving
+  typed QTTY mean-motion and propagation-offset conversions.
 
-- Add `moon_bright_limb_position_angle::<E, C>(input)` and the default-backend
+- `moon_bright_limb_position_angle::<E, C>(input)` and the default-backend
   `Moon::bright_limb_position_angle::<C>(input)`. `LunarObservationCenter`
   dispatches at compile time: `Geocentric` takes a TT Julian Date; `Topocentric`
   takes `(JulianDate, Geodetic<ECEF>)`. Both bodies use the selected ephemeris
-  and a shared observer/frame; affn computes the north-through-east bearing
-  and returns `None` for undefined orientations. Greatest defect is derived by
+  and a shared observer/frame; affn computes the north-through-east bearing and
+  returns `None` for undefined orientations. Greatest defect is derived by
   adding a typed half-turn without reevaluating the ephemeris.
 
-- Add `LayeredAtmosphere`, explicit constituent optics and exact partial vertical
-  optical-depth columns over Optica coefficients. Validate spectral/height domains,
-  aerosol SSA, mutated coefficient states and overflow. Profile mapping requires
-  declared layer fractions and preserves observer-local pressure semantics.
+- `LayeredAtmosphere`, explicit constituent optics, and exact partial vertical
+  optical-depth columns over Optica coefficients. Validates spectral/height
+  domains, aerosol SSA, mutated coefficient states, and overflow. Profile
+  mapping requires declared layer fractions and preserves observer-local
+  pressure semantics.
+- `atmosphere::NormalizedPhaseTable`, a typed adapter over Optica phase tables
+  with finite nonnegative data, positive wavelengths, full angular coverage,
+  analytic interpolant normalization checks, and strict fallible queries,
+  including analytic regressions and a 95% line coverage gate.
 
-- Add `atmosphere::NormalizedPhaseTable`, a typed adapter over Optica phase
-  tables with finite nonnegative data, positive wavelengths, full angular
-  coverage, analytic interpolant normalization checks, and strict fallible queries.
-- Add independent analytic phase regressions, numerical edge-case tests, and
-  a 95% line coverage gate for the normalized-table implementation.
+### Changed
+
+- Synchronize `siderust` and `siderust-ffi` at 0.15.0, including the internal
+  dependency requirement and reported C API version 1500.
+- Reuse keplerian eccentricity validation in the SGP4 TLE adapter and retain
+  only the calendar epoch after model initialization, dropping the redundant
+  full NativeElements copy. Preserve UTC nominal-minute semantics, all gravity
+  modes, public typed states, and unchanged numerical/FFI reference gates.
+- Consolidate elliptic/hyperbolic true-anomaly conversion in keplerian and
+  perifocal rotation in affn. `PreparedOrbit` caches affn rotation
+  coefficients; public orbital types, Serde formats, coordinate return types,
+  and FFI stay stable.
+- Clarify that TEME vector rotation does not transform coordinate velocities.
+- Reuse Optica's Rayleigh phase kernel behind the existing atmospheric API.
+  Generic `TabulatedPhaseFunction` correction tables retain clamping behavior.
 
 ### Fixed
 
-- Import QTTY's `Real` trait in the existing Mie/extinction no-std paths, so
+- Import QTTY's `Real` trait in the existing Mie/extinction no-std paths so
   `atmosphere` builds without `std`; add host/embedded feature checks.
 
 ## [0.14.1] - 2026-10-14
