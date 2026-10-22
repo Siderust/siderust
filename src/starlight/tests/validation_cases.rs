@@ -103,7 +103,9 @@ fn flux_conservation_rejects_nonfinite_inputs_and_invalid_tolerances() {
     for invalid in [-1.0, f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
         assert!(matches!(
             validate_flux_conservation(0.0, 0.0, &map, invalid),
-            Err(StellarMapError::Validation("tolerance must be finite and non-negative"))
+            Err(StellarMapError::Validation(
+                "tolerance must be finite and non-negative"
+            ))
         ));
     }
 
@@ -122,7 +124,9 @@ fn plane_pole_contrast_accepts_uniform_map_at_unity_and_rejects_higher_threshold
     validate_plane_pole_contrast(&map, 1.0).expect("uniform ratio is one");
     assert!(matches!(
         validate_plane_pole_contrast(&map, 1.1),
-        Err(StellarMapError::Validation("Galactic plane/pole contrast is too low"))
+        Err(StellarMapError::Validation(
+            "Galactic plane/pole contrast is too low"
+        ))
     ));
 }
 
@@ -136,14 +140,18 @@ fn plane_pole_contrast_handles_zero_pole_and_zero_plane_flux() {
     validate_plane_pole_contrast(&all_zero, 1.0).expect("zero over zero is unity");
     assert!(matches!(
         validate_plane_pole_contrast(&all_zero, 2.0),
-        Err(StellarMapError::Validation("Galactic plane/pole contrast is too low"))
+        Err(StellarMapError::Validation(
+            "Galactic plane/pole contrast is too low"
+        ))
     ));
 
     let pole_only = map_with_v(8, |_, lat| if lat.abs() >= 60.0 { 2.0 } else { 0.0 });
     validate_plane_pole_contrast(&pole_only, 0.0).expect("zero contrast meets zero threshold");
     assert!(matches!(
         validate_plane_pole_contrast(&pole_only, 0.1),
-        Err(StellarMapError::Validation("Galactic plane/pole contrast is too low"))
+        Err(StellarMapError::Validation(
+            "Galactic plane/pole contrast is too low"
+        ))
     ));
 }
 
@@ -159,7 +167,9 @@ fn plane_pole_contrast_handles_empty_regions_and_invalid_thresholds() {
     for invalid in [-1.0, f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
         assert!(matches!(
             validate_plane_pole_contrast(&valid_map, invalid),
-            Err(StellarMapError::Validation("min_ratio must be finite and non-negative"))
+            Err(StellarMapError::Validation(
+                "min_ratio must be finite and non-negative"
+            ))
         ));
     }
 }
@@ -185,10 +195,11 @@ fn longitude_seam_detects_asymmetric_brightness_near_zero_and_360() {
     });
     assert!(matches!(
         validate_no_longitude_wrap_artifact(&map, 0.8),
-        Err(StellarMapError::Validation("longitude wrap jump exceeds tolerance"))
+        Err(StellarMapError::Validation(
+            "longitude wrap jump exceeds tolerance"
+        ))
     ));
-    validate_no_longitude_wrap_artifact(&map, 0.9)
-        .expect("jump remains below relaxed threshold");
+    validate_no_longitude_wrap_artifact(&map, 0.9).expect("jump remains below relaxed threshold");
 }
 
 #[test]
@@ -202,7 +213,9 @@ fn longitude_seam_relative_jump_uses_unit_floor_for_dim_values() {
     });
     assert!(matches!(
         validate_no_longitude_wrap_artifact(&map, 0.15),
-        Err(StellarMapError::Validation("longitude wrap jump exceeds tolerance"))
+        Err(StellarMapError::Validation(
+            "longitude wrap jump exceeds tolerance"
+        ))
     ));
     validate_no_longitude_wrap_artifact(&map, 0.25).expect("jump is 0.2 against floor 1");
 }
@@ -212,14 +225,18 @@ fn longitude_seam_rejects_missing_strips_and_invalid_thresholds() {
     let coarse_map = map_with_v(1, |_, _| 1.0);
     assert!(matches!(
         validate_no_longitude_wrap_artifact(&coarse_map, 1.0),
-        Err(StellarMapError::Validation("longitude wrap regions are empty"))
+        Err(StellarMapError::Validation(
+            "longitude wrap regions are empty"
+        ))
     ));
 
     let valid_map = map_with_v(8, |_, _| 1.0);
     for invalid in [-1.0, f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
         assert!(matches!(
             validate_no_longitude_wrap_artifact(&valid_map, invalid),
-            Err(StellarMapError::Validation("max_relative_jump must be finite and non-negative"))
+            Err(StellarMapError::Validation(
+                "max_relative_jump must be finite and non-negative"
+            ))
         ));
     }
 }
@@ -237,10 +254,14 @@ fn spatial_validators_propagate_unsupported_healpix_ordering() {
 
     assert!(matches!(
         validate_plane_pole_contrast(&map, 1.0),
-        Err(StellarMapError::Healpix(HealpixError::UnsupportedOrdering(HealpixOrdering::Nested)))
+        Err(StellarMapError::Healpix(HealpixError::UnsupportedOrdering(
+            HealpixOrdering::Nested
+        )))
     ));
     assert!(matches!(
         validate_no_longitude_wrap_artifact(&map, 1.0),
-        Err(StellarMapError::Healpix(HealpixError::UnsupportedOrdering(HealpixOrdering::Nested)))
+        Err(StellarMapError::Healpix(HealpixError::UnsupportedOrdering(
+            HealpixOrdering::Nested
+        )))
     ));
 }
