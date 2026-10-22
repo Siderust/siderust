@@ -158,12 +158,12 @@ fn b_only_source_is_usable_without_a_v_filter_but_not_with_one() {
         .expect("B-only photometry");
     let area = map.grid().pixel_area_deg2();
     assert_close(map.values().iter().map(|p| p.b_s10 * area).sum(), 1.0);
-    assert!(map.values().iter().all(|p| p.v_s10 == 0.0 && p.integrated_ph_cm2_ns_sr == 0.0));
+    assert!(map
+        .values()
+        .iter()
+        .all(|p| p.v_s10 == 0.0 && p.integrated_ph_cm2_ns_sr == 0.0));
 
-    for (min, max) in [
-        (Some(magnitude(0.0)), None),
-        (None, Some(magnitude(20.0))),
-    ] {
+    for (min, max) in [(Some(magnitude(0.0)), None), (None, Some(magnitude(20.0)))] {
         let mut settings = builder();
         settings.min_v_mag = min;
         settings.max_v_mag = max;
@@ -225,7 +225,10 @@ fn zero_radiance_calibration_keeps_s10_values() {
         .build(vec![record(0.0, 0.0, 10.0)], provenance())
         .expect("zero calibration");
     assert!(map.values().iter().any(|p| p.v_s10 > 0.0));
-    assert!(map.values().iter().all(|p| p.integrated_ph_cm2_ns_sr == 0.0));
+    assert!(map
+        .values()
+        .iter()
+        .all(|p| p.integrated_ph_cm2_ns_sr == 0.0));
 }
 
 #[test]
@@ -252,7 +255,9 @@ fn nested_ordering_is_reported_as_unsupported_by_binning() {
         .expect("nested grid");
     assert!(matches!(
         settings.build(vec![record(0.0, 0.0, 10.0)], provenance()),
-        Err(StellarMapError::Healpix(HealpixError::UnsupportedOrdering(HealpixOrdering::Nested)))
+        Err(StellarMapError::Healpix(HealpixError::UnsupportedOrdering(
+            HealpixOrdering::Nested
+        )))
     ));
 }
 
