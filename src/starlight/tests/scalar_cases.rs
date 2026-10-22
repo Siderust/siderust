@@ -51,20 +51,16 @@ fn brightness_validation_checks_every_component() {
     assert!(valid.is_valid());
 
     for invalid in [-1.0, f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
-        assert!(!StellarSurfaceBrightness {
-            integrated_ph_cm2_ns_sr: invalid,
-            ..valid
-        }
-        .is_valid());
-        assert!(!StellarSurfaceBrightness {
-            b_s10: invalid,
-            ..valid
-        }
-        .is_valid());
-        assert!(!StellarSurfaceBrightness {
-            v_s10: invalid,
-            ..valid
-        }
-        .is_valid());
+        let mut pixel = valid;
+        pixel.integrated_ph_cm2_ns_sr = invalid;
+        assert!(!pixel.is_valid());
+
+        pixel = valid;
+        pixel.b_s10 = invalid;
+        assert!(!pixel.is_valid());
+
+        pixel = valid;
+        pixel.v_s10 = invalid;
+        assert!(!pixel.is_valid());
     }
 }
