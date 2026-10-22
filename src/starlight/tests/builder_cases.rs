@@ -5,6 +5,7 @@ use super::*;
 use crate::healpix::{HealpixError, HealpixMap};
 use alloc::format;
 use alloc::vec;
+use alloc::vec::Vec;
 
 fn magnitude(value: f64) -> ApparentMagnitude {
     ApparentMagnitude::new(value).expect("finite magnitude")
