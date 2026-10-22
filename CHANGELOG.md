@@ -28,6 +28,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add geocentric Mars and Saturn physical orientation:
+  `mars_orientation::<E>(jd)`, `saturn_ring_orientation::<E>(jd)`, and
+  default-backend `Mars::orientation` / `Saturn::ring_orientation`. Mars returns
+  north-pole and bright-limb position angles; Saturn returns north-pole/ring-axis
+  position angle plus signed Earth and Sun ring opening angles. Angles use IAU
+  rotational poles, VSOP87 (or any `PlanetaryEphemeris`) positions with light-time,
+  and true-of-date celestial north through east; sky-plane bearings may be `None`.
+  Documented Meeus ch. 42/45 validation and omitted apparent corrections.
+
 - Add explicit Tempoch `TimeContext` constructors for SGP4 propagators,
   preserving typed QTTY mean-motion and propagation-offset conversions.
 
