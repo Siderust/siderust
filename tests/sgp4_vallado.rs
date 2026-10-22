@@ -250,15 +250,21 @@ fn metadata_does_not_change_propagation_and_requests_are_order_independent() {
 fn extreme_finite_elements_cannot_return_non_finite_states() {
     let mut tle = parse_tle(L1, L2).unwrap();
     tle.bstar = f64::MAX;
+    assert!(matches!(
+        Sgp4Propagator::from_tle(&tle),
+        Err(Sgp4Error::InvalidElements { .. })
+    ));
+    tle.bstar = 1e5;
     let prop = Sgp4Propagator::from_tle(&tle).unwrap();
     assert!(matches!(
-        prop.propagate_minutes(Minutes::new(1.0)),
+        prop.propagate_minutes(Minutes::new(10_000.0)),
         Err(Sgp4Error::Propagation { .. })
     ));
 
     // Circular low-perigee orbit: the eccentricity drag vanishes, but the
     // deliberately extreme finite BSTAR overflows the radius calculation.
     // This must reach the Cartesian-output guard rather than return NaNs.
+    tle.bstar = f64::MAX;
     tle.eccentricity = 0.0;
     tle.inclination = Degrees::new(54.735610317245346);
     tle.mean_motion = qtty::Quantity::new(16.5);

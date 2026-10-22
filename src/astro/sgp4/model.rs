@@ -223,6 +223,23 @@ impl Constants {
                     * (3.0 * d4 + 12.0 * c1 * d3 + 6.0 * d2 * d2 + 15.0 * c1sq * (2.0 * d2 + c1sq)),
             })
         };
+        if let Some(high_drag) = &high_drag {
+            invalid_if_non_finite(
+                &[
+                    high_drag.omgcof,
+                    high_drag.xmcof,
+                    high_drag.delmo,
+                    high_drag.sinmao,
+                    high_drag.d2,
+                    high_drag.d3,
+                    high_drag.d4,
+                    high_drag.t3,
+                    high_drag.t4,
+                    high_drag.t5,
+                ],
+                "non-finite high-drag coefficients",
+            )?;
+        }
         let afspc = model == GravityModel::Wgs72;
         let (epoch, gsto) = super::time::model_epoch(elements.datetime, afspc);
         let mut constants = Self {
