@@ -4,7 +4,7 @@
 //! End-to-end smoke test for the typed TLE → SGP4 → TEME pipeline.
 //!
 //! This is the canonical "the typed boundary holds" check for
-//! `siderust-pod`. It exercises:
+//! Siderust. It exercises:
 //!
 //! 1. [`parse_tle`] consuming a published Vallado SGP4 Verification TLE.
 //! 2. [`TlePropagator::from_tle_with_model`] adapting the TLE to the
@@ -25,7 +25,7 @@ use qtty::time::Day;
 use qtty::Quantity;
 use siderust::astro::sgp4::{GravityModel, TlePropagator};
 use siderust::formats::tle::parse_tle;
-use tempoch::JulianDate;
+use tempoch::{JulianDate, TimeContext};
 
 // Vallado SGP4 Verification TLE, NORAD catalog 5.
 const L1: &str = "1 00005U 58002B   00179.78495062  .00000023  00000-0  28098-4 0  4753";
@@ -96,4 +96,25 @@ fn tle_sgp4_pipeline_propagates_forward_in_time() {
         moved_km > 50.0,
         "spacecraft barely moved ({moved_km} km) in one minute; pipeline likely stuck at epoch"
     );
+}
+
+#[test]
+fn explicit_time_context_preserves_typed_sgp4_results() {
+    let tle = parse_tle(L1, L2).unwrap();
+    let default = TlePropagator::from_tle_with_model(&tle, GravityModel::Wgs84).unwrap();
+    let explicit = TlePropagator::from_tle_with_model_and_context(
+        &tle,
+        GravityModel::Wgs84,
+        TimeContext::new(),
+    )
+    .unwrap();
+    let offset = siderust::qtty::Minutes::new(60.25);
+    let baseline = default.propagate_minutes(offset).unwrap();
+    let state = explicit.propagate_minutes(offset).unwrap();
+    assert_eq!(state.position(), baseline.position());
+    assert_eq!(state.velocity(), baseline.velocity());
+    assert_eq!(state.epoch(), baseline.epoch());
+    assert_eq!(explicit.gravity_model(), GravityModel::Wgs84);
+    let default_model = TlePropagator::from_tle_with_context(&tle, TimeContext::new()).unwrap();
+    assert_eq!(default_model.gravity_model(), GravityModel::Wgs72);
 }

@@ -10,16 +10,16 @@
 //! The state lives in the **TEME** (True Equator, Mean Equinox) frame defined
 //! by `affn::frames::TEME`, geocentric, with positions in
 //! [`qtty::length::Kilometer`] and velocities in [`KilometerPerSecond`].
-//! Downstream conversion to ITRF / GCRF / ECEF is provided by
-//! `siderust::coordinates::transform::providers::frames_teme` once Earth
-//! Orientation Parameters are supplied.
+//! The frame providers rotate positions and independent vectors. They do not
+//! implement a full coordinate-velocity conversion to ITRF / GCRF / ECEF:
+//! time-dependent frames require `Rdot r` in addition to `R v`; moving origins
+//! additionally require origin-velocity terms. Earth orientation data alone does
+//! not turn an instantaneous vector rotation into a complete state conversion.
 
 use crate::coordinates::cartesian::{position, velocity};
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar};
 use qtty::length::Kilometer;
-use qtty::time::Second;
-use qtty::Per;
 use tempoch::{JulianDate, UTC};
 
 /// Velocity unit alias used by the SGP4 propagator: kilometres per second.
@@ -36,7 +36,7 @@ use tempoch::{JulianDate, UTC};
 /// let v: Quantity<KilometerPerSecond> = Quantity::new(7.5);
 /// assert!((v.value() - 7.5).abs() < 1e-12);
 /// ```
-pub type KilometerPerSecond = Per<Kilometer, Second>;
+pub type KilometerPerSecond = qtty::KmPerSecond;
 
 /// Geocentric **TEME** Cartesian position with kilometre units.
 ///
@@ -50,8 +50,9 @@ pub type TemeVelocityKmPerSec = velocity::TEME<KilometerPerSecond>;
 /// SGP4 prediction at a single epoch in the **TEME** frame.
 ///
 /// Construction is performed by the propagator; this struct only exposes
-/// typed accessors. The fields are public-but-stable — adding new components
-/// (e.g. covariance) would be a breaking change requiring a new type.
+/// typed accessors. The private storage preserves the UTC epoch separately from
+/// its astronomical position/velocity wrappers; it is not a continuous-scale
+/// principia dynamics state.
 ///
 /// # Examples
 ///

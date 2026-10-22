@@ -13,7 +13,7 @@ use thiserror::Error;
 /// * **Initialisation** ([`InvalidElements`](Sgp4Error::InvalidElements),
 ///   [`InvalidEpoch`](Sgp4Error::InvalidEpoch)) — the TLE record is structurally
 ///   well-formed but its mean elements cannot be validated (e.g. eccentricity
-///   outside `[0, 1)`, sub-orbital mean motion, malformed UTC epoch).
+///   outside `[0, 1)`, non-positive mean motion, malformed UTC epoch).
 /// * **Propagation** ([`Propagation`](Sgp4Error::Propagation)) — propagation
 ///   diverged at the requested epoch (typical for very large `|Δt|` on
 ///   decayed objects or degenerate element sets).

@@ -47,7 +47,7 @@ use crate::error::SiderustStatus;
 /// |-------|---------|
 /// | 0 | WGS-72 with AFSPC sidereal-time convention (default) |
 /// | 1 | WGS-72 with IAU sidereal-time formula |
-/// | 2 | WGS-84 with IAU sidereal-time formula |
+/// | 2 | WGS-84 geopotential with IAU sidereal-time formula (explicit alternative) |
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SiderustGravityModel {
@@ -55,7 +55,7 @@ pub enum SiderustGravityModel {
     Wgs72 = 0,
     /// WGS-72 / IAU sidereal time.
     Wgs72Iau = 1,
-    /// WGS-84 / IAU sidereal time — modern default for new pipelines.
+    /// WGS-84 / IAU sidereal time — explicit alternative; not the default.
     Wgs84 = 2,
 }
 
@@ -65,6 +65,26 @@ impl From<SiderustGravityModel> for GravityModel {
             SiderustGravityModel::Wgs72 => GravityModel::Wgs72,
             SiderustGravityModel::Wgs72Iau => GravityModel::Wgs72Iau,
             SiderustGravityModel::Wgs84 => GravityModel::Wgs84,
+        }
+    }
+}
+
+impl From<i32> for SiderustGravityModel {
+    fn from(code: i32) -> Self {
+        match code {
+            1 => Self::Wgs72Iau,
+            2 => Self::Wgs84,
+            _ => Self::Wgs72,
+        }
+    }
+}
+
+impl From<GravityModel> for SiderustGravityModel {
+    fn from(model: GravityModel) -> Self {
+        match model {
+            GravityModel::Wgs72 => Self::Wgs72,
+            GravityModel::Wgs72Iau => Self::Wgs72Iau,
+            GravityModel::Wgs84 => Self::Wgs84,
         }
     }
 }
@@ -172,7 +192,9 @@ pub struct SiderustSgp4 {
 /// # Parameters
 ///
 /// * `tle`           — TLE handle (not consumed; caller still owns it).
-/// * `gravity_model` — 0 = WGS-72 (default), 1 = WGS-72/IAU, 2 = WGS-84.
+/// * `gravity_model` — 0 = WGS-72/AFSPC (actual default), 1 = WGS-72/IAU,
+///   2 = WGS-84/IAU (explicit alternative).
+///   Other values retain the WGS-72 default.
 /// * `out`           — receives a `*mut SiderustSgp4` on success.
 ///
 /// # Returns
@@ -192,11 +214,7 @@ pub extern "C" fn siderust_sgp4_new(
             return SiderustStatus::NullPointer;
         }
         let tle = unsafe { &*tle };
-        let model = match gravity_model {
-            1 => GravityModel::Wgs72Iau,
-            2 => GravityModel::Wgs84,
-            _ => GravityModel::Wgs72,
-        };
+        let model = SiderustGravityModel::from(gravity_model).into();
         match Sgp4Propagator::from_tle_with_model(&tle.inner, model) {
             Ok(prop) => {
                 let boxed = Box::new(SiderustSgp4 { inner: prop });
@@ -222,11 +240,7 @@ pub extern "C" fn siderust_sgp4_gravity_model(
             return SiderustStatus::NullPointer;
         }
         let sgp4 = unsafe { &*sgp4 };
-        let code = match sgp4.inner.gravity_model() {
-            GravityModel::Wgs72 => 0,
-            GravityModel::Wgs72Iau => 1,
-            GravityModel::Wgs84 => 2,
-        };
+        let code = SiderustGravityModel::from(sgp4.inner.gravity_model()) as i32;
         unsafe { *out_model = code };
         SiderustStatus::Ok
     })

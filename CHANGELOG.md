@@ -8,16 +8,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Reuse keplerian eccentricity validation in the SGP4 TLE adapter and retain only
+  the calendar epoch after model initialization, dropping the redundant full
+  NativeElements copy. Preserve UTC nominal-minute semantics, all gravity modes,
+  public typed states and unchanged numerical/FFI reference gates.
+
 - Consolidate elliptic/hyperbolic true-anomaly conversion in keplerian and
   perifocal rotation in affn. PreparedOrbit caches affn rotation coefficients;
   public orbital types, Serde formats, coordinate return types and FFI stay stable.
-- Use affn 0.12.1, keplerian 0.5.1 and tempoch 0.11.1 for the planned 0.15.0
-  release, resolved directly from crates.io without temporary Cargo patches
-  or dependency checkouts in CI.
 - Clarify that TEME vector rotation does not transform coordinate velocities.
+- **Breaking:** upgrade the public affn dependency to 0.12 across the workspace,
+  retaining its features. Update Keplerian, Optica, Principia, and Tempoch for
+  compatible public geometry types.
+- Synchronize `siderust` and `siderust-ffi` at 0.15.0, including the internal
+  dependency requirement and reported C API version 1500.
 
+- Reuse Optica's Rayleigh phase kernel behind the existing atmospheric API.
+  Generic `TabulatedPhaseFunction` correction tables retain clamping behavior.
 
 ### Added
+
+- Add explicit Tempoch `TimeContext` constructors for SGP4 propagators,
+  preserving typed QTTY mean-motion and propagation-offset conversions.
+
+- Full Vallado/AFSPC SGP4/SDP4 propagation for the pending **0.15.0** release,
+  replacing the secular J2 approximation with a native Rust numerical core
+  using the existing affn/qtty/tempoch stack, without a new dependency. Preserve
+  typed TLE, minutes, UTC epochs and geocentric TEME states, the `Sgp4Propagator` alias and FFI model codes. Include BSTAR drag,
+  periodic terms, lunar/solar perturbations and deep-space resonances.
+- Validate all 668 Vallado verification cases and 363 independent C++ reference
+  states at component errors below 1e-6 km / 1e-9 km/s. Explicitly select
+  WGS-72/AFSPC, WGS-72/IAU or WGS-84/IAU; the WGS-72/IAU path does not use
+  an implicit WGS-84 default. Retain `no_std + alloc` and embedded support.
+- Preserve nominal UTC-minute semantics across leap seconds and avoid large
+  Julian-date subtraction. Reject invalid elements, leap-second labels,
+  non-finite/out-of-range offsets and divergent states. Document scalar JD
+  precision and the approximately ±292-year calendar-offset limit. Predictions
+  intentionally differ from the former J2 approximation, including at epoch.
+  See `src/astro/sgp4/README.md` for numerical conventions and API notes.
 
 - Add `moon_bright_limb_position_angle::<E, C>(input)` and the default-backend
   `Moon::bright_limb_position_angle::<C>(input)`. `LunarObservationCenter`
@@ -37,18 +65,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   coverage, analytic interpolant normalization checks, and strict fallible queries.
 - Add independent analytic phase regressions, numerical edge-case tests, and
   a 95% line coverage gate for the normalized-table implementation.
-
-### Changed
-
-- **Breaking:** upgrade the public affn dependency to 0.12 across the workspace,
-  retaining its features. Update Keplerian, Optica, Principia, and Tempoch for
-  compatible public geometry types; temporarily patch their migration revisions
-  until the corresponding releases are published.
-- Synchronize `siderust` and `siderust-ffi` at 0.15.0, including the internal
-  dependency requirement and reported C API version 1500.
-
-- Reuse Optica's Rayleigh phase kernel behind the existing atmospheric API.
-  Generic `TabulatedPhaseFunction` correction tables retain clamping behavior.
 
 ### Fixed
 

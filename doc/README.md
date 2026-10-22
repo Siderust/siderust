@@ -18,4 +18,5 @@ If you are looking for benchmarking/profiling write-ups, see `benches/reports/RE
 - `README.md`: user-facing overview and installation.
 - `examples/README.md`: runnable tour of features.
 - `src/coordinates/README.md`: coordinate architecture and invariants (module-level).
+- `src/astro/sgp4/README.md`: SGP4/SDP4 numerical and public API reference (module-level).
 - `benches/README.md`: benchmark entrypoints and how to run them.
