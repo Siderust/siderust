@@ -228,6 +228,15 @@ pub use event::lunar::photometry::{
 pub use event::lunar::position_angle::{moon_bright_limb_position_angle, LunarObservationCenter};
 
 // ---------------------------------------------------------------------------
+// Convenience re‑exports: planetary physical orientation
+// ---------------------------------------------------------------------------
+pub use event::planetary::{
+    body_orientation, mars_orientation, saturn_ring_orientation, saturn_rings, BodyOrientation,
+    MarsOrientation, ObservationGeometry, PlanetaryObservationCenter, SaturnRingOrientation,
+    SkyOrientationFrame, ORIENTATION_CORRECTIONS,
+};
+
+// ---------------------------------------------------------------------------
 // Convenience re‑exports: target abstractions
 // ---------------------------------------------------------------------------
 pub use targets::{CoordinateWithPM, Trackable};

@@ -8,13 +8,14 @@
 //! and period-finding for astronomical observation planning.
 //!
 //! ## Technical scope
-//! Entry points: [`altitude`], [`azimuth`], [`solar`], [`lunar`], [`stellar`].
-//! Internal coordinate support in [`horizontal`].
+//! Entry points: [`altitude`], [`azimuth`], [`solar`], [`lunar`], [`planetary`],
+//! [`stellar`]. Internal coordinate support in [`horizontal`].
 
 pub mod altitude;
 pub mod azimuth;
 pub mod horizontal;
 pub mod lunar;
+pub mod planetary;
 pub mod solar;
 pub mod stellar;
 

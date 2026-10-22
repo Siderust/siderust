@@ -28,6 +28,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add a generic planetary physical-orientation API:
+  `body_orientation::<Body, E, C, F>(input)` over IAU body, `PlanetState`
+  ephemeris, geocentric/topocentric center, and equatorial sky frame
+  (`EquatorialTrueOfDate`, `EquatorialMeanJ2000`, `ICRS`). Convenience wrappers
+  `mars_orientation` / `Mars::orientation` and `saturn_ring_orientation` /
+  `Saturn::ring_orientation` keep geocentric true-of-date defaults; Saturn rings
+  reuse shared `ObservationGeometry` via `saturn_rings`. IAU poles are ICRS at
+  the light-time emission epoch; observer–planet range drives light-time
+  (including topocentric sites). Policy is `ORIENTATION_CORRECTIONS` =
+  light-time only (no aberration/deflection). Ring openings are
+  `Option<Radians>` (`ring_opening_observer`, `ring_opening_sun`); sky-plane
+  bearings may be `None`. Validated against Meeus ch. 42/45.
+
 - Add explicit Tempoch `TimeContext` constructors for SGP4 propagators,
   preserving typed QTTY mean-motion and propagation-offset conversions.
 

@@ -6,8 +6,10 @@
 //! This is the default (always-available) backend. It delegates to the
 //! existing `Planet::vsop87*` inherent methods and `Moon::get_geo_position`.
 
-use super::{AuPerDay, Ephemeris};
-use crate::bodies::solar_system::{Earth, Moon, Sun};
+use super::{AuPerDay, Ephemeris, PlanetState};
+use crate::bodies::solar_system::{
+    Earth, Jupiter, Mars, Mercury, Moon, Neptune, Saturn, Sun, Uranus, Venus,
+};
 use crate::coordinates::{
     cartesian::{Position, Velocity},
     centers::{Barycentric, Geocentric, Heliocentric},
@@ -57,3 +59,20 @@ impl Ephemeris for Vsop87Ephemeris {
         Moon::get_geo_position(jd)
     }
 }
+
+macro_rules! impl_vsop87_planet_state {
+    ($($body:ident),+ $(,)?) => {
+        $(
+            impl PlanetState<$body> for Vsop87Ephemeris {
+                #[inline]
+                fn heliocentric(
+                    jd: JulianDate,
+                ) -> Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit> {
+                    $body::vsop87a(jd)
+                }
+            }
+        )+
+    };
+}
+
+impl_vsop87_planet_state!(Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune);
