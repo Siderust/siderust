@@ -205,3 +205,26 @@ jobs:
           name: coverage-html
           path: coverage_html
           retention-days: 7
+
+      - name: Starlight production coverage (≥90% lines)
+        run: |
+          python3 - <<'PYCODE'
+          import json
+
+          with open("phase-coverage.json") as report:
+              files = json.load(report)["data"][0]["files"]
+
+          production = [
+              entry for entry in files
+              if "/src/starlight/" in entry["filename"].replace("\\", "/")
+              and "/src/starlight/tests/" not in entry["filename"].replace("\\", "/")
+              and not entry["filename"].replace("\\", "/").endswith("/src/starlight/tests.rs")
+          ]
+          assert production, "No starlight production files found in coverage report"
+          covered = sum(entry["summary"]["lines"]["covered"] for entry in production)
+          total = sum(entry["summary"]["lines"]["count"] for entry in production)
+          assert total, "No instrumented starlight production lines found"
+          percent = 100 * covered / total
+          print(f"Starlight production line coverage: {covered}/{total} ({percent:.2f}%)")
+          assert percent >= 90, f"starlight line coverage {percent:.2f}% is below 90%"
+          PYCODE
