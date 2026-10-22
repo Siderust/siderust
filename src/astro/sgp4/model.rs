@@ -94,6 +94,15 @@ pub(super) fn propagation_error(details: &str) -> Sgp4Error {
     }
 }
 
+fn invalid_if_non_finite(values: &[f64], details: &'static str) -> Result<(), Sgp4Error> {
+    if values.iter().any(|value| !value.is_finite()) {
+        return Err(Sgp4Error::InvalidElements {
+            details: details.into(),
+        });
+    }
+    Ok(())
+}
+
 impl Constants {
     /// Un-Kozai mean motion, initialize secular zonal and atmospheric terms,
     /// then select the 225-minute near-Earth/deep-space boundary.
@@ -115,9 +124,14 @@ impl Constants {
                 details: "invalid un-Kozai mean motion".into(),
             });
         }
+        invalid_if_non_finite(
+            &[beta2, beta, ak, d1, delta, adel, orbit.n],
+            "non-finite un-Kozai constants",
+        )?;
         let a = (geop.xke / orbit.n).powf(2.0 / 3.0);
         let p = a * beta2;
         let perigee = (a * (1.0 - orbit.e) - 1.0) * geop.radius.value();
+        invalid_if_non_finite(&[a, p, perigee], "non-finite orbital constants")?;
         let deep_orbit = TAU / orbit.n >= 225.0;
         let simplified = perigee < 220.0 || deep_orbit;
         // Atmospheric density parameters change for very low perigees.
@@ -176,6 +190,13 @@ impl Constants {
         let nodedot =
             -k1 * ci + (0.5 * k2 * (4.0 - 19.0 * ci2) + 2.0 * k3 * (3.0 - 7.0 * ci2)) * ci;
         let nodecf = 3.5 * beta2 * (-k1 * ci) * c1;
+        invalid_if_non_finite(
+            &[
+                s, q, inv_p2, tsi, eta, eta2, eeta, psi2, coef, coef1, c2, c1, c3, c4, c5, ci4, k1,
+                k2, k3, mdot, argpdot, nodedot, nodecf,
+            ],
+            "non-finite SGP4 coefficients",
+        )?;
         let high_drag = if simplified {
             None
         } else {

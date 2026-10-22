@@ -47,7 +47,7 @@ use crate::error::SiderustStatus;
 /// |-------|---------|
 /// | 0 | WGS-72 with AFSPC sidereal-time convention (default) |
 /// | 1 | WGS-72 with IAU sidereal-time formula |
-/// | 2 | WGS-84 with IAU sidereal-time formula |
+/// | 2 | WGS-84 geopotential with IAU sidereal-time formula (explicit alternative) |
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SiderustGravityModel {
@@ -55,7 +55,7 @@ pub enum SiderustGravityModel {
     Wgs72 = 0,
     /// WGS-72 / IAU sidereal time.
     Wgs72Iau = 1,
-    /// WGS-84 / IAU sidereal time — modern default for new pipelines.
+    /// WGS-84 / IAU sidereal time — explicit alternative; not the default.
     Wgs84 = 2,
 }
 
@@ -192,7 +192,8 @@ pub struct SiderustSgp4 {
 /// # Parameters
 ///
 /// * `tle`           — TLE handle (not consumed; caller still owns it).
-/// * `gravity_model` — 0 = WGS-72 (default), 1 = WGS-72/IAU, 2 = WGS-84.
+/// * `gravity_model` — 0 = WGS-72/AFSPC (actual default), 1 = WGS-72/IAU,
+///   2 = WGS-84/IAU (explicit alternative).
 ///   Other values retain the WGS-72 default.
 /// * `out`           — receives a `*mut SiderustSgp4` on success.
 ///

@@ -26,8 +26,9 @@ use super::Sgp4Error;
 /// Earth gravity / sidereal-time model selector for the TLE mean-element propagator.
 ///
 /// The three variants select the geopotential constants and the sidereal-time
-/// convention used by the full SGP4/SDP4 model. WGS-72/AFSPC matches
-/// Vallado verification vectors; IAU and WGS-84 results can differ.
+/// convention used by the full SGP4/SDP4 model. WGS-72/AFSPC is the actual
+/// default and matches Vallado verification vectors; WGS-72/IAU and WGS-84/IAU
+/// are explicit alternatives and can produce different results.
 ///
 /// # Examples
 ///
@@ -44,8 +45,8 @@ pub enum GravityModel {
     /// WGS-72 geopotential with the IAU sidereal-time formula. Use when
     /// you want the WGS-72 mean elements but the IAU time convention.
     Wgs72Iau,
-    /// WGS-84 geopotential with the IAU sidereal-time formula. Modern
-    /// default for new pipelines that don't need AFSPC bit-exactness.
+    /// WGS-84 geopotential with the IAU sidereal-time formula. Explicit
+    /// alternative; this is not the default.
     Wgs84,
 }
 

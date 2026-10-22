@@ -87,7 +87,14 @@ fn rejects_invalid_mutated_elements() {
         tle.eccentricity = e;
         invalid.push(tle);
     }
-    for n in [-1.0, 0.0, f64::NAN, f64::INFINITY, f64::MAX] {
+    for n in [
+        -1.0,
+        0.0,
+        f64::NAN,
+        f64::INFINITY,
+        f64::MAX,
+        f64::MIN_POSITIVE,
+    ] {
         let mut tle = valid.clone();
         tle.mean_motion = qtty::Quantity::new(n);
         invalid.push(tle);
