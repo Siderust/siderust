@@ -232,7 +232,8 @@ pub use event::lunar::position_angle::{moon_bright_limb_position_angle, LunarObs
 // ---------------------------------------------------------------------------
 pub use event::planetary::{
     body_orientation, mars_orientation, saturn_ring_orientation, saturn_rings, BodyOrientation,
-    MarsOrientation, PlanetaryObservationCenter, SaturnRingOrientation, SkyOrientationFrame,
+    MarsOrientation, ObservationGeometry, PlanetaryObservationCenter, SaturnRingOrientation,
+    SkyOrientationFrame, ORIENTATION_CORRECTIONS,
 };
 
 // ---------------------------------------------------------------------------

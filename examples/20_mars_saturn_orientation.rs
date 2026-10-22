@@ -3,18 +3,26 @@
 
 //! Mars and Saturn physical orientation (generic body / center / frame API).
 //!
-//! Run with: `cargo run --example 20_mars_saturn_orientation`
+//! Light-time geometric orientations (not fully apparent). Run with:
+//! `cargo run --example 20_mars_saturn_orientation`
 #![allow(clippy::print_stdout)]
 
 use siderust::bodies::solar_system::{Jupiter, Mars};
 use siderust::coordinates::centers::{Geocentric, Geodetic, Topocentric};
 use siderust::coordinates::frames::{EquatorialTrueOfDate, ECEF, ICRS};
 use siderust::ephemeris::Vsop87Ephemeris;
-use siderust::event::planetary::{body_orientation, saturn_ring_orientation, saturn_rings};
+use siderust::event::planetary::{
+    body_orientation, saturn_ring_orientation, saturn_rings, ORIENTATION_CORRECTIONS,
+};
 use siderust::qtty::{Degree, Degrees, Meters};
 use siderust::time::JulianDate;
 
 fn main() {
+    println!(
+        "Correction policy: {:?} (light-time only)\n",
+        ORIENTATION_CORRECTIONS
+    );
+
     // Meeus Example 42.a / 45.a epochs (TT ≈ JDE in the book examples).
     let mars_jd = JulianDate::new(2_448_935.500_683);
     let saturn_jd = JulianDate::new(2_448_972.500_68);
@@ -48,20 +56,24 @@ fn main() {
     if let Some(p) = saturn.north_pole_position_angle {
         println!("  ring-axis PA:   {:.3}", p.to::<Degree>());
     }
-    println!(
-        "  opening Earth:  {:+.3}",
-        saturn.ring_opening_earth.to::<Degree>()
-    );
-    println!(
-        "  opening Sun:    {:+.3}",
-        saturn.ring_opening_sun.to::<Degree>()
-    );
+    if let Some(b) = saturn.ring_opening_observer {
+        println!("  opening observer: {:+.3}", b.to::<Degree>());
+    }
+    if let Some(bp) = saturn.ring_opening_sun {
+        println!("  opening Sun:      {:+.3}", bp.to::<Degree>());
+    }
 
     let saturn_icrs = saturn_rings::<Vsop87Ephemeris, Geocentric, ICRS>(saturn_jd);
-    println!(
-        "  opening Earth (ICRS path): {:+.3}  [frame-invariant]",
-        saturn_icrs.ring_opening_earth.to::<Degree>()
-    );
+    if let (Some(a), Some(b)) = (
+        saturn.ring_opening_observer,
+        saturn_icrs.ring_opening_observer,
+    ) {
+        println!(
+            "  opening observer (ICRS path): {:+.3}  [Δ = {:.2e} rad]",
+            b.to::<Degree>(),
+            (a - b).abs().value()
+        );
+    }
 
     let jupiter =
         body_orientation::<Jupiter, Vsop87Ephemeris, Geocentric, EquatorialTrueOfDate>(mars_jd);

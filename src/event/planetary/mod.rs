@@ -27,5 +27,6 @@ pub mod orientation;
 
 pub use orientation::{
     body_orientation, mars_orientation, saturn_ring_orientation, saturn_rings, BodyOrientation,
-    MarsOrientation, PlanetaryObservationCenter, SaturnRingOrientation, SkyOrientationFrame,
+    MarsOrientation, ObservationGeometry, PlanetaryObservationCenter, SaturnRingOrientation,
+    SkyOrientationFrame, ORIENTATION_CORRECTIONS,
 };
