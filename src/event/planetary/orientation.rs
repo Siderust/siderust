@@ -1,52 +1,42 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! # Mars and Saturn apparent physical orientation
+//! # Planetary physical orientation
 //!
 //! ## Scientific scope
 //!
-//! This module evaluates geocentric physical-orientation angles for Mars and
-//! Saturn at a TT epoch:
+//! Light-time geometric sky-plane orientation of a major planet with an IAU
+//! WGCCRE rotational model:
 //!
-//! - **Mars:** position angle of the north rotational pole, and bright-limb
-//!   position angle (Sunward bearing on the sky), both measured from celestial
-//!   north through east in the true equator and equinox of date, normalised to
-//!   `[0, 2π)` when defined.
-//! - **Saturn:** position angle of the projected north pole / ring axis (same
-//!   convention), plus signed ring opening angles as seen from Earth (`B`) and
-//!   from the Sun (`B′`). Positive opening means the north face of the rings is
-//!   presented to that observer (saturnicentric latitude of the observer above
-//!   the ring plane).
+//! - Position angle of the projected north rotational pole
+//! - Bright-limb position angle (Sunward bearing)
+//! - For Saturn, signed ring opening angles from Earth and from the Sun
 //!
-//! Pole directions come from the body's IAU WGCCRE linear model
-//! ([`HasIauRotation`](crate::astro::HasIauRotation)) evaluated at the
-//! **observation** epoch. Planet heliocentric states are evaluated at a
-//! light-time retarded epoch (two fixed-point iterations). Earth is taken at
-//! the observation epoch. Geocentric and heliocentric vectors are formed in
-//! mean ecliptic J2000, then rotated to the true equator/equinox of date with
-//! the existing IAU 2006 precession and IAU 2006A nutation/frame-bias
-//! providers.
+//! Position angles are measured from celestial north through east in a
+//! selected equatorial [`SkyOrientationFrame`], normalised to `[0, 2π)` when
+//! defined. Signed ring openings are saturnicentric latitudes of the Earth and
+//! Sun relative to the ring plane (IAU north pole); **positive** means the
+//! north face is presented to that observer. Openings are frame-invariant.
 //!
-//! These are **light-time geometric** orientations in the true-of-date frame.
-//! Annual/diurnal aberration, gravitational deflection, atmospheric
-//! refraction, and topocentric parallax are **not** applied. Do not label the
-//! results as fully apparent places without those corrections. Near
-//! conjunction or when the body lies near a celestial pole the sky-plane
-//! bearings may be undefined (`None`).
+//! The IAU pole (`α₀`, `δ₀`) is interpreted in **ICRS/ICRF** and transformed
+//! into the sky frame. Planetary heliocentric states are evaluated at a
+//! light-time retarded TT epoch (two fixed-point iterations); Earth is taken
+//! at the observation epoch. Both share backend `E: PlanetState<Body>`.
 //!
-//! TT is used as the working time scale; IAU rotational rates are defined on
-//! TDB. The TT−TDB difference is neglected here (well below the angular
-//! accuracy of the linear pole model over light-time intervals).
+//! These are **not** fully apparent places: annual/diurnal aberration,
+//! gravitational deflection, and atmospheric refraction are omitted. The
+//! topocentric path applies parallax to the planet and Sun with a shared site.
+//! TT is the working scale; TT−TDB is neglected for the linear pole rates.
 //!
 //! ## Technical scope
 //!
-//! Backend-generic entry points require [`PlanetaryEphemeris`] so Mars/Saturn
-//! and Earth come from the same backend. Sky-plane bearings delegate to
-//! [`affn::spherical::Direction::position_angle_to`]. Opening angles are
-//! `asin` of the north-pole component of the unit vector from the planet toward
-//! the observer (Earth or Sun). Singular or non-finite geometry yields
-//! `None` for position angles; opening angles remain defined whenever the
-//! direction vectors normalise.
+//! - [`body_orientation`] — generic over body, ephemeris, observation center,
+//!   and sky frame
+//! - [`PlanetaryObservationCenter`] — [`Geocentric`] / [`Topocentric`] inputs
+//! - [`SkyOrientationFrame`] — [`EquatorialTrueOfDate`] (default),
+//!   [`EquatorialMeanJ2000`], [`ICRS`]
+//! - Convenience wrappers [`mars_orientation`], [`saturn_ring_orientation`],
+//!   [`Mars::orientation`], [`Saturn::ring_orientation`]
 //!
 //! ## References
 //!
@@ -58,15 +48,21 @@
 //! - Siderust affn spherical bearing:
 //!   <https://github.com/Siderust/affn/issues/34>.
 
-use crate::astro::{HasIauRotation, IauRotationParams};
+use crate::astro::HasIauRotation;
 use crate::bodies::solar_system::{Mars, Saturn};
-use crate::coordinates::centers::{Geocentric, Heliocentric};
-use crate::coordinates::frames;
-use crate::coordinates::transform::ext::PositionAstroExt;
-use crate::coordinates::transform::{AstroContext, TransformFrame};
+use crate::coordinates::centers::{
+    Geocentric, Geodetic, Heliocentric, ReferenceCenter, Topocentric,
+};
+use crate::coordinates::frames::{
+    self, EquatorialMeanJ2000, EquatorialTrueOfDate, MutableFrame, ReferenceFrame, ECEF, ICRS,
+};
+use crate::coordinates::transform::centers::position::to_topocentric::to_topocentric_with;
+use crate::coordinates::transform::ext::SphericalDirectionAstroExt;
+use crate::coordinates::transform::providers::frame_rotation_with;
+use crate::coordinates::transform::{AstroContext, TransformContext, TransformFrame};
 use crate::coordinates::{cartesian, spherical};
-use crate::ephemeris::PlanetaryEphemeris;
-use crate::qtty::{velocity::AU_PER_DAY_C, AstronomicalUnit, Days, Radians};
+use crate::ephemeris::{Ephemeris, PlanetState};
+use crate::qtty::{velocity::AU_PER_DAY_C, AstronomicalUnit, Days, LengthUnit, Radians};
 use crate::time::JulianDate;
 
 #[cfg(not(feature = "std"))]
@@ -75,9 +71,300 @@ use crate::qtty::{Real, Scalar, Transcendental};
 /// Fixed light-time iterations (Meeus planetary physical ephemerides use two).
 const LIGHT_TIME_ITERS: u8 = 2;
 
-/// Geocentric Mars physical orientation at a TT epoch.
+// ---------------------------------------------------------------------------
+// Sky frame
+// ---------------------------------------------------------------------------
+
+/// Equatorial frames that admit a celestial north-through-east position-angle
+/// convention for disc orientation.
+///
+/// Not every [`ReferenceFrame`] is a sky-orientation frame. Implementations
+/// convert ICRS pole directions and mean-equatorial J2000 positions into `Self`.
+pub trait SkyOrientationFrame: MutableFrame + Sized {
+    /// Rotate an ICRS direction into this sky frame.
+    fn direction_from_icrs<Eph: Ephemeris>(
+        dir: &spherical::Direction<ICRS>,
+        jd: &JulianDate,
+        ctx: &AstroContext<Eph>,
+    ) -> spherical::Direction<Self>;
+
+    /// Rotate a mean-equatorial J2000 position into this sky frame.
+    fn position_from_mean_equatorial<C, U, Eph>(
+        pos: &cartesian::Position<C, EquatorialMeanJ2000, U>,
+        jd: &JulianDate,
+        ctx: &AstroContext<Eph>,
+    ) -> cartesian::Position<C, Self, U>
+    where
+        C: ReferenceCenter,
+        U: LengthUnit,
+        Eph: Ephemeris,
+        C::Params: Copy;
+
+    /// Rotate a topocentric mean-equatorial J2000 position into this sky frame.
+    fn topocentric_from_mean_equatorial<Eph, Ctx>(
+        pos: &cartesian::Position<Topocentric, EquatorialMeanJ2000, AstronomicalUnit>,
+        jd: &JulianDate,
+        ctx: &Ctx,
+    ) -> cartesian::Position<Topocentric, Self, AstronomicalUnit>
+    where
+        Eph: Ephemeris,
+        Ctx: TransformContext<Eph = Eph>;
+}
+
+impl SkyOrientationFrame for EquatorialTrueOfDate {
+    #[inline]
+    fn direction_from_icrs<Eph: Ephemeris>(
+        dir: &spherical::Direction<ICRS>,
+        jd: &JulianDate,
+        ctx: &AstroContext<Eph>,
+    ) -> spherical::Direction<Self> {
+        dir.to_frame_with(jd, ctx)
+    }
+
+    #[inline]
+    fn position_from_mean_equatorial<C, U, Eph>(
+        pos: &cartesian::Position<C, EquatorialMeanJ2000, U>,
+        jd: &JulianDate,
+        ctx: &AstroContext<Eph>,
+    ) -> cartesian::Position<C, Self, U>
+    where
+        C: ReferenceCenter,
+        U: LengthUnit,
+        Eph: Ephemeris,
+        C::Params: Copy,
+    {
+        rotate_mean_equatorial_position(pos, jd, ctx)
+    }
+
+    #[inline]
+    fn topocentric_from_mean_equatorial<Eph, Ctx>(
+        pos: &cartesian::Position<Topocentric, EquatorialMeanJ2000, AstronomicalUnit>,
+        jd: &JulianDate,
+        ctx: &Ctx,
+    ) -> cartesian::Position<Topocentric, Self, AstronomicalUnit>
+    where
+        Eph: Ephemeris,
+        Ctx: TransformContext<Eph = Eph>,
+    {
+        let rotation = frame_rotation_with::<EquatorialMeanJ2000, Self, _>(*jd, ctx);
+        cartesian::Position::from_array(*pos.center_params(), rotation * *pos.as_array())
+    }
+}
+
+impl SkyOrientationFrame for EquatorialMeanJ2000 {
+    #[inline]
+    fn direction_from_icrs<Eph: Ephemeris>(
+        dir: &spherical::Direction<ICRS>,
+        jd: &JulianDate,
+        ctx: &AstroContext<Eph>,
+    ) -> spherical::Direction<Self> {
+        dir.to_frame_with(jd, ctx)
+    }
+
+    #[inline]
+    fn position_from_mean_equatorial<C, U, Eph>(
+        pos: &cartesian::Position<C, EquatorialMeanJ2000, U>,
+        _jd: &JulianDate,
+        _ctx: &AstroContext<Eph>,
+    ) -> cartesian::Position<C, Self, U>
+    where
+        C: ReferenceCenter,
+        U: LengthUnit,
+        Eph: Ephemeris,
+        C::Params: Copy,
+    {
+        TransformFrame::to_frame(pos)
+    }
+
+    #[inline]
+    fn topocentric_from_mean_equatorial<Eph, Ctx>(
+        pos: &cartesian::Position<Topocentric, EquatorialMeanJ2000, AstronomicalUnit>,
+        _jd: &JulianDate,
+        _ctx: &Ctx,
+    ) -> cartesian::Position<Topocentric, Self, AstronomicalUnit>
+    where
+        Eph: Ephemeris,
+        Ctx: TransformContext<Eph = Eph>,
+    {
+        TransformFrame::to_frame(pos)
+    }
+}
+
+impl SkyOrientationFrame for ICRS {
+    #[inline]
+    fn direction_from_icrs<Eph: Ephemeris>(
+        dir: &spherical::Direction<ICRS>,
+        _jd: &JulianDate,
+        _ctx: &AstroContext<Eph>,
+    ) -> spherical::Direction<Self> {
+        *dir
+    }
+
+    #[inline]
+    fn position_from_mean_equatorial<C, U, Eph>(
+        pos: &cartesian::Position<C, EquatorialMeanJ2000, U>,
+        jd: &JulianDate,
+        ctx: &AstroContext<Eph>,
+    ) -> cartesian::Position<C, Self, U>
+    where
+        C: ReferenceCenter,
+        U: LengthUnit,
+        Eph: Ephemeris,
+        C::Params: Copy,
+    {
+        rotate_mean_equatorial_position(pos, jd, ctx)
+    }
+
+    #[inline]
+    fn topocentric_from_mean_equatorial<Eph, Ctx>(
+        pos: &cartesian::Position<Topocentric, EquatorialMeanJ2000, AstronomicalUnit>,
+        jd: &JulianDate,
+        ctx: &Ctx,
+    ) -> cartesian::Position<Topocentric, Self, AstronomicalUnit>
+    where
+        Eph: Ephemeris,
+        Ctx: TransformContext<Eph = Eph>,
+    {
+        let rotation = frame_rotation_with::<EquatorialMeanJ2000, Self, _>(*jd, ctx);
+        cartesian::Position::from_array(*pos.center_params(), rotation * *pos.as_array())
+    }
+}
+
+/// Rotate a mean-equatorial J2000 position into `F` without requiring
+/// `ReferenceCenter::Params = ()` (unlike `PositionAstroExt`).
+fn rotate_mean_equatorial_position<C, U, Eph, F>(
+    pos: &cartesian::Position<C, EquatorialMeanJ2000, U>,
+    jd: &JulianDate,
+    ctx: &AstroContext<Eph>,
+) -> cartesian::Position<C, F, U>
+where
+    C: ReferenceCenter,
+    U: LengthUnit,
+    Eph: Ephemeris,
+    F: MutableFrame,
+    C::Params: Copy,
+    (): crate::coordinates::transform::providers::FrameRotationProvider<EquatorialMeanJ2000, F>,
+{
+    let rotation = frame_rotation_with::<EquatorialMeanJ2000, F, _>(*jd, ctx);
+    cartesian::Position::from_array(*pos.center_params(), rotation * *pos.as_array())
+}
+
+// ---------------------------------------------------------------------------
+// Observation center
+// ---------------------------------------------------------------------------
+
+/// Observation origin for planetary physical orientation.
+///
+/// Implemented for [`Geocentric`] and [`Topocentric`]. Dispatch is
+/// monomorphized; unsupported centers fail to compile.
+pub trait PlanetaryObservationCenter: ReferenceCenter {
+    /// Observation input: TT [`JulianDate`] for [`Geocentric`], or
+    /// `(JulianDate, Geodetic<ECEF>)` for [`Topocentric`].
+    type Input;
+
+    /// Body orientation in sky frame `F` with backend `E`.
+    fn body_orientation<Body, E, F>(input: Self::Input) -> BodyOrientation
+    where
+        Body: HasIauRotation,
+        E: PlanetState<Body>,
+        F: SkyOrientationFrame;
+
+    /// Saturn ring orientation in sky frame `F` with backend `E`.
+    fn saturn_ring_orientation<E, F>(input: Self::Input) -> SaturnRingOrientation
+    where
+        E: PlanetState<Saturn>,
+        F: SkyOrientationFrame;
+}
+
+impl PlanetaryObservationCenter for Geocentric {
+    type Input = JulianDate;
+
+    fn body_orientation<Body, E, F>(jd: Self::Input) -> BodyOrientation
+    where
+        Body: HasIauRotation,
+        E: PlanetState<Body>,
+        F: SkyOrientationFrame,
+    {
+        let ctx = AstroContext::<E>::default();
+        let geo = light_time_states::<E, Body>(&jd);
+        let mean = to_mean_equatorial_geocentric(&geo);
+        let sky = SkyBundle {
+            planet: F::position_from_mean_equatorial(&mean.planet, &jd, &ctx),
+            sun: F::position_from_mean_equatorial(&mean.sun, &jd, &ctx),
+            pole: iau_pole_in_frame::<Body, E, F>(&jd, &ctx),
+            planet_helio: F::position_from_mean_equatorial(&mean.planet_helio, &jd, &ctx),
+        };
+        body_from_sky(&sky)
+    }
+
+    fn saturn_ring_orientation<E, F>(jd: Self::Input) -> SaturnRingOrientation
+    where
+        E: PlanetState<Saturn>,
+        F: SkyOrientationFrame,
+    {
+        let ctx = AstroContext::<E>::default();
+        let geo = light_time_states::<E, Saturn>(&jd);
+        let mean = to_mean_equatorial_geocentric(&geo);
+        let sky = SkyBundle {
+            planet: F::position_from_mean_equatorial(&mean.planet, &jd, &ctx),
+            sun: F::position_from_mean_equatorial(&mean.sun, &jd, &ctx),
+            pole: iau_pole_in_frame::<Saturn, E, F>(&jd, &ctx),
+            planet_helio: F::position_from_mean_equatorial(&mean.planet_helio, &jd, &ctx),
+        };
+        saturn_from_sky(&sky)
+    }
+}
+
+impl PlanetaryObservationCenter for Topocentric {
+    type Input = (JulianDate, Geodetic<ECEF>);
+
+    fn body_orientation<Body, E, F>((jd, site): Self::Input) -> BodyOrientation
+    where
+        Body: HasIauRotation,
+        E: PlanetState<Body>,
+        F: SkyOrientationFrame,
+    {
+        let ctx = AstroContext::<E>::default();
+        let geo = light_time_states::<E, Body>(&jd);
+        let mean = to_mean_equatorial_geocentric(&geo);
+        let planet_topo = to_topocentric_with(&mean.planet, site, jd, &ctx);
+        let sun_topo = to_topocentric_with(&mean.sun, site, jd, &ctx);
+        let sky = SkyBundle {
+            planet: F::topocentric_from_mean_equatorial::<E, _>(&planet_topo, &jd, &ctx),
+            sun: F::topocentric_from_mean_equatorial::<E, _>(&sun_topo, &jd, &ctx),
+            pole: iau_pole_in_frame::<Body, E, F>(&jd, &ctx),
+            planet_helio: F::position_from_mean_equatorial(&mean.planet_helio, &jd, &ctx),
+        };
+        body_from_sky(&sky)
+    }
+
+    fn saturn_ring_orientation<E, F>((jd, site): Self::Input) -> SaturnRingOrientation
+    where
+        E: PlanetState<Saturn>,
+        F: SkyOrientationFrame,
+    {
+        let ctx = AstroContext::<E>::default();
+        let geo = light_time_states::<E, Saturn>(&jd);
+        let mean = to_mean_equatorial_geocentric(&geo);
+        let planet_topo = to_topocentric_with(&mean.planet, site, jd, &ctx);
+        let sun_topo = to_topocentric_with(&mean.sun, site, jd, &ctx);
+        let sky = SkyBundle {
+            planet: F::topocentric_from_mean_equatorial::<E, _>(&planet_topo, &jd, &ctx),
+            sun: F::topocentric_from_mean_equatorial::<E, _>(&sun_topo, &jd, &ctx),
+            pole: iau_pole_in_frame::<Saturn, E, F>(&jd, &ctx),
+            planet_helio: F::position_from_mean_equatorial(&mean.planet_helio, &jd, &ctx),
+        };
+        saturn_from_sky(&sky)
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Result types
+// ---------------------------------------------------------------------------
+
+/// Physical orientation of a planetary disc on the sky.
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct MarsOrientation {
+pub struct BodyOrientation {
     /// Position angle of the north rotational pole, north through east in
     /// `[0, 2π)`, or `None` when affn reports undefined sky-plane geometry.
     pub north_pole_position_angle: Option<Radians>,
@@ -87,30 +374,79 @@ pub struct MarsOrientation {
     pub bright_limb_position_angle: Option<Radians>,
 }
 
-/// Geocentric Saturn ring / pole orientation at a TT epoch.
+/// Mars-specific alias of [`BodyOrientation`] (stable name for callers).
+pub type MarsOrientation = BodyOrientation;
+
+/// Saturn ring / pole orientation.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct SaturnRingOrientation {
-    /// Position angle of the projected north pole (ring axis), north through
-    /// east in `[0, 2π)`, or `None` when undefined.
+    /// Position angle of the projected north pole (ring axis), or `None` when
+    /// undefined.
     pub north_pole_position_angle: Option<Radians>,
-    /// Signed ring opening angle as seen from Earth (saturnicentric latitude of
-    /// the Earth). Positive ⇒ north face of the rings toward Earth.
+    /// Signed ring opening as seen from the observation center (saturnicentric
+    /// latitude of the observer). Positive ⇒ north face toward the observer.
     pub ring_opening_earth: Radians,
-    /// Signed ring opening angle as seen from the Sun (saturnicentric latitude
-    /// of the Sun). Positive ⇒ north face illuminated.
+    /// Signed ring opening as seen from the Sun. Positive ⇒ north face
+    /// illuminated. Independent of observation center and sky frame.
     pub ring_opening_sun: Radians,
 }
 
-/// Geocentric Mars orientation with compile-time planetary ephemeris `E`.
+// ---------------------------------------------------------------------------
+// Public entry points
+// ---------------------------------------------------------------------------
+
+/// Planetary disc orientation with compile-time body, backend, center, and frame.
 ///
 /// # Arguments
 ///
-/// * `jd` — observation epoch on the TT axis as a Julian Date.
+/// * `input` — TT [`JulianDate`] for [`Geocentric`], or
+///   `(JulianDate, Geodetic<ECEF>)` for [`Topocentric`].
 ///
 /// # Returns
 ///
-/// [`MarsOrientation`] with optional sky-plane bearings. See the
-/// [module documentation](self) for light-time, frames, and omitted corrections.
+/// [`BodyOrientation`]. See the [module documentation](self) for corrections.
+///
+/// # Examples
+///
+/// ```rust
+/// use siderust::bodies::solar_system::Mars;
+/// use siderust::coordinates::centers::Geocentric;
+/// use siderust::coordinates::frames::EquatorialTrueOfDate;
+/// use siderust::ephemeris::Vsop87Ephemeris;
+/// use siderust::event::planetary::body_orientation;
+///
+/// let ori = body_orientation::<Mars, Vsop87Ephemeris, Geocentric, EquatorialTrueOfDate>(
+///     siderust::J2000,
+/// );
+/// assert!(ori.north_pole_position_angle.unwrap().is_finite());
+/// ```
+///
+/// Unsupported centers cannot be selected:
+///
+/// ```compile_fail,E0277
+/// use siderust::bodies::solar_system::Mars;
+/// use siderust::coordinates::centers::Heliocentric;
+/// use siderust::coordinates::frames::EquatorialTrueOfDate;
+/// use siderust::ephemeris::Vsop87Ephemeris;
+/// use siderust::event::planetary::body_orientation;
+/// let _ = body_orientation::<Mars, Vsop87Ephemeris, Heliocentric, EquatorialTrueOfDate>(
+///     siderust::J2000,
+/// );
+/// ```
+pub fn body_orientation<Body, E, C, F>(input: C::Input) -> BodyOrientation
+where
+    Body: HasIauRotation,
+    E: PlanetState<Body>,
+    C: PlanetaryObservationCenter,
+    F: SkyOrientationFrame,
+{
+    C::body_orientation::<Body, E, F>(input)
+}
+
+/// Geocentric Mars orientation in the true equator/equinox of date.
+///
+/// Equivalent to
+/// `body_orientation::<Mars, E, Geocentric, EquatorialTrueOfDate>(jd)`.
 ///
 /// # Examples
 ///
@@ -120,29 +456,39 @@ pub struct SaturnRingOrientation {
 ///
 /// let ori = mars_orientation::<Vsop87Ephemeris>(siderust::J2000);
 /// assert!(ori.north_pole_position_angle.unwrap().is_finite());
-/// assert!(ori.bright_limb_position_angle.unwrap().is_finite());
 /// ```
-pub fn mars_orientation<E: PlanetaryEphemeris>(jd: JulianDate) -> MarsOrientation {
-    let ctx = AstroContext::<E>::default();
-    let (planet_true, sun_true, pole_true, _) =
-        planet_sun_pole_true_of_date::<E, Mars, _>(&jd, &ctx, E::mars_heliocentric);
-    MarsOrientation {
-        north_pole_position_angle: bearing_to_pole(&planet_true, &pole_true),
-        bright_limb_position_angle: bearing_to_position(&planet_true, &sun_true),
-    }
+#[inline]
+pub fn mars_orientation<E: PlanetState<Mars>>(jd: JulianDate) -> MarsOrientation {
+    body_orientation::<Mars, E, Geocentric, EquatorialTrueOfDate>(jd)
 }
 
-/// Geocentric Saturn ring orientation with compile-time planetary ephemeris `E`.
+/// Saturn ring orientation with compile-time backend, center, and sky frame.
 ///
-/// # Arguments
+/// # Examples
 ///
-/// * `jd` — observation epoch on the TT axis as a Julian Date.
+/// ```rust
+/// use siderust::coordinates::centers::Geocentric;
+/// use siderust::coordinates::frames::EquatorialTrueOfDate;
+/// use siderust::ephemeris::Vsop87Ephemeris;
+/// use siderust::event::planetary::saturn_rings;
+/// use siderust::qtty::Degrees;
 ///
-/// # Returns
+/// let ori = saturn_rings::<Vsop87Ephemeris, Geocentric, EquatorialTrueOfDate>(siderust::J2000);
+/// assert!(ori.ring_opening_earth.to::<siderust::qtty::Degree>().abs() < Degrees::new(90.0));
+/// ```
+pub fn saturn_rings<E, C, F>(input: C::Input) -> SaturnRingOrientation
+where
+    E: PlanetState<Saturn>,
+    C: PlanetaryObservationCenter,
+    F: SkyOrientationFrame,
+{
+    C::saturn_ring_orientation::<E, F>(input)
+}
+
+/// Geocentric Saturn ring orientation in the true equator/equinox of date.
 ///
-/// [`SaturnRingOrientation`]. Opening angles are always finite for non-zero
-/// planet vectors; the pole position angle may be `None`. See the
-/// [module documentation](self) for conventions and corrections.
+/// Equivalent to
+/// `saturn_rings::<E, Geocentric, EquatorialTrueOfDate>(jd)`.
 ///
 /// # Examples
 ///
@@ -155,32 +501,17 @@ pub fn mars_orientation<E: PlanetaryEphemeris>(jd: JulianDate) -> MarsOrientatio
 /// assert!(ori.north_pole_position_angle.unwrap().is_finite());
 /// assert!(ori.ring_opening_earth.to::<siderust::qtty::Degree>().abs() < Degrees::new(90.0));
 /// ```
-pub fn saturn_ring_orientation<E: PlanetaryEphemeris>(jd: JulianDate) -> SaturnRingOrientation {
-    let ctx = AstroContext::<E>::default();
-    let (planet_true, _sun_true, pole_true, planet_helio_true) =
-        planet_sun_pole_true_of_date::<E, Saturn, _>(&jd, &ctx, E::saturn_heliocentric);
-    let earth_opening = signed_opening(&pole_true, &planet_true);
-    // Sunward unit vector from Saturn is opposite the heliocentric planet vector.
-    let sun_opening = signed_opening_from_heliocentric(&pole_true, &planet_helio_true);
-    SaturnRingOrientation {
-        north_pole_position_angle: bearing_to_pole(&planet_true, &pole_true),
-        ring_opening_earth: earth_opening,
-        ring_opening_sun: sun_opening,
-    }
+#[inline]
+pub fn saturn_ring_orientation<E: PlanetState<Saturn>>(jd: JulianDate) -> SaturnRingOrientation {
+    saturn_rings::<E, Geocentric, EquatorialTrueOfDate>(jd)
 }
 
 impl Mars {
-    /// Geocentric Mars physical orientation using [`DefaultEphemeris`].
+    /// Geocentric Mars orientation using [`DefaultEphemeris`] in
+    /// [`EquatorialTrueOfDate`].
     ///
-    /// For an explicit backend call [`mars_orientation`].
-    ///
-    /// # Arguments
-    ///
-    /// * `jd` — observation epoch on the TT axis as a Julian Date.
-    ///
-    /// # Returns
-    ///
-    /// [`MarsOrientation`] for the default VSOP87 planetary backend.
+    /// For explicit center/frame/backend selection see [`orientation_at`](Self::orientation_at)
+    /// and [`body_orientation`].
     ///
     /// # Examples
     ///
@@ -192,22 +523,36 @@ impl Mars {
     /// ```
     #[inline]
     pub fn orientation(jd: JulianDate) -> MarsOrientation {
-        mars_orientation::<crate::coordinates::transform::context::DefaultEphemeris>(jd)
+        Self::orientation_at::<Geocentric, EquatorialTrueOfDate>(jd)
+    }
+
+    /// Mars orientation with default ephemeris and explicit center/frame.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use siderust::bodies::solar_system::Mars;
+    /// use siderust::coordinates::centers::Geocentric;
+    /// use siderust::coordinates::frames::ICRS;
+    ///
+    /// let ori = Mars::orientation_at::<Geocentric, ICRS>(siderust::J2000);
+    /// assert!(ori.north_pole_position_angle.is_some());
+    /// ```
+    #[inline]
+    pub fn orientation_at<C, F>(input: C::Input) -> MarsOrientation
+    where
+        C: PlanetaryObservationCenter,
+        F: SkyOrientationFrame,
+    {
+        body_orientation::<Mars, crate::coordinates::transform::context::DefaultEphemeris, C, F>(
+            input,
+        )
     }
 }
 
 impl Saturn {
-    /// Geocentric Saturn ring orientation using [`DefaultEphemeris`].
-    ///
-    /// For an explicit backend call [`saturn_ring_orientation`].
-    ///
-    /// # Arguments
-    ///
-    /// * `jd` — observation epoch on the TT axis as a Julian Date.
-    ///
-    /// # Returns
-    ///
-    /// [`SaturnRingOrientation`] for the default VSOP87 planetary backend.
+    /// Geocentric Saturn ring orientation using [`DefaultEphemeris`] in
+    /// [`EquatorialTrueOfDate`].
     ///
     /// # Examples
     ///
@@ -219,53 +564,69 @@ impl Saturn {
     /// ```
     #[inline]
     pub fn ring_orientation(jd: JulianDate) -> SaturnRingOrientation {
-        saturn_ring_orientation::<crate::coordinates::transform::context::DefaultEphemeris>(jd)
+        Self::ring_orientation_at::<Geocentric, EquatorialTrueOfDate>(jd)
+    }
+
+    /// Saturn ring orientation with default ephemeris and explicit center/frame.
+    #[inline]
+    pub fn ring_orientation_at<C, F>(input: C::Input) -> SaturnRingOrientation
+    where
+        C: PlanetaryObservationCenter,
+        F: SkyOrientationFrame,
+    {
+        saturn_rings::<crate::coordinates::transform::context::DefaultEphemeris, C, F>(input)
     }
 }
 
-type GeoEcliptic = cartesian::Position<Geocentric, frames::EclipticMeanJ2000, AstronomicalUnit>;
-type GeoTrue = cartesian::Position<Geocentric, frames::EquatorialTrueOfDate, AstronomicalUnit>;
-type HelioEcliptic = cartesian::Position<Heliocentric, frames::EclipticMeanJ2000, AstronomicalUnit>;
-type HelioTrue = cartesian::Position<Heliocentric, frames::EquatorialTrueOfDate, AstronomicalUnit>;
+// ---------------------------------------------------------------------------
+// Internal geometry
+// ---------------------------------------------------------------------------
 
-fn planet_sun_pole_true_of_date<E, Body, F>(
-    jd: &JulianDate,
-    ctx: &AstroContext<E>,
-    planet_at: F,
-) -> (
-    GeoTrue,
-    GeoTrue,
-    spherical::Direction<frames::EquatorialTrueOfDate>,
-    HelioTrue,
-)
+type HelioEcliptic = cartesian::Position<Heliocentric, frames::EclipticMeanJ2000, AstronomicalUnit>;
+type GeoEcliptic = cartesian::Position<Geocentric, frames::EclipticMeanJ2000, AstronomicalUnit>;
+type GeoMean = cartesian::Position<Geocentric, EquatorialMeanJ2000, AstronomicalUnit>;
+type HelioMean = cartesian::Position<Heliocentric, EquatorialMeanJ2000, AstronomicalUnit>;
+
+struct LightTimeStates {
+    planet: GeoEcliptic,
+    sun: GeoEcliptic,
+    planet_helio: HelioEcliptic,
+}
+
+struct MeanEquatorial {
+    planet: GeoMean,
+    sun: GeoMean,
+    planet_helio: HelioMean,
+}
+
+struct SkyBundle<C: ReferenceCenter, F: ReferenceFrame> {
+    planet: cartesian::Position<C, F, AstronomicalUnit>,
+    sun: cartesian::Position<C, F, AstronomicalUnit>,
+    pole: spherical::Direction<F>,
+    planet_helio: cartesian::Position<Heliocentric, F, AstronomicalUnit>,
+}
+
+fn light_time_states<E, Body>(jd: &JulianDate) -> LightTimeStates
 where
-    E: PlanetaryEphemeris,
+    E: PlanetState<Body>,
     Body: HasIauRotation,
-    F: Fn(JulianDate) -> HelioEcliptic,
 {
     let earth = E::earth_heliocentric(*jd);
-    let (planet_geo, planet_helio, _jd_ret) = light_time_geocentric(jd, &earth, &planet_at);
-    let sun_geo = GeoEcliptic::new(-earth.x(), -earth.y(), -earth.z());
+    let (planet, planet_helio, _) = light_time_geocentric(jd, &earth, &|t| E::heliocentric(t));
+    let sun = GeoEcliptic::new(-earth.x(), -earth.y(), -earth.z());
+    LightTimeStates {
+        planet,
+        sun,
+        planet_helio,
+    }
+}
 
-    let planet_mean: cartesian::Position<
-        Geocentric,
-        frames::EquatorialMeanJ2000,
-        AstronomicalUnit,
-    > = TransformFrame::to_frame(&planet_geo);
-    let sun_mean: cartesian::Position<Geocentric, frames::EquatorialMeanJ2000, AstronomicalUnit> =
-        TransformFrame::to_frame(&sun_geo);
-    let helio_mean: cartesian::Position<
-        Heliocentric,
-        frames::EquatorialMeanJ2000,
-        AstronomicalUnit,
-    > = TransformFrame::to_frame(&planet_helio);
-
-    let planet_true = planet_mean.to_frame_with::<frames::EquatorialTrueOfDate, _>(jd, ctx);
-    let sun_true = sun_mean.to_frame_with::<frames::EquatorialTrueOfDate, _>(jd, ctx);
-    let helio_true = helio_mean.to_frame_with::<frames::EquatorialTrueOfDate, _>(jd, ctx);
-    let pole_true = iau_pole_true_of_date::<Body, E>(jd, ctx);
-
-    (planet_true, sun_true, pole_true, helio_true)
+fn to_mean_equatorial_geocentric(geo: &LightTimeStates) -> MeanEquatorial {
+    MeanEquatorial {
+        planet: TransformFrame::to_frame(&geo.planet),
+        sun: TransformFrame::to_frame(&geo.sun),
+        planet_helio: TransformFrame::to_frame(&geo.planet_helio),
+    }
 }
 
 fn light_time_geocentric<F>(
@@ -297,62 +658,80 @@ where
     (geo, planet, jd_ret)
 }
 
-fn iau_pole_true_of_date<Body, E>(
-    jd: &JulianDate,
-    ctx: &AstroContext<E>,
-) -> spherical::Direction<frames::EquatorialTrueOfDate>
+fn iau_pole_in_frame<Body, E, F>(jd: &JulianDate, ctx: &AstroContext<E>) -> spherical::Direction<F>
 where
     Body: HasIauRotation,
-    E: PlanetaryEphemeris,
+    E: Ephemeris,
+    F: SkyOrientationFrame,
 {
-    let params: &IauRotationParams = &Body::ROTATION;
-    // IAU α₀, δ₀ are ICRF equatorial; EquatorialMeanJ2000 is the mean equator
-    // of J2000 used throughout Siderust's planetary pipeline.
-    let pole_j2000 = spherical::Direction::<frames::EquatorialMeanJ2000>::new(
-        params.alpha0(*jd),
-        params.delta0(*jd),
-    );
-    use crate::coordinates::transform::ext::SphericalDirectionAstroExt;
-    pole_j2000.to_frame_with::<frames::EquatorialTrueOfDate, _>(jd, ctx)
+    let params = &Body::ROTATION;
+    let pole_icrs = spherical::Direction::<ICRS>::new(params.alpha0(*jd), params.delta0(*jd));
+    F::direction_from_icrs(&pole_icrs, jd, ctx)
 }
 
-fn bearing_to_position(from: &GeoTrue, toward: &GeoTrue) -> Option<Radians> {
+fn body_from_sky<C, F>(sky: &SkyBundle<C, F>) -> BodyOrientation
+where
+    C: ReferenceCenter,
+    F: ReferenceFrame,
+{
+    BodyOrientation {
+        north_pole_position_angle: bearing_to_pole(&sky.planet, &sky.pole),
+        bright_limb_position_angle: bearing_to_position(&sky.planet, &sky.sun),
+    }
+}
+
+fn saturn_from_sky<C, F>(sky: &SkyBundle<C, F>) -> SaturnRingOrientation
+where
+    C: ReferenceCenter,
+    F: ReferenceFrame,
+{
+    SaturnRingOrientation {
+        north_pole_position_angle: bearing_to_pole(&sky.planet, &sky.pole),
+        ring_opening_earth: signed_opening(&sky.pole, &sky.planet),
+        ring_opening_sun: signed_opening(&sky.pole, &sky.planet_helio),
+    }
+}
+
+fn bearing_to_position<C1, C2, F>(
+    from: &cartesian::Position<C1, F, AstronomicalUnit>,
+    toward: &cartesian::Position<C2, F, AstronomicalUnit>,
+) -> Option<Radians>
+where
+    C1: ReferenceCenter,
+    C2: ReferenceCenter,
+    F: ReferenceFrame,
+{
     let from_dir = spherical::Position::from_cartesian(from).direction();
     let toward_dir = spherical::Position::from_cartesian(toward).direction();
     from_dir.position_angle_to(&toward_dir)
 }
 
-fn bearing_to_pole(
-    from: &GeoTrue,
-    pole: &spherical::Direction<frames::EquatorialTrueOfDate>,
-) -> Option<Radians> {
+fn bearing_to_pole<C, F>(
+    from: &cartesian::Position<C, F, AstronomicalUnit>,
+    pole: &spherical::Direction<F>,
+) -> Option<Radians>
+where
+    C: ReferenceCenter,
+    F: ReferenceFrame,
+{
     let from_dir = spherical::Position::from_cartesian(from).direction();
     from_dir.position_angle_to(pole)
 }
 
-fn signed_opening(
-    pole: &spherical::Direction<frames::EquatorialTrueOfDate>,
-    planet_geo: &GeoTrue,
-) -> Radians {
-    let Some(geo_dir) = planet_geo.direction() else {
+fn signed_opening<C, F>(
+    pole: &spherical::Direction<F>,
+    planet: &cartesian::Position<C, F, AstronomicalUnit>,
+) -> Radians
+where
+    C: ReferenceCenter,
+    F: ReferenceFrame,
+{
+    let Some(dir) = planet.direction() else {
         return Radians::new(0.0);
     };
     let pole_cart = pole.to_cartesian();
-    // Planetocentric latitude of Earth: asin(n̂ · ê) with ê = planet → Earth = −ĝ.
-    let sin_b = -(pole_cart.dot(&geo_dir));
-    Radians::new(clamp_unit(sin_b).asin())
-}
-
-fn signed_opening_from_heliocentric(
-    pole: &spherical::Direction<frames::EquatorialTrueOfDate>,
-    planet_helio: &HelioTrue,
-) -> Radians {
-    let Some(helio_dir) = planet_helio.direction() else {
-        return Radians::new(0.0);
-    };
-    let pole_cart = pole.to_cartesian();
-    // Planetocentric latitude of the Sun: asin(n̂ · (−r̂_helio)).
-    let sin_b = -(pole_cart.dot(&helio_dir));
+    // Planetocentric latitude of the observer: asin(n̂ · (−r̂)).
+    let sin_b = -(pole_cart.dot(&dir));
     Radians::new(clamp_unit(sin_b).asin())
 }
 
@@ -364,16 +743,17 @@ fn clamp_unit(x: f64) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::bodies::solar_system::Jupiter;
     use crate::coordinates::centers::{Barycentric, Geocentric, Heliocentric};
     use crate::coordinates::transform::context::DefaultEphemeris;
-    use crate::ephemeris::{AuPerDay, Ephemeris, PlanetaryEphemeris};
-    use crate::qtty::{AstronomicalUnit, Degree, Degrees, Kilometer};
+    use crate::coordinates::transform::ext::PositionAstroExt;
+    use crate::ephemeris::{AuPerDay, Ephemeris, PlanetState};
+    use crate::qtty::{AstronomicalUnit, Degree, Degrees, Kilometer, Meters};
     use core::sync::atomic::{AtomicUsize, Ordering};
 
     static MARS_CALLS: AtomicUsize = AtomicUsize::new(0);
     static EARTH_CALLS: AtomicUsize = AtomicUsize::new(0);
 
-    /// Inject known true-of-date geometry through the ecliptic ephemeris contract.
     struct Cardinal<const CASE: u8>;
 
     fn source_position<U: crate::qtty::LengthUnit>(
@@ -381,13 +761,13 @@ mod tests {
         ra: f64,
         dec: f64,
     ) -> cartesian::Position<Geocentric, frames::EclipticMeanJ2000, U> {
-        let true_pos = spherical::Position::<Geocentric, frames::EquatorialTrueOfDate, U>::new(
+        let true_pos = spherical::Position::<Geocentric, EquatorialTrueOfDate, U>::new(
             Degrees::new(ra),
             Degrees::new(dec),
             crate::qtty::Quantity::<U>::new(1.0),
         )
         .to_cartesian();
-        let mean = true_pos.to_frame_with::<frames::EquatorialMeanJ2000, _>(
+        let mean = true_pos.to_frame_with::<EquatorialMeanJ2000, _>(
             &jd,
             &AstroContext::<DefaultEphemeris>::default(),
         );
@@ -400,8 +780,6 @@ mod tests {
         ) -> cartesian::Position<Heliocentric, frames::EclipticMeanJ2000, AstronomicalUnit>
         {
             EARTH_CALLS.fetch_add(1, Ordering::SeqCst);
-            // Positions are anchored at J2000 so light-time epoch shifts do not
-            // change the injected true-of-date geometry.
             let sun = source_position::<AstronomicalUnit>(crate::J2000, 90.0, 0.0);
             cartesian::Position::new(-sun.x(), -sun.y(), -sun.z())
         }
@@ -428,15 +806,12 @@ mod tests {
         }
     }
 
-    impl<const CASE: u8> PlanetaryEphemeris for Cardinal<CASE> {
-        fn mars_heliocentric(
+    impl<const CASE: u8> PlanetState<Mars> for Cardinal<CASE> {
+        fn heliocentric(
             _jd: JulianDate,
         ) -> cartesian::Position<Heliocentric, frames::EclipticMeanJ2000, AstronomicalUnit>
         {
             MARS_CALLS.fetch_add(1, Ordering::SeqCst);
-            // Geocentric Mars = planet_helio − earth_helio. With Earth set so
-            // −earth = Sun at (90°, 0°), choose planet so geo Mars is at (0°, 0°).
-            // geo = planet − earth ⇒ planet = geo + earth = geo − sun_geo.
             let mars_geo = match CASE {
                 0 | 1 => source_position::<AstronomicalUnit>(crate::J2000, 0.0, 0.0),
                 _ => source_position::<AstronomicalUnit>(crate::J2000, 0.0, 90.0),
@@ -447,13 +822,6 @@ mod tests {
                 mars_geo.y() - sun_geo.y(),
                 mars_geo.z() - sun_geo.z(),
             )
-        }
-
-        fn saturn_heliocentric(
-            jd: JulianDate,
-        ) -> cartesian::Position<Heliocentric, frames::EclipticMeanJ2000, AstronomicalUnit>
-        {
-            Self::mars_heliocentric(jd)
         }
     }
 
@@ -466,13 +834,11 @@ mod tests {
 
     #[test]
     fn mars_bright_limb_cardinal_east_and_backend_calls() {
-        // Mars at (0°,0°), Sun at (90°,0°) ⇒ bright limb PA = 90°.
         MARS_CALLS.store(0, Ordering::SeqCst);
         EARTH_CALLS.store(0, Ordering::SeqCst);
         let ori = mars_orientation::<Cardinal<0>>(crate::J2000);
         let bright = normalized(ori.bright_limb_position_angle);
         assert!((bright.to::<Degree>() - Degrees::new(90.0)).abs() < Degrees::new(1e-8));
-        // Light-time uses Earth once + planet LIGHT_TIME_ITERS+1 times (initial + iters).
         assert_eq!(EARTH_CALLS.load(Ordering::SeqCst), 1);
         assert_eq!(
             MARS_CALLS.load(Ordering::SeqCst),
@@ -481,25 +847,28 @@ mod tests {
     }
 
     #[test]
-    fn convenience_wrappers_match_default_backend() {
+    fn convenience_wrappers_match_generic_defaults() {
         let jd = crate::J2000;
         assert_eq!(
             Mars::orientation(jd),
             mars_orientation::<DefaultEphemeris>(jd)
         );
         assert_eq!(
+            Mars::orientation(jd),
+            body_orientation::<Mars, DefaultEphemeris, Geocentric, EquatorialTrueOfDate>(jd)
+        );
+        assert_eq!(
             Saturn::ring_orientation(jd),
             saturn_ring_orientation::<DefaultEphemeris>(jd)
+        );
+        assert_eq!(
+            Saturn::ring_orientation(jd),
+            saturn_rings::<DefaultEphemeris, Geocentric, EquatorialTrueOfDate>(jd)
         );
     }
 
     #[test]
     fn meeus_42a_mars_position_angles() {
-        // Meeus, Astronomical Algorithms 2nd ed., Example 42.a, p. 291.
-        // Independently reproduced by soniakeys/meeus (Physical):
-        // JDE 2448935.500683 → P = 347.64°, Q (defect) = 279.91°.
-        // Bright limb = Q + 180° → 99.91°.
-        // Tolerances absorb IAU pole-model and VSOP87/FK5 differences vs Meeus.
         let jd = JulianDate::new(2_448_935.500_683);
         let ori = mars_orientation::<DefaultEphemeris>(jd);
         let p = normalized(ori.north_pole_position_angle).to::<Degree>();
@@ -507,8 +876,6 @@ mod tests {
         let defect = (ori.bright_limb_position_angle.unwrap() + Radians::HALF_TURN)
             .normalize()
             .to::<Degree>();
-        // Bright-limb/defect track Meeus closely; pole PA differs by <1° because
-        // Siderust uses the modern IAU linear pole vs Meeus's ecliptic λ₀/β₀ model.
         assert!(
             (p - Degrees::new(347.64)).abs() < Degrees::new(1.0),
             "pole PA {p:?} vs Meeus 347.64°"
@@ -525,8 +892,6 @@ mod tests {
 
     #[test]
     fn meeus_45a_saturn_rings() {
-        // Meeus Example 45.a, p. 320 / soniakeys/meeus saturnring:
-        // JDE 2448972.50068 → B = 16.442°, B′ = 14.679°, P = 6.741°.
         let jd = JulianDate::new(2_448_972.500_68);
         let ori = saturn_ring_orientation::<DefaultEphemeris>(jd);
         let p = normalized(ori.north_pole_position_angle).to::<Degree>();
@@ -548,6 +913,59 @@ mod tests {
     }
 
     #[test]
+    fn jupiter_generic_body_is_finite() {
+        let ori = body_orientation::<Jupiter, DefaultEphemeris, Geocentric, EquatorialTrueOfDate>(
+            crate::J2000,
+        );
+        assert!(ori.north_pole_position_angle.unwrap().is_finite());
+        assert!(ori.bright_limb_position_angle.unwrap().is_finite());
+    }
+
+    #[test]
+    fn geocentric_vs_topocentric_differ_and_site_matters() {
+        let jd = JulianDate::new(2_448_935.500_683);
+        let geo = Mars::orientation(jd);
+        let sites = [
+            Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0)),
+            Geodetic::<ECEF>::new(Degrees::new(-70.4), Degrees::new(-24.6), Meters::new(0.0)),
+        ];
+        let mut topocentric = [Radians::new(0.0); 2];
+        for (i, site) in sites.iter().enumerate() {
+            let topo = Mars::orientation_at::<Topocentric, EquatorialTrueOfDate>((jd, *site));
+            assert!(
+                (geo.north_pole_position_angle.unwrap() - topo.north_pole_position_angle.unwrap())
+                    .abs()
+                    > Radians::new(1e-8)
+            );
+            topocentric[i] = topo.north_pole_position_angle.unwrap();
+        }
+        assert!((topocentric[0] - topocentric[1]).abs() > Radians::new(1e-8));
+    }
+
+    #[test]
+    fn equatorial_frames_transform_and_openings_are_invariant() {
+        let jd = JulianDate::new(2_448_972.500_68);
+        let tod = saturn_rings::<DefaultEphemeris, Geocentric, EquatorialTrueOfDate>(jd);
+        let mean = saturn_rings::<DefaultEphemeris, Geocentric, EquatorialMeanJ2000>(jd);
+        let icrs = saturn_rings::<DefaultEphemeris, Geocentric, ICRS>(jd);
+        // Ring openings are physical, not sky-plane, and must match across frames.
+        assert!((tod.ring_opening_earth - mean.ring_opening_earth).abs() < Radians::new(1e-10));
+        assert!((tod.ring_opening_earth - icrs.ring_opening_earth).abs() < Radians::new(1e-10));
+        assert!((tod.ring_opening_sun - mean.ring_opening_sun).abs() < Radians::new(1e-10));
+        assert!((tod.ring_opening_sun - icrs.ring_opening_sun).abs() < Radians::new(1e-10));
+        // Sky-plane PAs generally differ between true-of-date and mean/ICRS.
+        assert!(
+            (tod.north_pole_position_angle.unwrap() - mean.north_pole_position_angle.unwrap())
+                .abs()
+                > Radians::new(1e-6)
+                || (tod.north_pole_position_angle.unwrap()
+                    - icrs.north_pole_position_angle.unwrap())
+                .abs()
+                    > Radians::new(1e-6)
+        );
+    }
+
+    #[test]
     fn saturn_opening_sign_and_bounds() {
         for jd in [
             crate::J2000,
@@ -563,16 +981,10 @@ mod tests {
 
     #[test]
     fn angle_normalization_and_undefined_geometry() {
-        let origin = spherical::Direction::<frames::EquatorialTrueOfDate>::new(
-            Degrees::new(0.0),
-            Degrees::new(0.0),
-        );
-        assert_eq!(
-            origin.position_angle_to(&origin),
-            None,
-            "coincident directions are undefined"
-        );
-        let pole = spherical::Direction::<frames::EquatorialTrueOfDate>::new(
+        let origin =
+            spherical::Direction::<EquatorialTrueOfDate>::new(Degrees::new(0.0), Degrees::new(0.0));
+        assert_eq!(origin.position_angle_to(&origin), None);
+        let pole = spherical::Direction::<EquatorialTrueOfDate>::new(
             Degrees::new(0.0),
             Degrees::new(90.0),
         );

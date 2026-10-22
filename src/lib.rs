@@ -231,7 +231,8 @@ pub use event::lunar::position_angle::{moon_bright_limb_position_angle, LunarObs
 // Convenience re‑exports: planetary physical orientation
 // ---------------------------------------------------------------------------
 pub use event::planetary::{
-    mars_orientation, saturn_ring_orientation, MarsOrientation, SaturnRingOrientation,
+    body_orientation, mars_orientation, saturn_ring_orientation, saturn_rings, BodyOrientation,
+    MarsOrientation, PlanetaryObservationCenter, SaturnRingOrientation, SkyOrientationFrame,
 };
 
 // ---------------------------------------------------------------------------

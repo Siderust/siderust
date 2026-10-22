@@ -5,18 +5,17 @@
 //!
 //! ## Scientific scope
 //!
-//! Geocentric sky-plane orientation of Mars and Saturn for physical
-//! observations: rotational-pole (and Saturn ring-axis) position angles,
-//! Mars bright-limb bearing, and Saturn ring opening angles as seen from
-//! Earth and from the Sun. Epochs are TT; planetary positions are retarded
-//! for light-time. See [`orientation`] for the full correction policy.
+//! Light-time geometric sky-plane orientation of major planets: rotational-pole
+//! and bright-limb position angles, plus Saturn ring openings. Observers may be
+//! geocentric or topocentric; sky bearings may use true-of-date, mean J2000, or
+//! ICRS equatorial frames. See [`orientation`] for the correction policy.
 //!
 //! ## Technical scope
 //!
-//! Free functions [`mars_orientation`] and [`saturn_ring_orientation`] select
-//! the ephemeris backend at compile time via [`PlanetaryEphemeris`].
-//! Convenience wrappers live on [`Mars`](crate::bodies::solar_system::Mars) and
-//! [`Saturn`](crate::bodies::solar_system::Saturn).
+//! Generic entry point [`body_orientation`] over body, ephemeris, center, and
+//! frame. Convenience wrappers preserve Mars/Saturn geocentric true-of-date
+//! defaults. Saturn rings are layered on the shared geometry via
+//! [`saturn_rings`] / [`saturn_ring_orientation`].
 //!
 //! ## References
 //!
@@ -27,5 +26,6 @@
 pub mod orientation;
 
 pub use orientation::{
-    mars_orientation, saturn_ring_orientation, MarsOrientation, SaturnRingOrientation,
+    body_orientation, mars_orientation, saturn_ring_orientation, saturn_rings, BodyOrientation,
+    MarsOrientation, PlanetaryObservationCenter, SaturnRingOrientation, SkyOrientationFrame,
 };
