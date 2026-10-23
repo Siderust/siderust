@@ -3,10 +3,11 @@
 #
 # Usage (from repository root):
 #   CARGO_REGISTRY_TOKEN=... bash scripts/publish-changed.sh
-#   CARGO_REGISTRY_TOKEN=... bash scripts/publish-changed.sh --dry-run
+#   bash scripts/publish-changed.sh --dry-run
 #   CARGO_REGISTRY_TOKEN=... bash scripts/publish-changed.sh --confirm-ffi
 #
-# Tag-triggered releases (e.g. v0.9.0) should set CARGO_REGISTRY_TOKEN in CI.
+# Tag-triggered releases (e.g. v0.15.0) should set CARGO_REGISTRY_TOKEN in CI.
+# Dry runs do not require a registry token.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -29,35 +30,29 @@ for arg in "$@"; do
   esac
 done
 
-if [[ -z "${CARGO_REGISTRY_TOKEN:-}" ]]; then
+if [[ "$DRY_RUN" -eq 0 && -z "${CARGO_REGISTRY_TOKEN:-}" ]]; then
   echo "error: CARGO_REGISTRY_TOKEN must be set to publish to crates.io" >&2
   exit 1
 fi
 
-export CARGO_REGISTRY_TOKEN
+if [[ -n "${CARGO_REGISTRY_TOKEN:-}" ]]; then
+  export CARGO_REGISTRY_TOKEN
+fi
 
-is_publishable() {
-  local manifest="$1"
-  local publish
-  publish="$(cargo metadata --no-deps --format-version 1 --manifest-path "$manifest" \
-    | python3 -c 'import json,sys; m=json.load(sys.stdin)["packages"][0]; print(str(m.get("publish", True)).lower())')"
-  [[ "$publish" != "false" ]]
+RELEASE_BIN="$ROOT/target/debug/siderust-release"
+ensure_release_tool() {
+  if [[ ! -x "$RELEASE_BIN" ]]; then
+    cargo build -q -p siderust-release
+  fi
 }
 
-crate_name() {
-  cargo metadata --no-deps --format-version 1 --manifest-path "$1" \
-    | python3 -c 'import json,sys; print(json.load(sys.stdin)["packages"][0]["name"])'
-}
-
-crate_version() {
-  cargo metadata --no-deps --format-version 1 --manifest-path "$1" \
-    | python3 -c 'import json,sys; print(json.load(sys.stdin)["packages"][0]["version"])'
-}
-
+# Prefer the crates.io version API over `cargo search`. Search only reports the
+# newest crate and misses already-published versions during reruns.
 already_on_crates_io() {
   local name="$1"
   local version="$2"
-  if cargo search "$name" --limit 1 2>/dev/null | grep -q "^$name = \"$version\""; then
+  ensure_release_tool
+  if "$RELEASE_BIN" already-published "$name" "$version"; then
     return 0
   fi
   return 1
@@ -65,11 +60,11 @@ already_on_crates_io() {
 
 publish_manifest() {
   local manifest="$1"
-  local name version
-  name="$(crate_name "$manifest")"
-  version="$(crate_version "$manifest")"
+  local name version status
+  ensure_release_tool
+  read -r name version status < <("$RELEASE_BIN" package-meta "$manifest")
 
-  if ! is_publishable "$manifest"; then
+  if [[ "$status" != "publishable" ]]; then
     echo "skip $name ($manifest): publish = false"
     return 0
   fi
@@ -87,12 +82,14 @@ publish_manifest() {
   fi
 }
 
-# Primary crate (tag releases such as v0.9.0).
+# Primary crate (tag releases such as v0.15.0).
 publish_manifest "$ROOT/Cargo.toml"
 
 if [[ "$CONFIRM_FFI" -eq 1 ]]; then
   ffi_manifest="$ROOT/siderust-ffi/Cargo.toml"
-  if ! is_publishable "$ffi_manifest"; then
+  ensure_release_tool
+  read -r _name _version status < <("$RELEASE_BIN" package-meta "$ffi_manifest")
+  if [[ "$status" != "publishable" ]]; then
     echo "error: --confirm-ffi requested but siderust-ffi has publish = false" >&2
     echo "Set publish = true in siderust-ffi/Cargo.toml before releasing the FFI crate." >&2
     exit 1
