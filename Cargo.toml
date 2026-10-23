@@ -2,6 +2,7 @@
 members = [
     ".",
     "siderust-ffi",
+    "tools/release",
 ]
 
 [workspace.lints.rust]
