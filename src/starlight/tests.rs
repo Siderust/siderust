@@ -87,3 +87,7 @@ fn csv_contains_header_and_one_row_per_pixel() {
     assert!(csv.starts_with("healpix_index,integrated_ph_cm2_ns_sr,b_s10,v_s10"));
     assert_eq!(csv.lines().count(), map.values().len() + 1);
 }
+
+mod builder_cases;
+mod scalar_cases;
+mod validation_cases;
