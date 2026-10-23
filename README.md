@@ -58,7 +58,7 @@ No external JPL kernel is required for these VSOP87 examples. For more workflows
 - **Getting started:** [Installation](#installation) · [Examples](#examples) · [Supported feature flags](#supported-feature-flags)
 - **Core concepts:** [Features](#features) · [Coordinate systems](#coordinate-systems) · [Units and physical quantities](#units--physical-quantities)
 - **Data and internals:** [Scientific archive](#scientific-archive-submodule) · [Crate layout](#crate-layout) · [Benchmarks](benches/README.md)
-- **Community:** [Roadmap](#roadmap) · [Contributing](#contributing) · [Releasing](doc/releasing.md) · [License](#license) · [Acknowledgments](#acknowledgments)
+- **Community:** [Roadmap](#roadmap) · [Contributing](#contributing) · [License](#license) · [Acknowledgments](#acknowledgments)
 
 ---
 
