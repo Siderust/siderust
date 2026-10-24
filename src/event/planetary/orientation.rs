@@ -491,7 +491,7 @@ pub fn saturn_ring_orientation<E: PlanetState<Saturn>>(jd: JulianDate) -> Saturn
 }
 
 impl Mars {
-    /// Geocentric Mars orientation using [`DefaultEphemeris`] in
+    /// Geocentric Mars orientation using [`DefaultEphemeris`](crate::coordinates::transform::context::DefaultEphemeris) in
     /// [`EquatorialTrueOfDate`].
     ///
     /// # Examples
@@ -532,7 +532,7 @@ impl Mars {
 }
 
 impl Saturn {
-    /// Geocentric Saturn ring orientation using [`DefaultEphemeris`] in
+    /// Geocentric Saturn ring orientation using [`DefaultEphemeris`](crate::coordinates::transform::context::DefaultEphemeris) in
     /// [`EquatorialTrueOfDate`].
     ///
     /// # Examples

@@ -6,7 +6,7 @@
 //! Reuses Tempoch's explicit-context UTC bridge and ExactDuration validation;
 //! see the SGP4 module reference in `README.md` and Tempoch's
 //! nominal-civil-UTC decision.
-//! The model-specific minute/error adapters stay here. Time<UTC> subtraction
+//! The model-specific minute/error adapters stay here. `Time<UTC>` subtraction
 //! measures elapsed SI time and cannot replace these nominal calendar offsets.
 use super::Sgp4Error;
 use crate::qtty::Minutes;
