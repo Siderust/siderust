@@ -55,6 +55,12 @@ jobs:
             "$BIN" validate
           fi
 
+      - name: Check docs.rs documentation before publishing
+        env:
+          SIDERUST_JPL_STUB: all
+          RUSTDOCFLAGS: "-D rustdoc::broken_intra_doc_links -D rustdoc::invalid_html_tags"
+        run: cargo doc -p siderust --all-features --no-deps
+
       - name: Dry-run publishable package
         run: bash scripts/publish-changed.sh --dry-run
 

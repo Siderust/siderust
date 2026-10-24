@@ -6,6 +6,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.1] - 2026-10-24
+
+### Fixed
+
+- Resolve broken `DefaultEphemeris` intra-doc links in the Mars and Saturn
+  orientation APIs that prevented docs.rs from documenting v0.15.0.
+- Mark the SGP4 `Time<UTC>` name as inline code to avoid a rustdoc invalid-HTML
+  warning.
+- Add documentation build checks for all features to CI and release
+  preflight, denying broken intra-doc links and invalid HTML tags.
+
+### Changed
+
+- Synchronize `siderust` and unpublished `siderust-ffi` metadata at 0.15.1,
+  including the internal dependency and C ABI version 1501.
+
 ## [0.15.0]
 
 ### Breaking Changes
