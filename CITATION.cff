@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use Siderust in scientific work, cite this software and the astronomical models and datasets relevant to your analysis."
+type: software
+title: "Siderust: Type-Safe Astronomy and Satellite Mechanics in Rust"
+abstract: "A Rust library for type-safe astronomical coordinates, planetary and lunar ephemerides, time scales, observation analysis, and satellite mechanics."
+authors:
+  - family-names: "Vallés Puig"
+    given-names: "Ramon"
+repository-code: "https://github.com/Siderust/siderust"
+url: "https://github.com/Siderust/siderust"
+license: "AGPL-3.0-only"
+version: "0.15.1"
+keywords:
+  - astronomy
+  - astrodynamics
+  - celestial mechanics
+  - ephemerides
+  - satellite mechanics
