@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add `CITATION.cff` for scholarly software citations and document how to
+  cite Siderust in the README.
+
 ## [0.15.1] - 2026-10-24
 
 ### Fixed

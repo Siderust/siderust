@@ -389,6 +389,15 @@ If Siderust helps your work, [star the repository](https://github.com/Siderust/s
 
 ---
 
+## Citation
+
+If you use Siderust in scientific work, cite the software using
+[CITATION.cff](CITATION.cff) (or GitHub's **Cite this repository** menu).
+Record the exact software version and cite the underlying astronomical
+models and datasets relevant to your analysis.
+
+---
+
 ## License
 
 Copyright (C) 2026 Vallés Puig, Ramon
