@@ -183,4 +183,18 @@ mod tests {
         );
         assert_eq!(SurfaceObserver::<MoonSurface>::body_name(), "Moon");
     }
+
+    #[test]
+    fn observer_params_getters_preserve_site_and_cannot_mutate_invariants() {
+        use crate::qtty::{DEG, M};
+        let site = SurfaceSite::<MoonSurface>::new(30.0 * DEG, 20.0 * DEG, -10.0 * M)
+            .unwrap();
+        let params = SurfaceObserverParams::from_site(&site);
+        assert_eq!(params.lon(), site.lon());
+        assert_eq!(params.lat(), site.lat());
+        assert_eq!(params.height(), site.height());
+        assert_eq!(params.surface(), site.surface());
+        assert_eq!(params.latitude_convention(), site.latitude_convention());
+        assert_eq!(params, site.to_params());
+    }
 }
