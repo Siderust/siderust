@@ -254,31 +254,59 @@ where
     // are permitted for body models without a default surface.
     let params = site.to_params();
 
-    // 1. Centre → body centre in source frame, then rotate to ICRS, then to body-fixed.
-    let body_centred: Position<B::Center, F, U> =
-        TransformCenter::to_center_with(target, (), *jd, ctx);
-    let body_icrs: Position<B::Center, ICRS, U> = body_centred.to_frame_with(jd, ctx);
-    let body_fixed: Position<B::Center, B::FixedFrame, U> = body_icrs.to_frame_with(jd, ctx);
+    // Canonicalise to metres BEFORE rotations, centre shifts and subtracting
+    // observer coordinates. Working in arbitrary U (especially AU) makes a
+    // near-surface range depend on the unit's floating-point spacing.
+    let target_m: Position<C, F, Meter> = target.to_unit::<Meter>();
+    let body_centred: Position<B::Center, F, Meter> =
+        TransformCenter::to_center_with(&target_m, (), *jd, ctx);
+    let body_icrs: Position<B::Center, ICRS, Meter> = body_centred.to_frame_with(jd, ctx);
+    let body_fixed: Position<B::Center, B::FixedFrame, Meter> =
+        body_icrs.to_frame_with(jd, ctx);
+    let observer = site.observer_position::<Meter>()?;
 
-    // 2. Observer in body-fixed metres, converted to U.
-    let obs = site.observer_position::<U>()?;
-    let dx = (body_fixed.x() - obs.x()).value();
-    let dy = (body_fixed.y() - obs.y()).value();
-    let dz = (body_fixed.z() - obs.z()).value();
-    let r = (dx * dx + dy * dy + dz * dz).sqrt();
-    if !r.is_finite() {
-        return Err(SurfaceError::NonFiniteInput { field: "range" });
-    }
-    // Compare against a physical distance, never a raw numeric value in U:
-    // 1e-6 AU would otherwise reject perfectly valid nearby targets.
-    // Sub-micron residual after frame round-trips counts as coincident.
-    let range_m: Quantity<Meter> = Quantity::<U>::new(r).into();
-    if range_m.value() < 1e-6 {
-        return Err(SurfaceError::DegenerateGeometry {
-            reason: "zero observer–target range",
+    let dx = (body_fixed.x() - observer.x()).value();
+    let dy = (body_fixed.y() - observer.y()).value();
+    let dz = (body_fixed.z() - observer.z()).value();
+    if ![dx, dy, dz].iter().all(|value| value.is_finite()) {
+        return Err(SurfaceError::NonFiniteInput {
+            field: "observer_relative_position",
         });
     }
-    let los = [dx / r, dy / r, dz / r];
+    // Scale before evaluating the norm: no overflow in squaring huge values
+    // and no underflow when evaluating a tiny displacement.
+    let scale = dx.abs().max(dy.abs()).max(dz.abs());
+    let r_m = if scale == 0.0 {
+        0.0
+    } else {
+        let scaled = [dx / scale, dy / scale, dz / scale];
+        scale * (scaled[0] * scaled[0]
+            + scaled[1] * scaled[1]
+            + scaled[2] * scaled[2])
+            .sqrt()
+    };
+    if !r_m.is_finite() {
+        return Err(SurfaceError::NonFiniteInput { field: "range" });
+    }
+    // The tolerance is physical (metres), independent of requested U.
+    // It also includes the round-off floor for subtracting two absolute
+    // body-fixed positions of order the body's radius.
+    let absolute_scale = body_fixed
+        .x()
+        .value()
+        .abs()
+        .max(body_fixed.y().value().abs())
+        .max(body_fixed.z().value().abs())
+        .max(observer.x().value().abs())
+        .max(observer.y().value().abs())
+        .max(observer.z().value().abs());
+    let resolution_m = (64.0 * f64::EPSILON * absolute_scale).max(1.0e-6);
+    if r_m <= resolution_m {
+        return Err(SurfaceError::DegenerateGeometry {
+            reason: "coincident or numerically indistinguishable observer and target",
+        });
+    }
+    let los = [dx / r_m, dy / r_m, dz / r_m];
 
     let enu = site.enu_basis()?;
     let (alt, az) = los_to_horizontal(los, enu.east, enu.north, enu.up)?;
@@ -286,9 +314,9 @@ where
     // Horizontal Cartesian: x=North, y=East, z=Zenith (affn spherical convention).
     let az_r = deg_to_rad(az);
     let alt_r = deg_to_rad(alt);
-    let hx = Quantity::<U>::new(r * alt_r.cos() * az_r.cos());
-    let hy = Quantity::<U>::new(r * alt_r.cos() * az_r.sin());
-    let hz = Quantity::<U>::new(r * alt_r.sin());
+    let hx = Quantity::<U>::from(Quantity::<Meter>::new(r_m * alt_r.cos() * az_r.cos()));
+    let hy = Quantity::<U>::from(Quantity::<Meter>::new(r_m * alt_r.cos() * az_r.sin()));
+    let hz = Quantity::<U>::from(Quantity::<Meter>::new(r_m * alt_r.sin()));
 
     let position = Position::<SurfaceObserver<B>, Horizontal, U>::from_array(params, [hx, hy, hz]);
     Ok(HorizontalObservation { position })
