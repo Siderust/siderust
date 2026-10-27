@@ -612,7 +612,7 @@ fn finite_east_matches_direction_only_and_affn_horizontal_axes() {
         "east altitude parity",
     );
     assert!(
-        finite.position.y().value() > 0.0,
+        finite.position().y().value() > 0.0,
         "affn Horizontal +Y must mean east"
     );
 }
@@ -706,4 +706,33 @@ fn invalid_subsurface_site_deserialization_is_rejected() {
     let mut payload = serde_json::to_value(site).unwrap();
     payload["height"] = serde_json::to_value(-1_737_400.0 * M).unwrap();
     assert!(serde_json::from_value::<SurfaceSite<MoonSurface>>(payload).is_err());
+}
+
+#[test]
+fn microscopic_finite_range_preserves_altaz_in_au() {
+    // affn spherical Cartesian->spherical historically treats radii smaller
+    // than machine epsilon in the *current unit* as zero. A 10-µm LOS
+    // expressed in AU is below that numeric threshold but not physically zero.
+    let site = SurfaceSite::<MoonSurface>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
+    let [x, y, z] = site.body_fixed_cartesian().unwrap();
+    let target = Position::<Selenocentric, MoonPrincipalAxes, Meter>::new(
+        x,
+        y + 0.00001 * M,
+        z,
+    );
+    let target_au = target.to_unit::<AstronomicalUnit>();
+    let jd = siderust::J2000;
+    let ctx = ctx();
+    let obs_m = position_to_horizontal(&target, &site, &jd, &ctx).unwrap();
+    let obs_au = position_to_horizontal(&target_au, &site, &jd, &ctx).unwrap();
+    assert_near(obs_m.az().value(), 90.0, 0.25, "microscopic metre azimuth");
+    assert_near(obs_au.az().value(), 90.0, 0.25, "microscopic AU azimuth");
+    assert_near(obs_m.alt().value(), obs_au.alt().value(), 0.25, "micro alt parity");
+    assert_near(obs_m.az().value(), obs_au.az().value(), 0.25, "micro az parity");
+    assert_near(
+        obs_au.direction().to_spherical().az().value(),
+        obs_au.az().value(),
+        1e-6,
+        "micro direction consistency",
+    );
 }
