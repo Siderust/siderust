@@ -249,15 +249,17 @@ target → body-centred (Barycentric hub) → body-fixed (ICRS hub)
 ```
 
 Earth sidereal-time (GMST/GAST/UT1) is **not** used for lunar or planetary
-sites. Body orientation comes from the IAU WGCCRE `(α₀, δ₀, W)` model at the
-requested TT epoch.
+sites. Body orientation follows the corresponding IAU/WGCCRE model; the
+Moon uses the complete analytical IAU_MOON periodic terms. The underlying
+IAU rotation arguments are TDB: a TT Julian date is a practical approximation,
+not a mathematically exact timescale conversion.
 
 **Support matrix**
 
 | Body | Surface default | Fixed frame | Notes |
 |---|---|---|---|
 | Earth | WGS84 ellipsoid | `ECEF` | Coexists with `Topocentric` / GAST APIs |
-| Moon | IAU sphere 1737.4 km | `MoonPrincipalAxes` | IAU 2015 analytical PA — **not** JPL DE PA / ME |
+| Moon | IAU sphere 1737.4 km | `MoonIauMeanEarth` (`MoonPrincipalAxes` compatibility alias) | NAIF IAU_MOON analytical Mean-Earth model, **not** JPL DE PA / binary-PCK ME |
 | Mars | IAU ellipsoid 3396.19 km | `MarsFixed` | Default latitude: planetographic |
 | Mercury, Venus, Pluto | IAU mean spheres | `*Fixed` | Same generic path |
 | Gas giants | No default | Body-specific | Require a custom `BodySurfaceModel` with a documented reference surface and fixed frame |
@@ -270,15 +272,23 @@ must not be mixed silently. See `coordinates::surface` rustdocs and
 
 ## 5. Planetary Body-Fixed Frames
 
-These frames rotate with the respective body, defined by IAU 2015 rotation
-parameters (α₀, δ₀, W).  The transformation from body-fixed to ICRS is:
+These frames rotate with the respective body, using IAU pole and prime-meridian
+orientation parameters (α₀, δ₀, W). The active, column-vector body-fixed to
+ICRS rotation implemented by the provider is:
 
 ```
-R = Rz(−(α₀ + 90°)) · Rx(−(90° − δ₀)) · Rz(−W)
+R = Rz(α₀ + 90°) · Rx(90° − δ₀) · Rz(W)
 ```
 
 where α₀ and δ₀ define the body's north pole direction in ICRS, and W is
-the prime meridian angle (degrees).
+the prime meridian angle (degrees). This order matters: `affn`'s ZXZ constructor
+applies its first Z rotation first, then X, then the second Z. For the Moon,
+α₀, δ₀ and W additionally include the 13 periodic arguments of the NAIF
+IAU_MOON text-PCK and W includes a quadratic term. The `MoonPrincipalAxes`
+name is retained for API compatibility but does **not** denote a JPL DE
+principal-axes realization. Use the `MoonIauMeanEarth` alias to convey the
+implemented analytical ME orientation; DE-specific `MOON_PA` and `MOON_ME`
+require separate SPICE binary PCK frames.
 
 The **frame marker types** (zero-sized structs) are defined in `affn::frames`
 behind `feature = "astro"` so that `affn`'s derive macros can generate
@@ -295,7 +305,7 @@ The corresponding `FrameRotationProvider` implementations are organized under
 | Mercury body-fixed | `MercuryFixed` | Mercury | (lat, lon, radius) |
 | Venus body-fixed | `VenusFixed` | Venus | (lat, lon, radius) |
 | Mars body-fixed | `MarsFixed` | Mars | (lat, lon, radius) |
-| Moon PA | `MoonPrincipalAxes` | Moon | (lat, lon, radius) |
+| Moon analytical ME | `MoonIauMeanEarth` / `MoonPrincipalAxes` | Moon | (lat, lon, radius) |
 | Jupiter System III | `JupiterSystemIII` | Jupiter | (lat, lon, radius) |
 | Saturn body-fixed | `SaturnFixed` | Saturn | (lat, lon, radius) |
 | Uranus body-fixed | `UranusFixed` | Uranus | (lat, lon, radius) |
@@ -439,7 +449,7 @@ Named getters (`lat()`, `lon()`, `altitude()`) are generated automatically by th
 | MercuryFixed | Mercury body-fixed | IAU 2015 rotation | Mercury surface |
 | VenusFixed | Venus body-fixed | IAU 2015 rotation | Venus surface |
 | MarsFixed | Mars body-fixed | IAU 2015 rotation | Mars surface |
-| MoonPA | Moon Principal Axes | IAU 2015 rotation | Lunar surface |
+| MoonIauMeanEarth | Moon analytical Mean-Earth | NAIF IAU_MOON (2009), periodic | Lunar surface |
 | JupiterSysIII | Jupiter System III | IAU 2015 rotation | Jupiter magnetosphere |
 | SaturnFixed | Saturn body-fixed | IAU 2015 rotation | Saturn surface |
 | UranusFixed | Uranus body-fixed | IAU 2015 rotation | Uranus surface |
