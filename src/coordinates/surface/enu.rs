@@ -102,8 +102,29 @@ pub fn body_fixed_position(
     let (sin_lon, cos_lon) = lon_r.sin_cos();
     let (sin_lat, cos_lat) = lat_r.sin_cos();
     let h = height.value();
+    // A subsurface observer is valid until the inward normal reaches the
+    // ellipsoid's focal/evolute singularity or the centre-facing tangent plane.
+    // This geometric domain is independent of the chosen latitude convention.
+    let radial_limit = match *surface {
+        ReferenceSurface::Sphere { radius } => radius.value(),
+        ReferenceSurface::Ellipsoid { a, f } => {
+            let up = local_enu_basis(surface, lon, lat, convention)?.up;
+            let sin2 = up[2] * up[2];
+            let e2 = 2.0 * f - f * f;
+            let one_minus = 1.0 - e2 * sin2;
+            let a = a.value();
+            let meridional = a * (1.0 - e2) / (one_minus * one_minus.sqrt());
+            let tangent_distance = a * one_minus.sqrt();
+            meridional.min(tangent_distance)
+        }
+    };
+    if !radial_limit.is_finite() || radial_limit <= 0.0 || h <= -radial_limit {
+        return Err(SurfaceError::DegenerateGeometry {
+            reason: "height reaches or crosses surface-normal singularity",
+        });
+    }
 
-    match (*surface, convention) {
+    let position = match (*surface, convention) {
         (ReferenceSurface::Sphere { radius }, _) => {
             let r = radius.value() + h;
             Ok([
@@ -151,7 +172,13 @@ pub fn body_fixed_position(
                 Quantity::<Meter>::new(rho * sin_lat + h * normal[2]),
             ])
         }
+    }?;
+    if !position.iter().all(|value| value.value().is_finite()) {
+        return Err(SurfaceError::NonFiniteInput {
+            field: "body_fixed_position",
+        });
     }
+    Ok(position)
 }
 
 /// Local ENU basis at a surface site, expressed in the body-fixed frame.
