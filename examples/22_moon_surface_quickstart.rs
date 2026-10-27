@@ -24,7 +24,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let star = Direction::<ICRS>::new_unchecked(0.0, 0.0, 1.0);
 
     // The Moon's body-fixed orientation is evaluated at this TT epoch.
-    let ctx = AstroContext::default();
+    let ctx: AstroContext = AstroContext::default();
     let observed = site.observe_direction(&star, &J2000, &ctx)?;
 
     println!("Lunar site: lon={}, lat={}", site.lon(), site.lat());
