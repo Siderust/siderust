@@ -27,7 +27,7 @@ use siderust::coordinates::surface::{
 };
 use siderust::coordinates::transform::{
     direction_to_horizontal, horizontal_to_direction, position_to_horizontal, AstroContext,
-    DirectionAstroExt, SurfaceHorizontalExt,
+    DirectionAstroExt, SurfaceHorizontalExt, TransformCenter,
 };
 use siderust::ephemeris::{Ephemeris, Vsop87Ephemeris};
 use siderust::qtty::*;
@@ -75,30 +75,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         lunar_obs.range().to::<Kilometer>()
     );
 
-    // Direction-only Sun (no parallax invented).
+    // Convert the Sun's *barycentric position* to a Moon-centred position
+    // before observing it. Normalising sun_bary directly would instead yield
+    // the barycentre-to-Sun direction, which is not the Sun's lunar sky position.
     let sun_bary = Vsop87Ephemeris::sun_barycentric(jd);
-    let r = (sun_bary.x().value().powi(2)
-        + sun_bary.y().value().powi(2)
-        + sun_bary.z().value().powi(2))
-    .sqrt();
-    let sun_ecl = Direction::<EclipticMeanJ2000>::new_unchecked(
-        sun_bary.x().value() / r,
-        sun_bary.y().value() / r,
-        sun_bary.z().value() / r,
-    );
-    let sun_icrs: Direction<ICRS> = sun_ecl.to_frame(&jd);
-    let sun_hz = moon_site.observe_direction(&sun_icrs, &jd, &ctx)?;
-    let sun_sph = sun_hz.to_spherical();
+    let sun_sel: Position<Selenocentric, EclipticMeanJ2000, AstronomicalUnit> =
+        TransformCenter::to_center_with(&sun_bary, (), jd, &ctx);
+    let sun_obs = moon_site.observe_position(&sun_sel, &jd, &ctx)?;
     println!(
-        "  target: Sun (direction-only)          alt={:.4}  az={:.4}",
-        sun_sph.alt(),
-        sun_sph.az()
-    );
-
-    let back: Direction<ICRS> = horizontal_to_direction(&sun_hz, &moon_site, &jd, &ctx)?;
-    println!(
-        "  inverse check (Sun): angular error = {:.3e} rad\n",
-        sun_icrs.angle_to(&back).value()
+        "  target: Sun (selenocentric, finite)   alt={:.4}  az={:.4}  range={}\n",
+        sun_obs.alt(),
+        sun_obs.az(),
+        sun_obs.range().to::<AstronomicalUnit>()
     );
 
     // ── Mars: observe a fixed ICRS direction ──────────────────────────────
