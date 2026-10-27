@@ -579,3 +579,29 @@ fn site_params_body_name() {
         LatitudeConvention::Planetographic
     );
 }
+
+#[test]
+fn finite_east_matches_direction_only_and_affn_horizontal_axes() {
+    // On the lunar equator at longitude zero, +Y is local east. A target
+    // 1000 metres along +Y must report azimuth +90°, not 270°.
+    let site = SurfaceSite::<MoonSurface>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
+    let [x, y, z] = site.body_fixed_cartesian().unwrap();
+    let target = Position::<Selenocentric, MoonPrincipalAxes, Meter>::new(
+        x,
+        y + 1_000.0 * M,
+        z,
+    );
+    let jd = siderust::J2000;
+    let ctx = ctx();
+    let finite = position_to_horizontal(&target, &site, &jd, &ctx).unwrap();
+    let fixed_east = Direction::<MoonPrincipalAxes>::new_unchecked(0.0, 1.0, 0.0);
+    let icrs_east: Direction<ICRS> = fixed_east.to_frame_with(&jd, &ctx);
+    let direction = direction_to_horizontal(&icrs_east, &site, &jd, &ctx).unwrap();
+    let sph = direction.to_spherical();
+
+    assert_near(finite.alt().value(), 0.0, 1e-6, "finite east altitude");
+    assert_near(finite.az().value(), 90.0, 1e-6, "finite east azimuth");
+    assert_near(sph.az().value(), finite.az().value(), 1e-6, "east azimuth parity");
+    assert_near(sph.alt().value(), finite.alt().value(), 1e-6, "east altitude parity");
+    assert!(finite.position.y().value() > 0.0, "affn Horizontal +Y must mean east");
+}
