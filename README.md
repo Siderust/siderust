@@ -269,7 +269,12 @@ enforced at **compile time** with zero runtime cost (`Params = ()`).
 **Surface observers** (`SurfaceSite<B>`, `SurfaceObserver<B>`) provide geometric
 Alt/Az from Earth, Moon, Mars, and other supported bodies through one ENU
 pipeline (see `examples/21_body_surface_horizontal.rs`). Earth also keeps the
-legacy `Topocentric` / GAST path.
+legacy `Topocentric` / GAST path. Longitude is positive east; azimuth is
+north through east, altitude is above the reference-surface horizon (not
+terrain-occulted). Lunar observations use the analytical NAIF `IAU_MOON`
+Mean-Earth model (`MoonIauMeanEarth`, legacy name `MoonPrincipalAxes`), **not**
+JPL DE-series principal axes. For an observer-relative finite target, use
+`Position<C,F,U>`; a distance-free `Direction<F>` does not introduce parallax.
 
 **Parameterized centers** (`Topocentric`, `Bodycentric`, `SurfaceObserver`) carry runtime data
 (e.g., `ObserverSite`). The *center type* is still checked at compile time, but
