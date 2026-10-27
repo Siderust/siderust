@@ -262,4 +262,44 @@ mod tests {
         let f = s.flattening();
         assert!((f - 0.005_886_007_9).abs() < 1e-9, "f={f}");
     }
+
+    #[test]
+    fn default_surface_and_latitude_conventions_for_supported_rocky_bodies() {
+        use crate::coordinates::surface::SurfaceSite;
+        use crate::qtty::{DEG, M};
+
+        assert_eq!(EarthSurface::body_name(), "Earth");
+        assert_eq!(MoonSurface::body_name(), "Moon");
+        assert_eq!(MarsSurface::body_name(), "Mars");
+        assert_eq!(MercurySurface::body_name(), "Mercury");
+        assert_eq!(VenusSurface::body_name(), "Venus");
+        assert_eq!(PlutoSurface::body_name(), "Pluto");
+
+        assert_eq!(
+            EarthSurface::default_latitude_convention(),
+            LatitudeConvention::Planetographic
+        );
+        assert_eq!(
+            MarsSurface::default_latitude_convention(),
+            LatitudeConvention::Planetographic
+        );
+        for latitude in [
+            MoonSurface::default_latitude_convention(),
+            MercurySurface::default_latitude_convention(),
+            VenusSurface::default_latitude_convention(),
+            PlutoSurface::default_latitude_convention(),
+        ] {
+            assert_eq!(latitude, LatitudeConvention::Planetocentric);
+        }
+
+        let mercury = SurfaceSite::<MercurySurface>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M)
+            .unwrap();
+        let venus = SurfaceSite::<VenusSurface>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M)
+            .unwrap();
+        let pluto = SurfaceSite::<PlutoSurface>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M)
+            .unwrap();
+        assert_eq!(mercury.body_fixed_cartesian().unwrap()[0].value(), 2_439_700.0);
+        assert_eq!(venus.body_fixed_cartesian().unwrap()[0].value(), 6_051_800.0);
+        assert_eq!(pluto.body_fixed_cartesian().unwrap()[0].value(), 1_188_300.0);
+    }
 }
