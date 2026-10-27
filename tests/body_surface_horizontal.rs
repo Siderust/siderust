@@ -138,11 +138,7 @@ fn iau_body_poles_match_published_j2000_right_ascension_declination() {
     let pole_reference = |ra_deg: f64, dec_deg: f64| -> [f64; 3] {
         let ra = ra_deg.to_radians();
         let dec = dec_deg.to_radians();
-        [
-            dec.cos() * ra.cos(),
-            dec.cos() * ra.sin(),
-            dec.sin(),
-        ]
+        [dec.cos() * ra.cos(), dec.cos() * ra.sin(), dec.sin()]
     };
 
     let moon_pole: Direction<ICRS> =
@@ -213,8 +209,9 @@ fn direction_does_not_invent_parallax() {
     ));
     let recovered: Direction<ICRS> =
         siderust::coordinates::transform::horizontal_observation_to_direction(
-            &horiz, &site, &jd, &ctx
-        ).unwrap();
+            &horiz, &site, &jd, &ctx,
+        )
+        .unwrap();
     assert!(icrs.angle_to(&recovered).value() < 1e-8);
 }
 
@@ -379,7 +376,6 @@ fn zero_range_is_error() {
     }
 }
 
-
 // =============================================================================
 // Unit-independent coincident-target tolerance
 // =============================================================================
@@ -405,9 +401,24 @@ fn finite_observation_range_is_invariant_under_length_units() {
     let obs_au = position_to_horizontal(&target_au, &site, &jd, &ctx).unwrap();
 
     assert_near(obs_m.range().value(), 1_000.0, 1e-3, "metre slant range");
-    assert_near(obs_km.range().to::<Meter>().value(), 1_000.0, 1e-3, "km slant range");
-    assert_near(obs_au.range().to::<Meter>().value(), 1_000.0, 1e-2, "AU slant range");
-    assert_near(obs_m.alt().value(), obs_au.alt().value(), 1e-6, "unit invariant altitude");
+    assert_near(
+        obs_km.range().to::<Meter>().value(),
+        1_000.0,
+        1e-3,
+        "km slant range",
+    );
+    assert_near(
+        obs_au.range().to::<Meter>().value(),
+        1_000.0,
+        1e-2,
+        "AU slant range",
+    );
+    assert_near(
+        obs_m.alt().value(),
+        obs_au.alt().value(),
+        1e-6,
+        "unit invariant altitude",
+    );
 }
 
 // =============================================================================
@@ -463,7 +474,12 @@ fn mars_zenith_along_ellipsoid_normal() {
         Quantity::<Meter>::new(z.value() + enu.up[2] * 1_000.0),
     );
     let normal = position_to_horizontal(&normal_target, &site, &siderust::J2000, &ctx()).unwrap();
-    assert_near(normal.alt().value(), 90.0, 1e-6, "mars ellipsoid-normal zenith");
+    assert_near(
+        normal.alt().value(),
+        90.0,
+        1e-6,
+        "mars ellipsoid-normal zenith",
+    );
 }
 
 // Compile-time: SurfaceSite is parameterized by body (Moon ≠ Mars).
@@ -476,9 +492,14 @@ fn site_params_body_name() {
     // Params equality is within the same body centre type only.
     assert_eq!(moon.to_params(), moon.to_params());
     // The default params are body-specific, never implicitly lunar for Mars.
-    let moon_default = siderust::coordinates::surface::SurfaceObserverParams::<MoonSurface>::default();
-    let mars_default = siderust::coordinates::surface::SurfaceObserverParams::<MarsSurface>::default();
+    let moon_default =
+        siderust::coordinates::surface::SurfaceObserverParams::<MoonSurface>::default();
+    let mars_default =
+        siderust::coordinates::surface::SurfaceObserverParams::<MarsSurface>::default();
     assert_eq!(moon_default.surface, MoonSurface::default_surface());
     assert_eq!(mars_default.surface, MarsSurface::default_surface());
-    assert_eq!(mars_default.latitude_convention, LatitudeConvention::Planetographic);
+    assert_eq!(
+        mars_default.latitude_convention,
+        LatitudeConvention::Planetographic
+    );
 }
