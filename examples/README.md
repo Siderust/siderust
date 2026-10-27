@@ -17,6 +17,8 @@ Feature-gated examples list the required feature in the command.
 - `13_coordinate_operations`: angular separation, distances, and displacement algebra.
 - `14_nutation_models`: default and custom nutation-model transform paths.
 - `19_horizontal_coordinates`: equatorial ↔ horizontal for spherical/cartesian directions and positions.
+- `21_body_surface_horizontal`: complete Moon/Mars/Earth geometric Alt/Az workflow.
+- `22_moon_surface_quickstart`: minimal lunar site and inertial-direction Alt/Az (no downloads).
 
 ```bash
 cargo run --example 01_basic_coordinates
@@ -26,6 +28,8 @@ cargo run --example 04_all_center_conversions
 cargo run --example 13_coordinate_operations
 cargo run --example 14_nutation_models
 cargo run --example 19_horizontal_coordinates
+cargo run --example 21_body_surface_horizontal
+cargo run --example 22_moon_surface_quickstart
 ```
 
 ## Observing Workflows
