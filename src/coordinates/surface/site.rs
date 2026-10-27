@@ -109,7 +109,7 @@ impl<B: BodySurfaceModel> SurfaceSite<B> {
         surface: ReferenceSurface,
         latitude_convention: LatitudeConvention,
     ) -> Result<Self, SurfaceError> {
-        B::ensure_supported()?;
+        // An explicit surface is allowed even when a body has no default model.
         // Public enum variants can bypass constructors; always enforce invariants.
         surface.validate()?;
         if !lon.value().is_finite() {
