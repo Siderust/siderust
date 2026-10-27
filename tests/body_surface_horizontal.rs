@@ -163,6 +163,20 @@ fn direction_does_not_invent_parallax() {
     let icrs: Direction<ICRS> = fixed.to_frame_with(&jd, &ctx);
     let horiz = site.observe_direction(&icrs, &jd, &ctx).unwrap();
     assert_near(horiz.to_spherical().alt().value(), 0.0, 1e-8, "dir alt");
+    assert_eq!(horiz.site_params(), &site.to_params());
+    let other = SurfaceSite::<MoonSurface>::new(15.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
+    let bad = siderust::coordinates::transform::horizontal_observation_to_direction::<
+        MoonSurface, ICRS, _
+    >(&horiz, &other, &jd, &ctx);
+    assert!(matches!(
+        bad,
+        Err(siderust::coordinates::surface::SurfaceError::MismatchedObserver)
+    ));
+    let recovered: Direction<ICRS> =
+        siderust::coordinates::transform::horizontal_observation_to_direction(
+            &horiz, &site, &jd, &ctx
+        ).unwrap();
+    assert!(icrs.angle_to(&recovered).value() < 1e-8);
 }
 
 // =============================================================================
