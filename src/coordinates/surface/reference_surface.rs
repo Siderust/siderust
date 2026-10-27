@@ -27,8 +27,9 @@ pub enum ReferenceSurface {
     /// Oblate reference ellipsoid with equatorial radius `a` and flattening `f`.
     ///
     /// Latitude interpretation follows [`super::LatitudeConvention`]:
-    /// planetographic uses the ellipsoid normal; planetocentric uses the
-    /// radius-vector direction.
+    /// planetographic specifies the surface-normal direction; planetocentric
+    /// specifies the centre-to-surface direction. Height and ENU up are
+    /// always along the ellipsoid normal.
     Ellipsoid {
         /// Semi-major (equatorial) axis in metres.
         a: Meters,
