@@ -157,6 +157,78 @@ fn iau_body_poles_match_published_j2000_right_ascension_declination() {
 }
 
 // =============================================================================
+// Absolute IAU prime-meridian orientation (independent of the provider)
+// =============================================================================
+
+#[test]
+fn iau_body_prime_meridians_match_j2000_cartographic_axes() {
+    // IAU body-fixed +X is the reference-equator node rotated eastward by W.
+    // This is a direct published-angle reference, not an inverse round-trip.
+    fn expected_x(ra_deg: f64, dec_deg: f64, w_deg: f64) -> [f64; 3] {
+        let (sa, ca) = ra_deg.to_radians().sin_cos();
+        let (sd, cd) = dec_deg.to_radians().sin_cos();
+        let (sw, cw) = w_deg.to_radians().sin_cos();
+        [-sa * cw - sd * ca * sw, ca * cw - sd * sa * sw, cd * sw]
+    }
+
+    let jd = siderust::J2000;
+    let ctx = ctx();
+    let moon_x: Direction<ICRS> =
+        Direction::<MoonPrincipalAxes>::new_unchecked(1.0, 0.0, 0.0)
+            .to_frame_with(&jd, &ctx);
+    let mars_x: Direction<ICRS> =
+        Direction::<MarsFixed>::new_unchecked(1.0, 0.0, 0.0).to_frame_with(&jd, &ctx);
+
+    for (actual, expected, label) in [
+        (moon_x, expected_x(269.9949, 66.5392, 38.3213), "Moon"),
+        (mars_x, expected_x(317.269, 54.432, 176.049), "Mars"),
+    ] {
+        assert_near(actual.x(), expected[0], 1e-10, &format!("{label} X-axis x"));
+        assert_near(actual.y(), expected[1], 1e-10, &format!("{label} X-axis y"));
+        assert_near(actual.z(), expected[2], 1e-10, &format!("{label} X-axis z"));
+    }
+}
+
+#[test]
+fn mars_altaz_invariant_under_equivalent_latitude_conventions() {
+    let s = MarsSurface::default_surface();
+    let graphic = 45.0_f64;
+    let centric = ((1.0 - s.e2()) * graphic.to_radians().tan())
+        .atan()
+        .to_degrees();
+    let site_g = SurfaceSite::<MarsSurface>::with_surface(
+        137.0 * DEG,
+        graphic * DEG,
+        100.0 * M,
+        s,
+        LatitudeConvention::Planetographic,
+    )
+    .unwrap();
+    let site_c = SurfaceSite::<MarsSurface>::with_surface(
+        137.0 * DEG,
+        centric * DEG,
+        100.0 * M,
+        s,
+        LatitudeConvention::Planetocentric,
+    )
+    .unwrap();
+
+    let target = Direction::<ICRS>::new_unchecked(0.0, 0.0, 1.0);
+    let jd = siderust::J2000;
+    let ctx = ctx();
+    let g = direction_to_horizontal(&target, &site_g, &jd, &ctx)
+        .unwrap()
+        .to_spherical();
+    let c = direction_to_horizontal(&target, &site_c, &jd, &ctx)
+        .unwrap()
+        .to_spherical();
+
+    assert_near(g.alt().value(), c.alt().value(), 1e-10, "equivalent Mars alt");
+    let daz = (g.az().value() - c.az().value()).abs();
+    assert!(daz.min(360.0 - daz) < 1e-10);
+}
+
+// =============================================================================
 // Finite-distance parallax
 // =============================================================================
 
