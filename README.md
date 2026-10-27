@@ -266,7 +266,12 @@ The public frame set includes:
 For most centers (`Barycentric`, `Heliocentric`, `Geocentric`) all invariants are
 enforced at **compile time** with zero runtime cost (`Params = ()`).
 
-**Parameterized centers** (`Topocentric`, `Bodycentric`) carry runtime data
+**Surface observers** (`SurfaceSite<B>`, `SurfaceObserver<B>`) provide geometric
+Alt/Az from Earth, Moon, Mars, and other supported bodies through one ENU
+pipeline (see `examples/21_body_surface_horizontal.rs`). Earth also keeps the
+legacy `Topocentric` / GAST path.
+
+**Parameterized centers** (`Topocentric`, `Bodycentric`, `SurfaceObserver`) carry runtime data
 (e.g., `ObserverSite`). The *center type* is still checked at compile time, but
 *parameter equality* (e.g., "are these two positions at the same site?") is
 checked at **runtime**:

@@ -69,3 +69,14 @@ impl_via_icrs_bidirectional!(EME2000, SaturnFixed);
 impl_via_icrs_bidirectional!(EME2000, UranusFixed);
 impl_via_icrs_bidirectional!(EME2000, NeptuneFixed);
 impl_via_icrs_bidirectional!(EME2000, PlutoFixed);
+
+// EquatorialMeanJ2000 ↔ body-fixed (compose through ICRS) for surface Alt/Az.
+impl_via_icrs_bidirectional!(EquatorialMeanJ2000, MercuryFixed);
+impl_via_icrs_bidirectional!(EquatorialMeanJ2000, VenusFixed);
+impl_via_icrs_bidirectional!(EquatorialMeanJ2000, MarsFixed);
+impl_via_icrs_bidirectional!(EquatorialMeanJ2000, MoonPrincipalAxes);
+impl_via_icrs_bidirectional!(EquatorialMeanJ2000, JupiterSystemIII);
+impl_via_icrs_bidirectional!(EquatorialMeanJ2000, SaturnFixed);
+impl_via_icrs_bidirectional!(EquatorialMeanJ2000, UranusFixed);
+impl_via_icrs_bidirectional!(EquatorialMeanJ2000, NeptuneFixed);
+impl_via_icrs_bidirectional!(EquatorialMeanJ2000, PlutoFixed);

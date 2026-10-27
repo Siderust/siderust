@@ -22,9 +22,20 @@ The consequence is that mismatches can trigger panics in default operations. For
 
 Transformations are separated according to their physical meaning rather than bundled under a single abstraction. Frame rotations are implemented as pure rotation matrices. Center shifts are modeled as affine translations. Observation effects, such as aberration or apparent place corrections, are treated as a distinct processing pipeline.
 
-Each of these operations carries different invariants and requires different contextual inputs. For example, horizontal transformations depend on an observer site and Earth orientation parameters such as UT1 and polar motion. By keeping these domains distinct, the API makes such dependencies explicit rather than implicit.
+Each of these operations carries different invariants and requires different contextual inputs. For example, Earth-specific GAST horizontal transforms depend on an observer site and Earth orientation parameters such as UT1 and polar motion. Generic body-surface Alt/Az transforms instead depend on the body's IAU orientation model at a TT epoch and an explicit reference surface — they deliberately do **not** reuse GMST/GAST/UT1. By keeping these domains distinct, the API makes such dependencies explicit rather than implicit.
 
 This design avoids hidden assumptions, particularly regarding Earth orientation and observational context. The user is required to supply the appropriate information where necessary, reinforcing clarity over convenience.
+
+## Generic Surface Observers (v0.16)
+
+Surface observers on Earth, the Moon, Mars, and other supported bodies share one pipeline rather than body-specific Alt/Az engines:
+
+1. Translate the target to the body centre (barycentric hub).
+2. Rotate into the body-fixed frame (ICRS hub + IAU WGCCRE orientation).
+3. Form the observer-relative line of sight (finite targets include parallax; directions do not invent a distance).
+4. Project onto the local east–north–up basis derived from the site's reference surface.
+
+`SurfaceSite<B>` and `SurfaceObserver<B>` carry the body at the type level; site geometry is validated at runtime. Earth retains `Topocentric` / `Geodetic<ECEF>` / GAST helpers for backward compatibility; the generic path is available via `SurfaceSite<Earth>` for API uniformity. Geometric Alt/Az remains separate from refraction, aberration, light-time, and terrain masking.
 
 ## Modular Provider Registry with Explicit Hubs
 

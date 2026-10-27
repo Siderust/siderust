@@ -228,7 +228,43 @@ Local horizontal frame centred on the observer.  Spherical coordinates are
 azimuth measured from North through East.
 
 Every `Position<Topocentric, Horizontal, U>` implicitly carries a
-`Geodetic<ECEF>` via the `Topocentric` center parameter.
+`Geodetic<ECEF>` via the `Topocentric` center parameter (Earth-only path).
+
+### 4.1 Generic body-surface observers
+
+For observers on bodies other than Earth — and for a uniform Earth API —
+use `coordinates::surface`:
+
+| Type | Role |
+|---|---|
+| `SurfaceSite<B>` | Lat/lon/height on body `B` with an explicit `ReferenceSurface` |
+| `SurfaceObserver<B>` | Parameterized centre carrying `SurfaceObserverParams` |
+| `BodySurfaceModel` | Compile-time link: body → centre, fixed frame, default surface |
+
+**Pipeline** (geometric Alt/Az):
+
+```text
+target → body-centred (Barycentric hub) → body-fixed (ICRS hub)
+      → observer-relative LOS → local ENU → Horizontal
+```
+
+Earth sidereal-time (GMST/GAST/UT1) is **not** used for lunar or planetary
+sites. Body orientation comes from the IAU WGCCRE `(α₀, δ₀, W)` model at the
+requested TT epoch.
+
+**Support matrix**
+
+| Body | Surface default | Fixed frame | Notes |
+|---|---|---|---|
+| Earth | WGS84 ellipsoid | `ECEF` | Coexists with `Topocentric` / GAST APIs |
+| Moon | IAU sphere 1737.4 km | `MoonPrincipalAxes` | IAU 2015 analytical PA — **not** JPL DE PA / ME |
+| Mars | IAU ellipsoid 3396.19 km | `MarsFixed` | Default latitude: planetographic |
+| Mercury, Venus, Pluto | IAU mean spheres | `*Fixed` | Same generic path |
+| Gas giants | — | — | Rejected unless an explicit reference surface is provided |
+
+Planetocentric and planetographic latitudes are distinct on ellipsoids and
+must not be mixed silently. See `coordinates::surface` rustdocs and
+`examples/21_body_surface_horizontal.rs`.
 
 ---
 
@@ -422,10 +458,10 @@ orbit-relative API in `astro::dynamics::frames::LocalOrbitalFrame<M>` and
 from a concrete `OrbitState`, so the state-dependent nature of the frame is
 preserved at the type level.
 
-Other operational frames (e.g. body-fixed frames for minor planets, or
-observer-defined topocentric frames beyond `Horizontal`) are still out of
-scope for the typed frame system.
+Other operational frames (e.g. body-fixed frames for minor planets) remain
+out of scope for the typed frame system. Generic surface observers for the
+major rocky bodies are in scope as of v0.16 via `coordinates::surface`.
 
 ---
 
-*Last updated by the P0–P2 coordinate model refactor.*
+*Last updated for v0.16 generic body-surface horizontal transforms.*

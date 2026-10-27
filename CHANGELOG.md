@@ -6,10 +6,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-10-27
+
 ### Added
 
+- Generic celestial-body surface observers and geometric Alt/Az transforms:
+  `SurfaceSite<B>`, `ReferenceSurface`, `BodySurfaceModel`,
+  `SurfaceObserver<B>`, and `coordinates::transform::surface_horizontal`
+  (`position_to_horizontal`, `direction_to_horizontal`, inverse helpers,
+  `SurfaceHorizontalExt`). One ENU pipeline serves Earth, Moon, Mars, and
+  other rocky bodies with documented reference surfaces; gas giants are
+  rejected unless an explicit surface model is supplied.
+- First-class lunar and Martian surface Alt/Az using existing
+  `Selenocentric` / `MoonPrincipalAxes` and `Marscentric` / `MarsFixed`
+  orientation providers (IAU WGCCRE). Finite-distance parallax is applied
+  only to positions; direction-only inputs do not invent a range.
+- Default surfaces with documented provenance: WGS84 (Earth), IAU mean
+  sphere 1737.4 km (Moon), IAU ellipsoid a = 3396.19 km (Mars), plus Mercury,
+  Venus, and Pluto mean spheres. Planetocentric vs planetographic latitude
+  conventions are explicit.
+- Example `21_body_surface_horizontal` and offline scientific validation
+  tests (`tests/body_surface_horizontal.rs`) covering zenith, cardinals,
+  poles, parallax, epoch rotation, forward/inverse round-trips, and
+  invalid inputs.
+- EquatorialMeanJ2000 ↔ planetary body-fixed frame rotations via the ICRS hub.
 - Add `CITATION.cff` for scholarly software citations and document how to
   cite Siderust in the README.
+
+### Changed
+
+- Synchronize `siderust` and unpublished `siderust-ffi` metadata at 0.16.0,
+  including the internal dependency and C ABI version 1600.
+- Document generic surface observers in `doc/frames_and_centers.md` and
+  `doc/architecture_decisions.md`. Earth `Topocentric` / GAST horizontal
+  APIs remain unchanged for backward compatibility.
+
+### Notes
+
+- Geometric Alt/Az only: no refraction, aberration, light deflection,
+  light-time, or terrain masking in the new path.
+- `MoonPrincipalAxes` is siderust's IAU 2015 analytical realisation, not
+  JPL DE `MOON_PA` or Mean-Earth (`MOON_ME`); comparisons to SPICE must
+  account for that difference.
 
 ## [0.15.1] - 2026-10-24
 
