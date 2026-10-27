@@ -44,7 +44,8 @@
 //! - [`MercuryFixed`]: Mercury IAU 2015 body-fixed rotation model.
 //! - [`VenusFixed`]: Venus IAU 2015 body-fixed rotation model.
 //! - [`MarsFixed`]: Mars IAU 2015 body-fixed rotation model.
-//! - [`MoonPrincipalAxes`]: Moon principal axes (selenocentric) frame.
+//! - [`MoonIauMeanEarth`]: NAIF IAU_MOON analytical Mean-Earth frame.
+//!   The legacy [`MoonPrincipalAxes`] name is an alias, **not** DE MOON_PA.
 //! - [`JupiterSystemIII`]: Jupiter System III magnetic-field-based rotation.
 //! - [`SaturnFixed`]: Saturn IAU body-fixed rotation model.
 //! - [`UranusFixed`]: Uranus IAU body-fixed rotation model.
@@ -76,6 +77,13 @@ pub mod planetary {
         SaturnFixed, UranusFixed, VenusFixed,
     };
 
+    /// NAIF IAU_MOON analytical lunar Mean-Earth/Polar-Axis orientation.
+    ///
+    /// This preserves the `affn`-defined [`MoonPrincipalAxes`] marker as a
+    /// compatibility alias. Neither name denotes a DE-specific `MOON_PA`
+    /// realization; use an explicit SPICE binary PCK for that precision.
+    pub type MoonIauMeanEarth = MoonPrincipalAxes;
+
     // Re-export planetary IAU rotation parameters from solar-system body metadata.
     pub use crate::astro::{HasIauRotation, IauRotationParams};
     pub use crate::bodies::solar_system::{
@@ -102,8 +110,8 @@ pub use affn::frames::{
 
 // Re-export siderust-specific frame types
 pub use planetary::{
-    JupiterSystemIII, MarsFixed, MercuryFixed, MoonPrincipalAxes, NeptuneFixed, PlutoFixed,
-    SaturnFixed, UranusFixed, VenusFixed,
+    JupiterSystemIII, MarsFixed, MercuryFixed, MoonIauMeanEarth, MoonPrincipalAxes, NeptuneFixed,
+    PlutoFixed, SaturnFixed, UranusFixed, VenusFixed,
 };
 
 // NOTE: The `Horizontal` frame type uses the **North-clockwise** azimuth convention
