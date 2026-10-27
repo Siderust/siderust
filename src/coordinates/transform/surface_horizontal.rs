@@ -67,21 +67,47 @@ use core::f64::consts::{PI, TAU};
 /// result cannot be silently reinterpreted at a different site.
 #[derive(Debug, Clone, Copy)]
 pub struct HorizontalObservation<B: BodySurfaceModel, U: LengthUnit = Meter> {
-    /// Topocentric horizontal position (range preserved for finite targets).
-    pub position: Position<SurfaceObserver<B>, Horizontal, U>,
+    /// Observer-tagged topocentric horizontal position.
+    position: Position<SurfaceObserver<B>, Horizontal, U>,
 }
 
 impl<B: BodySurfaceModel, U: LengthUnit> HorizontalObservation<B, U> {
+    /// The validated observer-tagged Cartesian position.
+    pub fn position(&self) -> &Position<SurfaceObserver<B>, Horizontal, U> {
+        &self.position
+    }
+
+    // affn's generic spherical conversion treats radii smaller than
+    // f64::EPSILON in the *input unit* as zero. At micrometre-scale ranges
+    // represented in AU that would silently erase a valid sky direction.
+    // Use a scale-free Cartesian angular extraction instead.
+    fn stable_angles(&self) -> (Degrees, Degrees) {
+        let x = self.position.x().value();
+        let y = self.position.y().value();
+        let z = self.position.z().value();
+        let scale = x.abs().max(y.abs()).max(z.abs());
+        if scale == 0.0 {
+            return (Degrees::new(0.0), Degrees::new(0.0));
+        }
+        let (north, east, up) = (x / scale, y / scale, z / scale);
+        let horizontal = (north * north + east * east).sqrt();
+        let altitude = rad_to_deg(up.atan2(horizontal));
+        let azimuth = if horizontal == 0.0 {
+            0.0
+        } else {
+            rad_to_deg(east.atan2(north).rem_euclid(TAU))
+        };
+        (Degrees::new(altitude), Degrees::new(azimuth))
+    }
+
     /// Altitude above the geometric horizon.
     pub fn alt(&self) -> Degrees {
-        let sph = affn::Position::<SurfaceObserver<B>, Horizontal, U>::to_spherical(&self.position);
-        sph.alt()
+        self.stable_angles().0
     }
 
     /// Azimuth from north through east, normalised to `[0°, 360°)`.
     pub fn az(&self) -> Degrees {
-        let sph = affn::Position::<SurfaceObserver<B>, Horizontal, U>::to_spherical(&self.position);
-        sph.az()
+        self.stable_angles().1
     }
 
     /// Slant range from observer to target.
@@ -96,8 +122,8 @@ impl<B: BodySurfaceModel, U: LengthUnit> HorizontalObservation<B, U> {
 
     /// Spherical horizontal direction (altitude, azimuth).
     pub fn direction_spherical(&self) -> spherical::Direction<Horizontal> {
-        let sph = affn::Position::<SurfaceObserver<B>, Horizontal, U>::to_spherical(&self.position);
-        sph.direction()
+        let (altitude, azimuth) = self.stable_angles();
+        spherical::Direction::<Horizontal>::new_unchecked(altitude, azimuth)
     }
 
     /// Cartesian horizontal direction.
