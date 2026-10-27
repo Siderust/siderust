@@ -24,8 +24,10 @@ use serde::{Deserialize, Serialize};
 ///
 /// Longitude is positive **east**. Latitude follows
 /// [`LatitudeConvention`] (body default unless overridden). Height is
-/// measured above the configured [`ReferenceSurface`] along the local
-/// vertical of that convention.
+/// measured above the configured [`ReferenceSurface`] along its outward
+/// normal (radial on a sphere). On an ellipsoid, the local horizon is
+/// independent of whether the same site is given planetocentric or
+/// planetographic latitude.
 ///
 /// # Example
 ///
@@ -41,7 +43,8 @@ use serde::{Deserialize, Serialize};
 /// assert_eq!(site.body_name(), "Moon");
 /// ```
 #[derive(Debug, Clone, Copy)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize))]
+#[cfg_attr(feature = "serde", serde(bound(serialize = "")))]
 pub struct SurfaceSite<B: BodySurfaceModel> {
     lon: Degrees,
     lat: Degrees,
@@ -50,6 +53,29 @@ pub struct SurfaceSite<B: BodySurfaceModel> {
     latitude_convention: LatitudeConvention,
     #[cfg_attr(feature = "serde", serde(skip))]
     _body: PhantomData<B>,
+}
+
+#[cfg(feature = "serde")]
+impl<'de, B: BodySurfaceModel> Deserialize<'de> for SurfaceSite<B> {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        #[derive(Deserialize)]
+        struct Fields {
+            lon: Degrees,
+            lat: Degrees,
+            height: Meters,
+            surface: ReferenceSurface,
+            latitude_convention: LatitudeConvention,
+        }
+        let site = Fields::deserialize(deserializer)?;
+        Self::with_surface(
+            site.lon,
+            site.lat,
+            site.height,
+            site.surface,
+            site.latitude_convention,
+        )
+        .map_err(serde::de::Error::custom)
+    }
 }
 
 impl<B: BodySurfaceModel> PartialEq for SurfaceSite<B> {
@@ -84,15 +110,8 @@ impl<B: BodySurfaceModel> SurfaceSite<B> {
         latitude_convention: LatitudeConvention,
     ) -> Result<Self, SurfaceError> {
         B::ensure_supported()?;
-        // Re-validate surface parameters (const defaults are trusted; custom ones may not be).
-        match surface {
-            ReferenceSurface::Sphere { radius } => {
-                let _ = ReferenceSurface::sphere(radius)?;
-            }
-            ReferenceSurface::Ellipsoid { a, f } => {
-                let _ = ReferenceSurface::ellipsoid(a, f)?;
-            }
-        }
+        // Public enum variants can bypass constructors; always enforce invariants.
+        surface.validate()?;
         if !lon.value().is_finite() {
             return Err(SurfaceError::NonFiniteInput { field: "longitude" });
         }
@@ -261,6 +280,21 @@ mod tests {
     fn rejects_bad_latitude() {
         let err = SurfaceSite::<MarsSurface>::new(0.0 * DEG, 100.0 * DEG, 0.0 * M).unwrap_err();
         assert!(matches!(err, SurfaceError::InvalidLatitude { .. }));
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn deserialization_enforces_site_invariants() {
+        let site = SurfaceSite::<MoonSurface>::new(20.0 * DEG, 30.0 * DEG, 0.0 * M).unwrap();
+        let mut payload = serde_json::to_value(site).unwrap();
+        payload["lat"] = serde_json::to_value(120.0 * DEG).unwrap();
+        assert!(serde_json::from_value::<SurfaceSite<MoonSurface>>(payload).is_err());
+
+        let mut payload = serde_json::to_value(site).unwrap();
+        payload["surface"] = serde_json::json!({"Sphere": {
+            "radius": serde_json::to_value(-1.0 * M).unwrap()
+        }});
+        assert!(serde_json::from_value::<SurfaceSite<MoonSurface>>(payload).is_err());
     }
 
     #[test]
