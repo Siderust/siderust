@@ -137,211 +137,85 @@ pub const PLUTO_IAU_SPHERE: ReferenceSurface = ReferenceSurface::Sphere {
 };
 
 // =============================================================================
-// Marker wrappers (keep solar-system markers free of orphan-rule conflicts)
+// Canonical solar-system body markers (legacy *Surface names are type aliases)
 // =============================================================================
 
-/// Earth surface-observer body tag (WGS84 / ECEF).
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Default)]
-pub struct EarthSurface;
+/// Earth observer marker, identical to [`Earth`].
+pub type EarthSurface = Earth;
+/// Moon observer marker, identical to [`Moon`].
+pub type MoonSurface = Moon;
+/// Mars observer marker, identical to [`Mars`].
+pub type MarsSurface = Mars;
+/// Mercury observer marker, identical to [`Mercury`].
+pub type MercurySurface = Mercury;
+/// Venus observer marker, identical to [`Venus`].
+pub type VenusSurface = Venus;
+/// Pluto observer marker, identical to [`Pluto`].
+pub type PlutoSurface = Pluto;
 
-/// Moon surface-observer body tag (IAU sphere / MoonPrincipalAxes).
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Default)]
-pub struct MoonSurface;
-
-/// Mars surface-observer body tag (IAU ellipsoid / MarsFixed).
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Default)]
-pub struct MarsSurface;
-
-/// Mercury surface-observer body tag.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Default)]
-pub struct MercurySurface;
-
-/// Venus surface-observer body tag.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Default)]
-pub struct VenusSurface;
-
-/// Pluto surface-observer body tag.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Default)]
-pub struct PlutoSurface;
-
-impl BodySurfaceModel for EarthSurface {
-    type Center = Geocentric;
-    type FixedFrame = ECEF;
-
-    fn body_name() -> &'static str {
-        "Earth"
-    }
-    fn default_surface() -> ReferenceSurface {
-        EARTH_WGS84_SURFACE
-    }
-    fn default_latitude_convention() -> LatitudeConvention {
-        LatitudeConvention::Planetographic
-    }
-}
-
-impl BodySurfaceModel for MoonSurface {
-    type Center = Selenocentric;
-    type FixedFrame = MoonPrincipalAxes;
-
-    fn body_name() -> &'static str {
-        "Moon"
-    }
-    fn default_surface() -> ReferenceSurface {
-        MOON_IAU_SPHERE
-    }
-    fn default_latitude_convention() -> LatitudeConvention {
-        // Sphere: planetocentric ≡ planetographic; document as planetocentric.
-        LatitudeConvention::Planetocentric
-    }
-}
-
-impl BodySurfaceModel for MarsSurface {
-    type Center = Marscentric;
-    type FixedFrame = MarsFixed;
-
-    fn body_name() -> &'static str {
-        "Mars"
-    }
-    fn default_surface() -> ReferenceSurface {
-        MARS_IAU_ELLIPSOID
-    }
-    fn default_latitude_convention() -> LatitudeConvention {
-        LatitudeConvention::Planetographic
-    }
-}
-
-impl BodySurfaceModel for MercurySurface {
-    type Center = Mercurycentric;
-    type FixedFrame = MercuryFixed;
-
-    fn body_name() -> &'static str {
-        "Mercury"
-    }
-    fn default_surface() -> ReferenceSurface {
-        MERCURY_IAU_SPHERE
-    }
-    fn default_latitude_convention() -> LatitudeConvention {
-        LatitudeConvention::Planetocentric
-    }
-}
-
-impl BodySurfaceModel for VenusSurface {
-    type Center = Venuscentric;
-    type FixedFrame = VenusFixed;
-
-    fn body_name() -> &'static str {
-        "Venus"
-    }
-    fn default_surface() -> ReferenceSurface {
-        VENUS_IAU_SPHERE
-    }
-    fn default_latitude_convention() -> LatitudeConvention {
-        LatitudeConvention::Planetocentric
-    }
-}
-
-impl BodySurfaceModel for PlutoSurface {
-    type Center = Plutocentric;
-    type FixedFrame = PlutoFixed;
-
-    fn body_name() -> &'static str {
-        "Pluto"
-    }
-    fn default_surface() -> ReferenceSurface {
-        PLUTO_IAU_SPHERE
-    }
-    fn default_latitude_convention() -> LatitudeConvention {
-        LatitudeConvention::Planetocentric
-    }
-}
-
-/// Convenience: treat the solar-system [`Earth`] marker as [`EarthSurface`].
 impl BodySurfaceModel for Earth {
     type Center = Geocentric;
     type FixedFrame = ECEF;
-    fn body_name() -> &'static str {
-        EarthSurface::body_name()
-    }
-    fn default_surface() -> ReferenceSurface {
-        EarthSurface::default_surface()
-    }
+
+    fn body_name() -> &'static str { "Earth" }
+    fn default_surface() -> ReferenceSurface { EARTH_WGS84_SURFACE }
     fn default_latitude_convention() -> LatitudeConvention {
-        EarthSurface::default_latitude_convention()
+        LatitudeConvention::Planetographic
     }
 }
 
-/// Convenience: treat the solar-system [`Moon`] marker as [`MoonSurface`].
 impl BodySurfaceModel for Moon {
     type Center = Selenocentric;
     type FixedFrame = MoonPrincipalAxes;
-    fn body_name() -> &'static str {
-        MoonSurface::body_name()
-    }
-    fn default_surface() -> ReferenceSurface {
-        MoonSurface::default_surface()
-    }
+
+    fn body_name() -> &'static str { "Moon" }
+    fn default_surface() -> ReferenceSurface { MOON_IAU_SPHERE }
     fn default_latitude_convention() -> LatitudeConvention {
-        MoonSurface::default_latitude_convention()
+        LatitudeConvention::Planetocentric
     }
 }
 
-/// Convenience: treat the solar-system [`Mars`] marker as [`MarsSurface`].
 impl BodySurfaceModel for Mars {
     type Center = Marscentric;
     type FixedFrame = MarsFixed;
-    fn body_name() -> &'static str {
-        MarsSurface::body_name()
-    }
-    fn default_surface() -> ReferenceSurface {
-        MarsSurface::default_surface()
-    }
+
+    fn body_name() -> &'static str { "Mars" }
+    fn default_surface() -> ReferenceSurface { MARS_IAU_ELLIPSOID }
     fn default_latitude_convention() -> LatitudeConvention {
-        MarsSurface::default_latitude_convention()
+        LatitudeConvention::Planetographic
     }
 }
 
-/// Convenience: [`Mercury`] → [`MercurySurface`].
 impl BodySurfaceModel for Mercury {
     type Center = Mercurycentric;
     type FixedFrame = MercuryFixed;
-    fn body_name() -> &'static str {
-        MercurySurface::body_name()
-    }
-    fn default_surface() -> ReferenceSurface {
-        MercurySurface::default_surface()
-    }
+
+    fn body_name() -> &'static str { "Mercury" }
+    fn default_surface() -> ReferenceSurface { MERCURY_IAU_SPHERE }
     fn default_latitude_convention() -> LatitudeConvention {
-        MercurySurface::default_latitude_convention()
+        LatitudeConvention::Planetocentric
     }
 }
 
-/// Convenience: [`Venus`] → [`VenusSurface`].
 impl BodySurfaceModel for Venus {
     type Center = Venuscentric;
     type FixedFrame = VenusFixed;
-    fn body_name() -> &'static str {
-        VenusSurface::body_name()
-    }
-    fn default_surface() -> ReferenceSurface {
-        VenusSurface::default_surface()
-    }
+
+    fn body_name() -> &'static str { "Venus" }
+    fn default_surface() -> ReferenceSurface { VENUS_IAU_SPHERE }
     fn default_latitude_convention() -> LatitudeConvention {
-        VenusSurface::default_latitude_convention()
+        LatitudeConvention::Planetocentric
     }
 }
 
-/// Convenience: [`Pluto`] → [`PlutoSurface`].
 impl BodySurfaceModel for Pluto {
     type Center = Plutocentric;
     type FixedFrame = PlutoFixed;
-    fn body_name() -> &'static str {
-        PlutoSurface::body_name()
-    }
-    fn default_surface() -> ReferenceSurface {
-        PlutoSurface::default_surface()
-    }
+
+    fn body_name() -> &'static str { "Pluto" }
+    fn default_surface() -> ReferenceSurface { PLUTO_IAU_SPHERE }
     fn default_latitude_convention() -> LatitudeConvention {
-        PlutoSurface::default_latitude_convention()
+        LatitudeConvention::Planetocentric
     }
 }
 
