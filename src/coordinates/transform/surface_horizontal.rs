@@ -261,8 +261,7 @@ where
     let body_centred: Position<B::Center, F, Meter> =
         TransformCenter::to_center_with(&target_m, (), *jd, ctx);
     let body_icrs: Position<B::Center, ICRS, Meter> = body_centred.to_frame_with(jd, ctx);
-    let body_fixed: Position<B::Center, B::FixedFrame, Meter> =
-        body_icrs.to_frame_with(jd, ctx);
+    let body_fixed: Position<B::Center, B::FixedFrame, Meter> = body_icrs.to_frame_with(jd, ctx);
     let observer = site.observer_position::<Meter>()?;
 
     let dx = (body_fixed.x() - observer.x()).value();
@@ -280,10 +279,7 @@ where
         0.0
     } else {
         let scaled = [dx / scale, dy / scale, dz / scale];
-        scale * (scaled[0] * scaled[0]
-            + scaled[1] * scaled[1]
-            + scaled[2] * scaled[2])
-            .sqrt()
+        scale * (scaled[0] * scaled[0] + scaled[1] * scaled[1] + scaled[2] * scaled[2]).sqrt()
     };
     if !r_m.is_finite() {
         return Err(SurfaceError::NonFiniteInput { field: "range" });
