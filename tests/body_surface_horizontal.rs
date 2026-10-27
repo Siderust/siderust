@@ -165,9 +165,10 @@ fn direction_does_not_invent_parallax() {
     assert_near(horiz.to_spherical().alt().value(), 0.0, 1e-8, "dir alt");
     assert_eq!(horiz.site_params(), &site.to_params());
     let other = SurfaceSite::<MoonSurface>::new(15.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
-    let bad = siderust::coordinates::transform::horizontal_observation_to_direction::<
-        MoonSurface, ICRS, _
-    >(&horiz, &other, &jd, &ctx);
+    let bad: Result<Direction<ICRS>, _> =
+        siderust::coordinates::transform::horizontal_observation_to_direction(
+            &horiz, &other, &jd, &ctx,
+        );
     assert!(matches!(
         bad,
         Err(siderust::coordinates::surface::SurfaceError::MismatchedObserver)
@@ -403,29 +404,28 @@ fn analytical_enu_projection_reference() {
 fn mars_zenith_along_ellipsoid_normal() {
     let site = SurfaceSite::<MarsSurface>::new(10.0 * DEG, 25.0 * DEG, 0.0 * M).unwrap();
     let [x, y, z] = site.body_fixed_cartesian().unwrap();
-    let target = Position::<Marscentric, MarsFixed, Meter>::new(
+    // Radial extension is *not* the zenith at nonzero planetographic
+    // latitude on an oblate ellipsoid.
+    let radial_target = Position::<Marscentric, MarsFixed, Meter>::new(
         Quantity::<Meter>::new(x.value() * 2.0),
         Quantity::<Meter>::new(y.value() * 2.0),
         Quantity::<Meter>::new(z.value() * 2.0),
     );
-    let obs = position_to_horizontal(&target, &site, &siderust::J2000, &ctx()).unwrap();
-    // For planetographic sites, radial extension is not exactly zenith on an
-    // ellipsoid — local up is the ellipsoid normal, which coincides with the
-    // geodetic (φ, λ) direction, and body_fixed_position for planetographic
-    // places the site along a vector that is NOT parallel to the normal when
-    // h=0... Actually for h=0 the position vector is NOT parallel to the
-    // normal. Scaling the position vector is therefore NOT exactly zenith.
-    // Use the ENU up direction instead.
+    let radial = position_to_horizontal(&radial_target, &site, &siderust::J2000, &ctx()).unwrap();
+    assert!(
+        radial.alt().value() < 89.95,
+        "radial direction must differ from planetographic zenith"
+    );
+
+    // The ellipsoid normal is the physical local up for this reference surface.
     let enu = site.enu_basis().unwrap();
-    let r_obs = (x.value().powi(2) + y.value().powi(2) + z.value().powi(2)).sqrt();
-    let target2 = Position::<Marscentric, MarsFixed, Meter>::new(
+    let normal_target = Position::<Marscentric, MarsFixed, Meter>::new(
         Quantity::<Meter>::new(x.value() + enu.up[0] * 1_000.0),
         Quantity::<Meter>::new(y.value() + enu.up[1] * 1_000.0),
         Quantity::<Meter>::new(z.value() + enu.up[2] * 1_000.0),
     );
-    let obs2 = position_to_horizontal(&target2, &site, &siderust::J2000, &ctx()).unwrap();
-    assert_near(obs2.alt().value(), 90.0, 1e-6, "mars zenith along normal");
-    let _ = (obs, r_obs);
+    let normal = position_to_horizontal(&normal_target, &site, &siderust::J2000, &ctx()).unwrap();
+    assert_near(normal.alt().value(), 90.0, 1e-6, "mars ellipsoid-normal zenith");
 }
 
 // Compile-time: SurfaceSite is parameterized by body (Moon ≠ Mars).
