@@ -283,12 +283,11 @@ where
     let enu = site.enu_basis()?;
     let (alt, az) = los_to_horizontal(los, enu.east, enu.north, enu.up)?;
 
-    // Horizontal Cartesian: x=North, y=West, z=Zenith (affn Horizontal convention
-    // used by existing Topocentric transforms).
+    // Horizontal Cartesian: x=North, y=East, z=Zenith (affn spherical convention).
     let az_r = deg_to_rad(az);
     let alt_r = deg_to_rad(alt);
     let hx = Quantity::<U>::new(r * alt_r.cos() * az_r.cos());
-    let hy = Quantity::<U>::new(-(r * alt_r.cos() * az_r.sin()));
+    let hy = Quantity::<U>::new(r * alt_r.cos() * az_r.sin());
     let hz = Quantity::<U>::new(r * alt_r.sin());
 
     let position = Position::<SurfaceObserver<B>, Horizontal, U>::from_array(params, [hx, hy, hz]);
@@ -339,7 +338,7 @@ where
     let sph = horizontal.to_spherical();
     let alt = deg_to_rad(sph.alt());
     let az = deg_to_rad(sph.az());
-    // Horizontal cartesian: x=N, y=W, z=Up → ENU components
+    // Horizontal Cartesian: x=N, y=E, z=Up → ENU components
     // e = sin(az) cos(alt), n = cos(az) cos(alt), u = sin(alt)
     let e = az.sin() * alt.cos();
     let n = az.cos() * alt.cos();
