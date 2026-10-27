@@ -27,7 +27,7 @@ use siderust::coordinates::surface::{
 };
 use siderust::coordinates::transform::{
     direction_to_horizontal, horizontal_to_direction, position_to_horizontal, AstroContext,
-    DirectionAstroExt, SurfaceHorizontalExt, TransformCenter,
+    SurfaceHorizontalExt, TransformCenter,
 };
 use siderust::ephemeris::{Ephemeris, Vsop87Ephemeris};
 use siderust::qtty::*;
