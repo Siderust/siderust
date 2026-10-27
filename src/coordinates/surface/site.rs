@@ -130,6 +130,12 @@ impl<B: BodySurfaceModel> SurfaceSite<B> {
             lon_n
         };
 
+        // Validate geometry immediately (including negative-height domain),
+        // not just when the observer is first converted to Cartesian.
+        // Deserialization uses this constructor and therefore shares the
+        // same invariants.
+        body_fixed_position(&surface, lon_n, lat_n, height, latitude_convention)?;
+
         Ok(Self {
             lon: lon_n,
             lat: lat_n,
