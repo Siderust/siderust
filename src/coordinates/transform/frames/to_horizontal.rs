@@ -167,10 +167,10 @@ impl<U: LengthUnit> Transform<cartesian::Position<Topocentric, Horizontal, U>>
             equatorial_to_horizontal_angles(ra.to::<Deg>(), dec.to::<Deg>(), site, &site_trig, jd);
 
         // Convert back to Cartesian in horizontal frame
-        // In horizontal: x = North, y = West, z = Zenith
+        // In horizontal: x = North, y = East, z = Zenith
         // Trig functions return f64, multiply by Quantity<U> to get Quantity<U>
         let new_x = r * alt.cos() * az.cos();
-        let new_y = -r * alt.cos() * az.sin(); // negative for East-positive azimuth
+        let new_y = r * alt.cos() * az.sin();
         let new_z = r * alt.sin();
 
         cartesian::Position::from_array(*site, [new_x, new_y, new_z])
@@ -200,7 +200,7 @@ impl<U: LengthUnit> Transform<cartesian::Position<Topocentric, EquatorialMeanOfD
             Quantity::<Radian>::new(0.0)
         };
         // atan2 on Quantity<U> values - extract raw values for atan2
-        let az: Radians = Quantity::<Radian>::new((-self.y() / r).atan2(self.x() / r));
+        let az: Radians = Quantity::<Radian>::new((self.y() / r).atan2(self.x() / r));
 
         let site_trig = SiteTrig::from_site(site);
         let (ra, dec) = horizontal_to_equatorial_angles(alt, az, site, &site_trig, jd);
