@@ -117,14 +117,13 @@ impl<B: BodySurfaceModel> Default for SurfaceObserverParams<B> {
     /// The body, reference surface, and latitude convention always match `B`.
     /// Prefer building params from a validated [`SurfaceSite`].
     fn default() -> Self {
-        Self {
-            lon: Degrees::new(0.0),
-            lat: Degrees::new(0.0),
-            height: Meters::new(0.0),
-            surface: B::default_surface(),
-            latitude_convention: B::default_latitude_convention(),
-            _body: PhantomData,
-        }
+        let site = SurfaceSite::<B>::new(
+            Degrees::new(0.0),
+            Degrees::new(0.0),
+            Meters::new(0.0),
+        )
+        .expect("BodySurfaceModel default site must be geometrically valid");
+        Self::from_site(&site)
     }
 }
 
