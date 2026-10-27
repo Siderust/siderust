@@ -65,8 +65,8 @@ pub trait BodySurfaceModel: Copy + Clone + Debug + Send + Sync + 'static {
 
     /// Whether a solid or cartographic reference surface is supported.
     ///
-    /// Gas giants return `false` unless an explicit 1-bar (or similar) model
-    /// is opted into by a specialised implementor.
+    /// A specialised gas-giant implementor can opt in after defining a
+    /// physical reference surface (e.g. a 1-bar level) and fixed frame.
     fn has_reference_surface() -> bool {
         true
     }
@@ -78,7 +78,7 @@ pub trait BodySurfaceModel: Copy + Clone + Debug + Send + Sync + 'static {
         } else {
             Err(SurfaceError::UnsupportedSurface {
                 body: Self::body_name(),
-                reason: "no documented solid/reference surface; provide an explicit model",
+                reason: "no documented reference surface; implement a body model with an explicit surface",
             })
         }
     }
@@ -157,8 +157,12 @@ impl BodySurfaceModel for Earth {
     type Center = Geocentric;
     type FixedFrame = ECEF;
 
-    fn body_name() -> &'static str { "Earth" }
-    fn default_surface() -> ReferenceSurface { EARTH_WGS84_SURFACE }
+    fn body_name() -> &'static str {
+        "Earth"
+    }
+    fn default_surface() -> ReferenceSurface {
+        EARTH_WGS84_SURFACE
+    }
     fn default_latitude_convention() -> LatitudeConvention {
         LatitudeConvention::Planetographic
     }
@@ -168,8 +172,12 @@ impl BodySurfaceModel for Moon {
     type Center = Selenocentric;
     type FixedFrame = MoonPrincipalAxes;
 
-    fn body_name() -> &'static str { "Moon" }
-    fn default_surface() -> ReferenceSurface { MOON_IAU_SPHERE }
+    fn body_name() -> &'static str {
+        "Moon"
+    }
+    fn default_surface() -> ReferenceSurface {
+        MOON_IAU_SPHERE
+    }
     fn default_latitude_convention() -> LatitudeConvention {
         LatitudeConvention::Planetocentric
     }
@@ -179,8 +187,12 @@ impl BodySurfaceModel for Mars {
     type Center = Marscentric;
     type FixedFrame = MarsFixed;
 
-    fn body_name() -> &'static str { "Mars" }
-    fn default_surface() -> ReferenceSurface { MARS_IAU_ELLIPSOID }
+    fn body_name() -> &'static str {
+        "Mars"
+    }
+    fn default_surface() -> ReferenceSurface {
+        MARS_IAU_ELLIPSOID
+    }
     fn default_latitude_convention() -> LatitudeConvention {
         LatitudeConvention::Planetographic
     }
@@ -190,8 +202,12 @@ impl BodySurfaceModel for Mercury {
     type Center = Mercurycentric;
     type FixedFrame = MercuryFixed;
 
-    fn body_name() -> &'static str { "Mercury" }
-    fn default_surface() -> ReferenceSurface { MERCURY_IAU_SPHERE }
+    fn body_name() -> &'static str {
+        "Mercury"
+    }
+    fn default_surface() -> ReferenceSurface {
+        MERCURY_IAU_SPHERE
+    }
     fn default_latitude_convention() -> LatitudeConvention {
         LatitudeConvention::Planetocentric
     }
@@ -201,8 +217,12 @@ impl BodySurfaceModel for Venus {
     type Center = Venuscentric;
     type FixedFrame = VenusFixed;
 
-    fn body_name() -> &'static str { "Venus" }
-    fn default_surface() -> ReferenceSurface { VENUS_IAU_SPHERE }
+    fn body_name() -> &'static str {
+        "Venus"
+    }
+    fn default_surface() -> ReferenceSurface {
+        VENUS_IAU_SPHERE
+    }
     fn default_latitude_convention() -> LatitudeConvention {
         LatitudeConvention::Planetocentric
     }
@@ -212,8 +232,12 @@ impl BodySurfaceModel for Pluto {
     type Center = Plutocentric;
     type FixedFrame = PlutoFixed;
 
-    fn body_name() -> &'static str { "Pluto" }
-    fn default_surface() -> ReferenceSurface { PLUTO_IAU_SPHERE }
+    fn body_name() -> &'static str {
+        "Pluto"
+    }
+    fn default_surface() -> ReferenceSurface {
+        PLUTO_IAU_SPHERE
+    }
     fn default_latitude_convention() -> LatitudeConvention {
         LatitudeConvention::Planetocentric
     }
