@@ -48,9 +48,9 @@ impl_body_fixed_rotation!(MarsFixed, crate::bodies::solar_system::Mars);
 // Source: NAIF pck00011.tpc, BODY301_* and BODY3_NUT_PREC_ANGLES.
 // Angles use days/centuries past J2000 TDB; JulianDate is assumed to carry
 // the corresponding numerical epoch (TT is only an approximation).
+use crate::qtty::{Degrees, Radian};
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar, Transcendental};
-use crate::qtty::{Degrees, Radian};
 
 fn iau_moon_mean_earth_to_icrs(jd: JulianDate) -> Rotation3 {
     let days = (jd.raw() - crate::J2000.raw()).value();
