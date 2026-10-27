@@ -326,6 +326,37 @@ fn zero_range_is_error() {
     }
 }
 
+
+// =============================================================================
+// Unit-independent coincident-target tolerance
+// =============================================================================
+
+#[test]
+fn finite_observation_range_is_invariant_under_length_units() {
+    let site = SurfaceSite::<MoonSurface>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
+    let [x, y, z] = site.body_fixed_cartesian().unwrap();
+    // 1 km above the surface: 1 km = ~6.7e-9 AU. Comparing the
+    // raw numeric range to 1e-6 would incorrectly reject the AU target.
+    let target_m = Position::<Selenocentric, MoonPrincipalAxes, Meter>::new(
+        Quantity::<Meter>::new(x.value() + 1_000.0),
+        y,
+        z,
+    );
+    let target_km = target_m.to_unit::<Kilometer>();
+    let target_au = target_m.to_unit::<AstronomicalUnit>();
+    let jd = siderust::J2000;
+    let ctx = ctx();
+
+    let obs_m = position_to_horizontal(&target_m, &site, &jd, &ctx).unwrap();
+    let obs_km = position_to_horizontal(&target_km, &site, &jd, &ctx).unwrap();
+    let obs_au = position_to_horizontal(&target_au, &site, &jd, &ctx).unwrap();
+
+    assert_near(obs_m.range().value(), 1_000.0, 1e-3, "metre slant range");
+    assert_near(obs_km.range().to::<Meter>().value(), 1_000.0, 1e-3, "km slant range");
+    assert_near(obs_au.range().to::<Meter>().value(), 1_000.0, 1e-2, "AU slant range");
+    assert_near(obs_m.alt().value(), obs_au.alt().value(), 1e-6, "unit invariant altitude");
+}
+
 // =============================================================================
 // Independent analytical reference (Moon sphere ENU, no frame rotation)
 // =============================================================================
