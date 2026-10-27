@@ -260,7 +260,7 @@ requested TT epoch.
 | Moon | IAU sphere 1737.4 km | `MoonPrincipalAxes` | IAU 2015 analytical PA — **not** JPL DE PA / ME |
 | Mars | IAU ellipsoid 3396.19 km | `MarsFixed` | Default latitude: planetographic |
 | Mercury, Venus, Pluto | IAU mean spheres | `*Fixed` | Same generic path |
-| Gas giants | — | — | Rejected unless an explicit reference surface is provided |
+| Gas giants | No default | Body-specific | Require a custom `BodySurfaceModel` with a documented reference surface and fixed frame |
 
 Planetocentric and planetographic latitudes are distinct on ellipsoids and
 must not be mixed silently. See `coordinates::surface` rustdocs and
