@@ -18,6 +18,17 @@
 //! documented reference surface (e.g. a 1-bar level) and are rejected by
 //! default.
 //!
+//! Longitude is east-positive. Negative heights are permitted until the
+//! inward reference-surface normal reaches a curvature/centre singularity;
+//! invalid interior sites are rejected during construction or deserialization.
+//! Cartesian Horizontal axes follow affn's spherical convention: +X north,
+//! +Y east and +Z local up. At exact zenith/nadir, azimuth is set to 0 by
+//! convention because it is physically undefined.
+//!
+//! Lunar fixed orientation uses the NAIF IAU_MOON analytical Mean-Earth model
+//! with 13 periodic arguments, **not** a DE-specific principal-axes solution.
+//! Lunar orientation is defined in TDB arguments; TT is an approximation.
+//!
 //! Geometric Alt/Az computed here does **not** include atmospheric
 //! refraction, aberration, light deflection, light-time, or terrain
 //! occultation. Those belong in the observation / event pipelines.
@@ -41,6 +52,7 @@
 //!   (2015). *Celestial Mechanics and Dynamical Astronomy* 130, 22.
 //! - Archinal et al. (2018). Report of the IAU WGCCRE. *Celestial Mechanics
 //!   and Dynamical Astronomy* 130, 22.
+//! - NAIF, `pck00011.tpc`, IAU_MOON analytical Mean-Earth orientation.
 //! - See also [`crate::coordinates::transform::horizontal`] for the
 //!   Earth-specific GAST path retained for backward compatibility.
 
