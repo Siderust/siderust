@@ -90,7 +90,7 @@ impl<B: BodySurfaceModel, U: LengthUnit> HorizontalObservation<B, U> {
     }
 
     /// Observer site parameters attached to this observation.
-    pub fn site_params(&self) -> &SurfaceObserverParams {
+    pub fn site_params(&self) -> &SurfaceObserverParams<B> {
         self.position.center_params()
     }
 
