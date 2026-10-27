@@ -423,4 +423,10 @@ fn site_params_body_name() {
     assert_eq!(mars.body_name(), "Mars");
     // Params equality is within the same body centre type only.
     assert_eq!(moon.to_params(), moon.to_params());
+    // The default params are body-specific, never implicitly lunar for Mars.
+    let moon_default = siderust::coordinates::surface::SurfaceObserverParams::<MoonSurface>::default();
+    let mars_default = siderust::coordinates::surface::SurfaceObserverParams::<MarsSurface>::default();
+    assert_eq!(moon_default.surface, MoonSurface::default_surface());
+    assert_eq!(mars_default.surface, MarsSurface::default_surface());
+    assert_eq!(mars_default.latitude_convention, LatitudeConvention::Planetographic);
 }
