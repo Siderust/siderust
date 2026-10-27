@@ -715,11 +715,7 @@ fn microscopic_finite_range_preserves_altaz_in_au() {
     // expressed in AU is below that numeric threshold but not physically zero.
     let site = SurfaceSite::<MoonSurface>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
     let [x, y, z] = site.body_fixed_cartesian().unwrap();
-    let target = Position::<Selenocentric, MoonPrincipalAxes, Meter>::new(
-        x,
-        y + 0.00001 * M,
-        z,
-    );
+    let target = Position::<Selenocentric, MoonPrincipalAxes, Meter>::new(x, y + 0.00001 * M, z);
     let target_au = target.to_unit::<AstronomicalUnit>();
     let jd = siderust::J2000;
     let ctx = ctx();
