@@ -89,6 +89,14 @@ impl ReferenceSurface {
         if !f.is_finite() || f <= 0.0 || f >= 1.0 {
             return Err(SurfaceError::InvalidFlattening { value: f });
         }
+        let b = a_v * (1.0 - f);
+        let e2 = 2.0 * f - f * f;
+        if !b.is_finite() || b <= 0.0 || e2 >= 1.0 {
+            return Err(SurfaceError::InvalidDimension {
+                parameter: "semi_minor_axis",
+                value: b,
+            });
+        }
         Ok(Self::Ellipsoid { a, f })
     }
 
