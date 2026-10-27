@@ -315,10 +315,9 @@ mod tests {
     #[test]
     fn longitude_normalization_and_checked_geodetic_conversion() {
         use crate::coordinates::surface::{LatitudeConvention, ReferenceSurface};
-        let wrapped = SurfaceSite::<MoonSurface>::new(370.0 * DEG, 0.0 * DEG, -100.0 * M)
-            .unwrap();
-        let negative = SurfaceSite::<MoonSurface>::new(-190.0 * DEG, 0.0 * DEG, -100.0 * M)
-            .unwrap();
+        let wrapped = SurfaceSite::<MoonSurface>::new(370.0 * DEG, 0.0 * DEG, -100.0 * M).unwrap();
+        let negative =
+            SurfaceSite::<MoonSurface>::new(-190.0 * DEG, 0.0 * DEG, -100.0 * M).unwrap();
         assert_eq!(wrapped.lon().value(), 10.0);
         assert_eq!(negative.lon().value(), 170.0);
         assert_eq!(wrapped.height().value(), -100.0);
@@ -350,7 +349,10 @@ mod tests {
         let longitude = SurfaceSite::<MoonSurface>::new(f64::INFINITY * DEG, 0.0 * DEG, 0.0 * M);
         let latitude = SurfaceSite::<MoonSurface>::new(0.0 * DEG, f64::NAN * DEG, 0.0 * M);
         let height = SurfaceSite::<MoonSurface>::new(0.0 * DEG, 0.0 * DEG, f64::NAN * M);
-        assert!(matches!(longitude, Err(SurfaceError::NonFiniteInput { .. })));
+        assert!(matches!(
+            longitude,
+            Err(SurfaceError::NonFiniteInput { .. })
+        ));
         assert!(matches!(latitude, Err(SurfaceError::NonFiniteInput { .. })));
         assert!(matches!(height, Err(SurfaceError::NonFiniteInput { .. })));
     }
