@@ -21,8 +21,8 @@ use serde::{Deserialize, Serialize};
 /// Parameter equality is checked at runtime (same pattern as
 /// [`crate::coordinates::centers::Topocentric`]).
 #[derive(Debug, Clone, Copy)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "serde", serde(bound(serialize = "", deserialize = "")))]
+#[cfg_attr(feature = "serde", derive(Serialize))]
+#[cfg_attr(feature = "serde", serde(bound(serialize = "")))]
 pub struct SurfaceObserverParams<B: BodySurfaceModel> {
     /// Longitude, positive eastward (degrees).
     pub lon: Degrees,
@@ -36,6 +36,30 @@ pub struct SurfaceObserverParams<B: BodySurfaceModel> {
     pub latitude_convention: LatitudeConvention,
     #[cfg_attr(feature = "serde", serde(skip))]
     _body: PhantomData<B>,
+}
+
+#[cfg(feature = "serde")]
+impl<'de, B: BodySurfaceModel> Deserialize<'de> for SurfaceObserverParams<B> {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        #[derive(Deserialize)]
+        struct Fields {
+            lon: Degrees,
+            lat: Degrees,
+            height: Meters,
+            surface: ReferenceSurface,
+            latitude_convention: LatitudeConvention,
+        }
+        let site = Fields::deserialize(deserializer)?;
+        let site = SurfaceSite::<B>::with_surface(
+            site.lon,
+            site.lat,
+            site.height,
+            site.surface,
+            site.latitude_convention,
+        )
+        .map_err(serde::de::Error::custom)?;
+        Ok(Self::from_site(&site))
+    }
 }
 
 impl<B: BodySurfaceModel> PartialEq for SurfaceObserverParams<B> {
@@ -120,6 +144,16 @@ impl<B: BodySurfaceModel> SurfaceObserver<B> {
 mod tests {
     use super::*;
     use crate::coordinates::surface::MoonSurface;
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn observer_params_deserialization_enforces_site_invariants() {
+        use crate::qtty::{DEG, M};
+        let site = SurfaceSite::<MoonSurface>::new(10.0 * DEG, 20.0 * DEG, 0.0 * M).unwrap();
+        let mut payload = serde_json::to_value(site.to_params()).unwrap();
+        payload["lat"] = serde_json::to_value(95.0 * DEG).unwrap();
+        assert!(serde_json::from_value::<SurfaceObserverParams<MoonSurface>>(payload).is_err());
+    }
 
     #[test]
     fn center_name_is_stable() {
