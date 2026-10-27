@@ -28,13 +28,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Observer-tagged horizontal direction results through `SurfaceHorizontalExt`;
   observer parameters now carry the body at the type level, preventing
   accidental site and body mismatches in checked inverse transforms.
-- Example `21_body_surface_horizontal` and offline scientific validation
+- Examples `21_body_surface_horizontal` and beginner-friendly
+  `22_moon_surface_quickstart`, plus offline scientific validation
   tests (`tests/body_surface_horizontal.rs`) covering zenith, cardinals,
   poles, parallax, epoch rotation, forward/inverse round-trips, and
   invalid inputs.
 - EquatorialMeanJ2000 ↔ planetary body-fixed frame rotations via the ICRS hub.
 - Add `CITATION.cff` for scholarly software citations and document how to
   cite Siderust in the README.
+
+### Fixed
+
+- Correct the pre-existing IAU body-fixed → ICRS active ZXZ rotation
+  convention; pin the Moon/Mars poles and prime meridians to independent
+  J2000 reference vectors.
+- Make the ellipsoid surface normal the geometric vertical for both
+  planetocentric and planetographic site representations; height is measured
+  along that normal in either convention.
+- Validate deserialized reference surfaces, sites, and observer parameters.
 
 ### Changed
 
