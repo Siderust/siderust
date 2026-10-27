@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 /// (e.g. a mission-specific lunar radius) without proliferating marker types.
 /// Body defaults are documented on [`super::BodySurfaceModel`].
 #[derive(Debug, Clone, Copy, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub enum ReferenceSurface {
     /// Sphere of mean/reference radius `radius` (metres).
     ///
@@ -37,7 +37,33 @@ pub enum ReferenceSurface {
     },
 }
 
+#[cfg(feature = "serde")]
+impl<'de> Deserialize<'de> for ReferenceSurface {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        // Preserve the externally-tagged enum representation but forbid invalid
+        // radii and flattening values from entering the typed geometry model.
+        #[derive(Deserialize)]
+        enum RawSurface {
+            Sphere { radius: Meters },
+            Ellipsoid { a: Meters, f: f64 },
+        }
+        match RawSurface::deserialize(deserializer)? {
+            RawSurface::Sphere { radius } => Self::sphere(radius),
+            RawSurface::Ellipsoid { a, f } => Self::ellipsoid(a, f),
+        }
+        .map_err(serde::de::Error::custom)
+    }
+}
+
 impl ReferenceSurface {
+    /// Validate a reference surface, including values constructed via public variants.
+    pub fn validate(&self) -> Result<(), SurfaceError> {
+        match *self {
+            Self::Sphere { radius } => Self::sphere(radius).map(|_| ()),
+            Self::Ellipsoid { a, f } => Self::ellipsoid(a, f).map(|_| ()),
+        }
+    }
+
     /// Construct a validated spherical surface.
     pub fn sphere(radius: Meters) -> Result<Self, SurfaceError> {
         let r = radius.value();
@@ -116,6 +142,20 @@ mod tests {
         assert!(ReferenceSurface::ellipsoid(1.0 * M, 0.0).is_err());
         assert!(ReferenceSurface::ellipsoid(1.0 * M, 1.0).is_err());
         assert!(ReferenceSurface::ellipsoid(1.0 * M, f64::NAN).is_err());
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn deserialization_rejects_invalid_surface() {
+        let surface = ReferenceSurface::sphere(1_000.0 * M).unwrap();
+        let mut payload = serde_json::to_value(surface).unwrap();
+        payload["Sphere"]["radius"] = serde_json::to_value(-1.0 * M).unwrap();
+        assert!(serde_json::from_value::<ReferenceSurface>(payload).is_err());
+
+        let surface = ReferenceSurface::ellipsoid(1_000.0 * M, 0.1).unwrap();
+        let mut payload = serde_json::to_value(surface).unwrap();
+        payload["Ellipsoid"]["f"] = serde_json::json!(1.0);
+        assert!(serde_json::from_value::<ReferenceSurface>(payload).is_err());
     }
 
     #[test]
