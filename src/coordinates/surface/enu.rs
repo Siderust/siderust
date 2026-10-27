@@ -279,20 +279,9 @@ mod tests {
         let graphic = 45.0_f64.to_radians();
         let e2 = s.e2();
         let centric = ((1.0 - e2) * graphic.tan()).atan().to_degrees();
-        let g = local_enu_basis(
-            &s,
-            lon,
-            45.0 * DEG,
-            LatitudeConvention::Planetographic,
-        )
-        .unwrap();
-        let c = local_enu_basis(
-            &s,
-            lon,
-            centric * DEG,
-            LatitudeConvention::Planetocentric,
-        )
-        .unwrap();
+        let g = local_enu_basis(&s, lon, 45.0 * DEG, LatitudeConvention::Planetographic).unwrap();
+        let c =
+            local_enu_basis(&s, lon, centric * DEG, LatitudeConvention::Planetocentric).unwrap();
         for i in 0..3 {
             assert!((c.up[i] - g.up[i]).abs() < 1e-14);
             assert!((c.north[i] - g.north[i]).abs() < 1e-14);
