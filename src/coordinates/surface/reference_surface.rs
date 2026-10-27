@@ -173,4 +173,19 @@ mod tests {
         assert_eq!(s.e2(), 0.0);
         assert_eq!(s.polar_radius(), s.equatorial_radius());
     }
+
+    #[test]
+    fn ellipsoid_axes_curvature_and_degenerate_minor_axis() {
+        let surface = ReferenceSurface::ellipsoid(4.0 * M, 0.25).unwrap();
+        assert_eq!(surface.equatorial_radius().value(), 4.0);
+        assert_eq!(surface.polar_radius().value(), 3.0);
+        assert_eq!(surface.flattening(), 0.25);
+        assert!((surface.e2() - 0.4375).abs() < 1e-14);
+        assert!(matches!(
+            ReferenceSurface::ellipsoid(4.0 * M, 1.0 - f64::EPSILON),
+            Err(SurfaceError::InvalidDimension { .. })
+        ));
+        assert!(ReferenceSurface::sphere(f64::NAN * M).is_err());
+        assert!(ReferenceSurface::ellipsoid(f64::INFINITY * M, 0.25).is_err());
+    }
 }
