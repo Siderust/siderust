@@ -9,7 +9,6 @@ use super::reference_surface::ReferenceSurface;
 use crate::qtty::{Degrees, Meter, Meters, Quantity, Radian};
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar, Transcendental};
-use core::f64::consts::FRAC_PI_2;
 
 /// Orthonormal east–north–up basis in a body-fixed Cartesian frame.
 ///
@@ -96,6 +95,7 @@ pub fn body_fixed_position(
     convention: LatitudeConvention,
 ) -> Result<[Meters; 3], SurfaceError> {
     validate_angles(lon, lat, height)?;
+    surface.validate()?;
 
     let lon_r = lon.to::<Radian>().value();
     let lat_r = lat.to::<Radian>().value();
@@ -135,11 +135,20 @@ pub fn body_fixed_position(
                 });
             }
             let rho = (a * b) / denom;
-            let r = rho + h;
+            // The planetocentric angle selects the intersection of the
+            // radius vector with the ellipsoid. Height, however, is measured
+            // along the same surface normal used by planetographic sites.
+            // Thus both latitude conventions describe the same physical
+            // location and horizon when their coordinates are converted.
+            let normal = normalize([
+                cos_lat * cos_lon / (a * a),
+                cos_lat * sin_lon / (a * a),
+                sin_lat / (b * b),
+            ])?;
             Ok([
-                Quantity::<Meter>::new(r * cos_lat * cos_lon),
-                Quantity::<Meter>::new(r * cos_lat * sin_lon),
-                Quantity::<Meter>::new(r * sin_lat),
+                Quantity::<Meter>::new(rho * cos_lat * cos_lon + h * normal[0]),
+                Quantity::<Meter>::new(rho * cos_lat * sin_lon + h * normal[1]),
+                Quantity::<Meter>::new(rho * sin_lat + h * normal[2]),
             ])
         }
     }
@@ -157,6 +166,7 @@ pub fn local_enu_basis(
     convention: LatitudeConvention,
 ) -> Result<EnuBasis, SurfaceError> {
     validate_angles(lon, lat, Quantity::<Meter>::new(0.0))?;
+    surface.validate()?;
 
     let lon_r = lon.to::<Radian>().value();
     let lat_r = lat.to::<Radian>().value();
@@ -167,55 +177,30 @@ pub fn local_enu_basis(
     let east = normalize([-sin_lon, cos_lon, 0.0])?;
 
     let up = match (*surface, convention) {
-        (ReferenceSurface::Sphere { .. }, _)
-        | (ReferenceSurface::Ellipsoid { .. }, LatitudeConvention::Planetocentric) => {
-            // Local vertical along the radius vector.
+        (ReferenceSurface::Sphere { .. }, _) => {
             normalize([cos_lat * cos_lon, cos_lat * sin_lon, sin_lat])?
         }
-        (ReferenceSurface::Ellipsoid { a, f }, LatitudeConvention::Planetographic) => {
-            // Ellipsoid normal (geodetic up).
-            let a = a.value();
-            let e2 = 2.0 * f - f * f;
-            let n = a / (1.0 - e2 * sin_lat * sin_lat).sqrt();
-            // Position on the ellipsoid (h=0), then normal from geodetic formula.
-            let x = n * cos_lat * cos_lon;
-            let y = n * cos_lat * sin_lon;
-            let z = n * (1.0 - e2) * sin_lat;
-            // For a rotational ellipsoid the unit normal equals the geodetic
-            // (cos φ cos λ, cos φ sin λ, sin φ) direction — identical to the
-            // spherical formula when expressed in geodetic latitude.
-            let _ = (x, y, z);
+        (ReferenceSurface::Ellipsoid { .. }, LatitudeConvention::Planetographic) => {
+            // Geodetic latitude directly specifies the ellipsoid normal.
             normalize([cos_lat * cos_lon, cos_lat * sin_lon, sin_lat])?
+        }
+        (ReferenceSurface::Ellipsoid { a, f }, LatitudeConvention::Planetocentric) => {
+            // Planetocentric latitude locates a point radially, but the
+            // geometric local vertical remains the ellipsoid normal.
+            let a = a.value();
+            let b = a * (1.0 - f);
+            normalize([
+                cos_lat * cos_lon / (a * a),
+                cos_lat * sin_lon / (a * a),
+                sin_lat / (b * b),
+            ])?
         }
     };
 
-    // North = up × east keeps a right-handed ENU triad.
-    // Near poles |cos lat|→0 so east×up from the spherical formula
-    //   north = (−sin lat cos lon, −sin lat sin lon, cos lat)
-    // is recovered; we compute it explicitly for numerical stability.
-    let north = if lat_r.abs() > FRAC_PI_2 - 1e-14 {
-        // At the pole: north points along −z for north pole? Convention:
-        // at φ=+90°, north is undefined in the classical sense; we adopt
-        // the meridian continuation: north = (−cos λ, −sin λ, 0) so that
-        // azimuth 0° follows the longitude meridian toward decreasing z
-        // when leaving the north pole along that meridian... Actually the
-        // standard IAU/mission convention at the north pole uses:
-        //   north = (−cos λ, −sin λ, 0)  (toward lon along decreasing z from +z)
-        // Wait: at φ=90°, spherical north = (0,0,0) from the formula.
-        // Longitude-dependent meridian: azimuth 0 points toward lon along
-        // the great circle. Using north = (−cos λ, −sin λ, 0) makes
-        // east×north = up for up=(0,0,1):
-        // east=(−sin λ, cos λ, 0), north=(−cos λ, −sin λ, 0)
-        // east×north = (0, 0, sin²λ + cos²λ) = (0,0,1). ✓
-        if lat_r > 0.0 {
-            normalize([-cos_lon, -sin_lon, 0.0])?
-        } else {
-            // South pole up=(0,0,−1): north = (cos λ, sin λ, 0)
-            normalize([cos_lon, sin_lon, 0.0])?
-        }
-    } else {
-        normalize([-sin_lat * cos_lon, -sin_lat * sin_lon, cos_lat])?
-    };
+    // Up x East points north and preserves the longitude-defined meridian
+    // at the poles, without assuming that planetocentric latitude equals
+    // the surface-normal latitude.
+    let north = normalize(cross(up, east))?;
 
     let basis = EnuBasis { east, north, up };
     basis.assert_orthonormal(1e-12)?;
@@ -285,6 +270,52 @@ mod tests {
         .unwrap();
         b.assert_orthonormal(1e-12).unwrap();
         assert!((b.up[2] - 1.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn ellipsoid_latitude_conventions_share_the_same_local_vertical() {
+        let s = crate::coordinates::surface::MARS_IAU_ELLIPSOID;
+        let lon = 137.0 * DEG;
+        let graphic = 45.0_f64.to_radians();
+        let e2 = s.e2();
+        let centric = ((1.0 - e2) * graphic.tan()).atan().to_degrees();
+        let g = local_enu_basis(
+            &s,
+            lon,
+            45.0 * DEG,
+            LatitudeConvention::Planetographic,
+        )
+        .unwrap();
+        let c = local_enu_basis(
+            &s,
+            lon,
+            centric * DEG,
+            LatitudeConvention::Planetocentric,
+        )
+        .unwrap();
+        for i in 0..3 {
+            assert!((c.up[i] - g.up[i]).abs() < 1e-14);
+            assert!((c.north[i] - g.north[i]).abs() < 1e-14);
+        }
+        let p1 = body_fixed_position(
+            &s,
+            lon,
+            45.0 * DEG,
+            100.0 * M,
+            LatitudeConvention::Planetographic,
+        )
+        .unwrap();
+        let p2 = body_fixed_position(
+            &s,
+            lon,
+            centric * DEG,
+            100.0 * M,
+            LatitudeConvention::Planetocentric,
+        )
+        .unwrap();
+        for i in 0..3 {
+            assert!((p1[i] - p2[i]).value().abs() < 1e-6);
+        }
     }
 
     #[test]
