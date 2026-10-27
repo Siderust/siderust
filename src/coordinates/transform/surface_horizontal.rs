@@ -106,6 +106,83 @@ impl<B: BodySurfaceModel, U: LengthUnit> HorizontalObservation<B, U> {
     }
 }
 
+/// Local geometric sky direction tied to its specific body and observer site.
+/// 
+/// The raw `Direction<Horizontal>` alone has no centre parameters; this
+/// wrapper preserves them and prevents silently using the direction at another
+/// body or location.
+#[derive(Debug, Clone, Copy)]
+pub struct HorizontalDirectionObservation<B: BodySurfaceModel> {
+    /// Underlying horizontal unit direction.
+    pub direction: Direction<Horizontal>,
+    site_params: SurfaceObserverParams<B>,
+}
+
+impl<B: BodySurfaceModel> HorizontalDirectionObservation<B> {
+    /// Observer parameters used to calculate this direction.
+    pub fn site_params(&self) -> &SurfaceObserverParams<B> {
+        &self.site_params
+    }
+
+    /// Horizontal sky direction in spherical coordinates.
+    pub fn to_spherical(&self) -> spherical::Direction<Horizontal> {
+        self.direction.to_spherical()
+    }
+
+    /// Geometric altitude at the observer site.
+    pub fn alt(&self) -> Degrees {
+        self.to_spherical().alt()
+    }
+
+    /// Azimuth (north through east) at the observer site.
+    pub fn az(&self) -> Degrees {
+        self.to_spherical().az()
+    }
+}
+
+/// Inverse of a site-bound direction, rejecting attempts to reuse it at a
+/// different observer site; the body itself is enforced by the type `B`.
+pub fn horizontal_observation_to_direction<B, F, Ctx>(
+    observation: &HorizontalDirectionObservation<B>,
+    site: &SurfaceSite<B>,
+    jd: &JulianDate,
+    ctx: &Ctx,
+) -> Result<Direction<F>, SurfaceError>
+where
+    B: BodySurfaceModel,
+    F: ReferenceFrame,
+    Ctx: TransformContext,
+    (): FrameRotationProvider<B::FixedFrame, ICRS>,
+    (): FrameRotationProvider<ICRS, F>,
+{
+    if observation.site_params != site.to_params() {
+        return Err(SurfaceError::MismatchedObserver);
+    }
+    horizontal_to_direction(&observation.direction, site, jd, ctx)
+}
+
+/// Return a site- and body-bound horizontal sky direction instead of the
+/// untyped `Direction<Horizontal>` returned by the low-level conversion.
+pub fn observed_direction_to_horizontal<B, F, Ctx>(
+    target: &Direction<F>,
+    site: &SurfaceSite<B>,
+    jd: &JulianDate,
+    ctx: &Ctx,
+) -> Result<HorizontalDirectionObservation<B>, SurfaceError>
+where
+    B: BodySurfaceModel,
+    F: ReferenceFrame,
+    Ctx: TransformContext,
+    (): FrameRotationProvider<F, ICRS>,
+    (): FrameRotationProvider<ICRS, B::FixedFrame>,
+{
+    let direction = direction_to_horizontal(target, site, jd, ctx)?;
+    Ok(HorizontalDirectionObservation {
+        direction,
+        site_params: site.to_params(),
+    })
+}
+
 /// Project a unit line-of-sight in a body-fixed frame onto local ENU / Horizontal.
 fn los_to_horizontal(
     los_unit: [f64; 3],
@@ -330,7 +407,7 @@ pub trait SurfaceHorizontalExt<B: BodySurfaceModel> {
         target: &Direction<F>,
         jd: &JulianDate,
         ctx: &Ctx,
-    ) -> Result<Direction<Horizontal>, SurfaceError>
+    ) -> Result<HorizontalDirectionObservation<B>, SurfaceError>
     where
         F: ReferenceFrame,
         Ctx: TransformContext,
@@ -365,14 +442,14 @@ impl<B: BodySurfaceModel> SurfaceHorizontalExt<B> for SurfaceSite<B> {
         target: &Direction<F>,
         jd: &JulianDate,
         ctx: &Ctx,
-    ) -> Result<Direction<Horizontal>, SurfaceError>
+    ) -> Result<HorizontalDirectionObservation<B>, SurfaceError>
     where
         F: ReferenceFrame,
         Ctx: TransformContext,
         (): FrameRotationProvider<F, ICRS>,
         (): FrameRotationProvider<ICRS, B::FixedFrame>,
     {
-        direction_to_horizontal(target, self, jd, ctx)
+        observed_direction_to_horizontal(target, self, jd, ctx)
     }
 }
 
