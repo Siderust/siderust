@@ -311,4 +311,47 @@ mod tests {
         assert!((back.lat.value() - g.lat.value()).abs() < 1e-12);
         assert!((back.lon.value() - g.lon.value()).abs() < 1e-12);
     }
+
+    #[test]
+    fn longitude_normalization_and_checked_geodetic_conversion() {
+        use crate::coordinates::surface::{LatitudeConvention, ReferenceSurface};
+        let wrapped = SurfaceSite::<MoonSurface>::new(370.0 * DEG, 0.0 * DEG, -100.0 * M)
+            .unwrap();
+        let negative = SurfaceSite::<MoonSurface>::new(-190.0 * DEG, 0.0 * DEG, -100.0 * M)
+            .unwrap();
+        assert_eq!(wrapped.lon().value(), 10.0);
+        assert_eq!(negative.lon().value(), 170.0);
+        assert_eq!(wrapped.height().value(), -100.0);
+        assert_ne!(wrapped, negative);
+
+        let custom = SurfaceSite::<EarthSurface>::with_surface(
+            0.0 * DEG,
+            10.0 * DEG,
+            0.0 * M,
+            ReferenceSurface::sphere(6_371_000.0 * M).unwrap(),
+            LatitudeConvention::Planetographic,
+        )
+        .unwrap();
+        assert!(custom.to_geodetic().is_err());
+
+        let centric = SurfaceSite::<EarthSurface>::with_surface(
+            0.0 * DEG,
+            10.0 * DEG,
+            0.0 * M,
+            EarthSurface::default_surface(),
+            LatitudeConvention::Planetocentric,
+        )
+        .unwrap();
+        assert!(centric.to_geodetic().is_err());
+    }
+
+    #[test]
+    fn site_nonfinite_input_is_rejected_at_construction() {
+        let longitude = SurfaceSite::<MoonSurface>::new(f64::INFINITY * DEG, 0.0 * DEG, 0.0 * M);
+        let latitude = SurfaceSite::<MoonSurface>::new(0.0 * DEG, f64::NAN * DEG, 0.0 * M);
+        let height = SurfaceSite::<MoonSurface>::new(0.0 * DEG, 0.0 * DEG, f64::NAN * M);
+        assert!(matches!(longitude, Err(SurfaceError::NonFiniteInput { .. })));
+        assert!(matches!(latitude, Err(SurfaceError::NonFiniteInput { .. })));
+        assert!(matches!(height, Err(SurfaceError::NonFiniteInput { .. })));
+    }
 }
