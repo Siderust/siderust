@@ -37,6 +37,8 @@ pub enum SurfaceError {
         /// Short reason.
         reason: &'static str,
     },
+    /// Site geometry does not match the typed horizontal observation.
+    MismatchedObserver,
     /// Non-finite input component.
     NonFiniteInput {
         /// Which field failed.
@@ -61,6 +63,9 @@ impl fmt::Display for SurfaceError {
             }
             Self::DegenerateGeometry { reason } => {
                 write!(f, "degenerate surface geometry: {reason}")
+            }
+            Self::MismatchedObserver => {
+                write!(f, "horizontal observation belongs to a different surface site")
             }
             Self::NonFiniteInput { field } => {
                 write!(f, "non-finite input in {field}")
