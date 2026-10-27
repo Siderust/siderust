@@ -174,8 +174,7 @@ fn iau_body_prime_meridians_match_j2000_cartographic_axes() {
     let jd = siderust::J2000;
     let ctx = ctx();
     let moon_x: Direction<ICRS> =
-        Direction::<MoonPrincipalAxes>::new_unchecked(1.0, 0.0, 0.0)
-            .to_frame_with(&jd, &ctx);
+        Direction::<MoonPrincipalAxes>::new_unchecked(1.0, 0.0, 0.0).to_frame_with(&jd, &ctx);
     let mars_x: Direction<ICRS> =
         Direction::<MarsFixed>::new_unchecked(1.0, 0.0, 0.0).to_frame_with(&jd, &ctx);
 
@@ -223,7 +222,12 @@ fn mars_altaz_invariant_under_equivalent_latitude_conventions() {
         .unwrap()
         .to_spherical();
 
-    assert_near(g.alt().value(), c.alt().value(), 1e-10, "equivalent Mars alt");
+    assert_near(
+        g.alt().value(),
+        c.alt().value(),
+        1e-10,
+        "equivalent Mars alt",
+    );
     let daz = (g.az().value() - c.az().value()).abs();
     assert!(daz.min(360.0 - daz) < 1e-10);
 }
