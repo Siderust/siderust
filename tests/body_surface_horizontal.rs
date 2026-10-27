@@ -574,10 +574,10 @@ fn site_params_body_name() {
         siderust::coordinates::surface::SurfaceObserverParams::<MoonSurface>::default();
     let mars_default =
         siderust::coordinates::surface::SurfaceObserverParams::<MarsSurface>::default();
-    assert_eq!(moon_default.surface, MoonSurface::default_surface());
-    assert_eq!(mars_default.surface, MarsSurface::default_surface());
+    assert_eq!(*moon_default.surface(), MoonSurface::default_surface());
+    assert_eq!(*mars_default.surface(), MarsSurface::default_surface());
     assert_eq!(
-        mars_default.latitude_convention,
+        mars_default.latitude_convention(),
         LatitudeConvention::Planetographic
     );
 }
@@ -690,18 +690,11 @@ fn negative_height_domain_for_spheres_and_ellipsoids() {
     let a = ellipsoid.equatorial_radius().value();
     let f = ellipsoid.flattening();
     let meridional_radius = a * (1.0 - (2.0 * f - f * f));
-    let safe = SurfaceSite::<MarsSurface>::new(
-        0.0 * DEG,
-        0.0 * DEG,
-        (-meridional_radius + 100.0) * M,
-    );
+    let safe =
+        SurfaceSite::<MarsSurface>::new(0.0 * DEG, 0.0 * DEG, (-meridional_radius + 100.0) * M);
     assert!(safe.is_ok(), "valid shallow side of normal singularity");
     assert!(matches!(
-        SurfaceSite::<MarsSurface>::new(
-            0.0 * DEG,
-            0.0 * DEG,
-            (-meridional_radius - 100.0) * M
-        ),
+        SurfaceSite::<MarsSurface>::new(0.0 * DEG, 0.0 * DEG, (-meridional_radius - 100.0) * M),
         Err(SurfaceError::DegenerateGeometry { .. })
     ));
 }
