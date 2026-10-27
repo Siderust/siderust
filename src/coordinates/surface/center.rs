@@ -20,9 +20,10 @@ use serde::{Deserialize, Serialize};
 /// [`SurfaceObserver<B>`]; these fields carry the site geometry only.
 /// Parameter equality is checked at runtime (same pattern as
 /// [`crate::coordinates::centers::Topocentric`]).
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct SurfaceObserverParams {
+#[cfg_attr(feature = "serde", serde(bound(serialize = "", deserialize = "")))]
+pub struct SurfaceObserverParams<B: BodySurfaceModel> {
     /// Longitude, positive eastward (degrees).
     pub lon: Degrees,
     /// Latitude per [`Self::latitude_convention`] (degrees).
@@ -33,34 +34,47 @@ pub struct SurfaceObserverParams {
     pub surface: ReferenceSurface,
     /// Latitude convention used by `lat`.
     pub latitude_convention: LatitudeConvention,
+    #[cfg_attr(feature = "serde", serde(skip))]
+    _body: PhantomData<B>,
 }
 
-impl SurfaceObserverParams {
+impl<B: BodySurfaceModel> PartialEq for SurfaceObserverParams<B> {
+    fn eq(&self, other: &Self) -> bool {
+        self.lon == other.lon
+            && self.lat == other.lat
+            && self.height == other.height
+            && self.surface == other.surface
+            && self.latitude_convention == other.latitude_convention
+    }
+}
+
+impl<B: BodySurfaceModel> SurfaceObserverParams<B> {
     /// Build params from a typed [`SurfaceSite`].
-    pub fn from_site<B: BodySurfaceModel>(site: &SurfaceSite<B>) -> Self {
+    pub fn from_site(site: &SurfaceSite<B>) -> Self {
         Self {
             lon: site.lon(),
             lat: site.lat(),
             height: site.height(),
             surface: *site.surface(),
             latitude_convention: site.latitude_convention(),
+            _body: PhantomData,
         }
     }
 }
 
-impl Default for SurfaceObserverParams {
-    /// Origin on the Moon IAU sphere (placeholder for `ReferenceCenter::Params`).
+impl<B: BodySurfaceModel> Default for SurfaceObserverParams<B> {
+    /// Default body-specific site parameters at lon=lat=height=0.
     ///
-    /// Prefer constructing params from a concrete [`SurfaceSite`]. This default
-    /// exists only to satisfy the `affn::ReferenceCenter::Params: Default` bound.
+    /// The body, reference surface, and latitude convention always match `B`.
+    /// Prefer building params from a validated [`SurfaceSite`].
     fn default() -> Self {
-        use super::body::{LatitudeConvention, MOON_IAU_SPHERE};
         Self {
             lon: Degrees::new(0.0),
             lat: Degrees::new(0.0),
             height: Meters::new(0.0),
-            surface: MOON_IAU_SPHERE,
-            latitude_convention: LatitudeConvention::Planetocentric,
+            surface: B::default_surface(),
+            latitude_convention: B::default_latitude_convention(),
+            _body: PhantomData,
         }
     }
 }
@@ -82,7 +96,7 @@ impl Default for SurfaceObserverParams {
 pub struct SurfaceObserver<B: BodySurfaceModel>(PhantomData<B>);
 
 impl<B: BodySurfaceModel> ReferenceCenter for SurfaceObserver<B> {
-    type Params = SurfaceObserverParams;
+    type Params = SurfaceObserverParams<B>;
 
     fn center_name() -> &'static str {
         // Associated function cannot return a dynamic body name without
