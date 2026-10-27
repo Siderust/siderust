@@ -179,7 +179,11 @@ fn iau_body_prime_meridians_match_j2000_cartographic_axes() {
         Direction::<MarsFixed>::new_unchecked(1.0, 0.0, 0.0).to_frame_with(&jd, &ctx);
 
     for (actual, expected, label) in [
-        (moon_x, expected_x(266.85773344495135, 65.64110274784532, 41.19526398074522), "Moon"),
+        (
+            moon_x,
+            expected_x(266.85773344495135, 65.64110274784532, 41.19526398074522),
+            "Moon",
+        ),
         (mars_x, expected_x(317.269, 54.432, 176.049), "Mars"),
     ] {
         assert_near(actual.x(), expected[0], 1e-10, &format!("{label} X-axis x"));
@@ -584,11 +588,7 @@ fn finite_east_matches_direction_only_and_affn_horizontal_axes() {
     // 1000 metres along +Y must report azimuth +90°, not 270°.
     let site = SurfaceSite::<MoonSurface>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
     let [x, y, z] = site.body_fixed_cartesian().unwrap();
-    let target = Position::<Selenocentric, MoonPrincipalAxes, Meter>::new(
-        x,
-        y + 1_000.0 * M,
-        z,
-    );
+    let target = Position::<Selenocentric, MoonPrincipalAxes, Meter>::new(x, y + 1_000.0 * M, z);
     let jd = siderust::J2000;
     let ctx = ctx();
     let finite = position_to_horizontal(&target, &site, &jd, &ctx).unwrap();
@@ -599,9 +599,22 @@ fn finite_east_matches_direction_only_and_affn_horizontal_axes() {
 
     assert_near(finite.alt().value(), 0.0, 1e-6, "finite east altitude");
     assert_near(finite.az().value(), 90.0, 1e-6, "finite east azimuth");
-    assert_near(sph.az().value(), finite.az().value(), 1e-6, "east azimuth parity");
-    assert_near(sph.alt().value(), finite.alt().value(), 1e-6, "east altitude parity");
-    assert!(finite.position.y().value() > 0.0, "affn Horizontal +Y must mean east");
+    assert_near(
+        sph.az().value(),
+        finite.az().value(),
+        1e-6,
+        "east azimuth parity",
+    );
+    assert_near(
+        sph.alt().value(),
+        finite.alt().value(),
+        1e-6,
+        "east altitude parity",
+    );
+    assert!(
+        finite.position.y().value() > 0.0,
+        "affn Horizontal +Y must mean east"
+    );
 }
 
 #[test]
@@ -612,17 +625,29 @@ fn lunar_iau_mean_earth_orientation_matches_independent_pck_vectors() {
     let samples = [
         (
             2_451_545.0,
-            [-0.022608671404182476, -0.41183090094261293, 0.9109797785934293],
+            [
+                -0.022608671404182476,
+                -0.41183090094261293,
+                0.9109797785934293,
+            ],
             [0.7842270520919168, 0.557847112460164, 0.27165148607559475],
         ),
         (
             2_455_197.5,
-            [0.024575730238028167, -0.38844430350837333, 0.9211444276307393],
+            [
+                0.024575730238028167,
+                -0.38844430350837333,
+                0.9211444276307393,
+            ],
             [0.258239248504571, -0.8876830435158835, -0.3812234315807105],
         ),
         (
             2_447_892.5,
-            [0.017200848997715103, -0.3789436182964894, 0.9252598904881386],
+            [
+                0.017200848997715103,
+                -0.3789436182964894,
+                0.9252598904881386,
+            ],
             [-0.8802151957580415, 0.4332072758214011, 0.1937851009031218],
         ),
     ];
@@ -630,11 +655,9 @@ fn lunar_iau_mean_earth_orientation_matches_independent_pck_vectors() {
     for (jd_num, expected_pole, expected_x) in samples {
         let jd = JulianDate::new(jd_num);
         let pole: Direction<ICRS> =
-            Direction::<MoonPrincipalAxes>::new_unchecked(0.0, 0.0, 1.0)
-                .to_frame_with(&jd, &ctx);
+            Direction::<MoonPrincipalAxes>::new_unchecked(0.0, 0.0, 1.0).to_frame_with(&jd, &ctx);
         let x_axis: Direction<ICRS> =
-            Direction::<MoonPrincipalAxes>::new_unchecked(1.0, 0.0, 0.0)
-                .to_frame_with(&jd, &ctx);
+            Direction::<MoonPrincipalAxes>::new_unchecked(1.0, 0.0, 0.0).to_frame_with(&jd, &ctx);
         for (actual, expected) in [
             ([pole.x(), pole.y(), pole.z()], expected_pole),
             ([x_axis.x(), x_axis.y(), x_axis.z()], expected_x),
