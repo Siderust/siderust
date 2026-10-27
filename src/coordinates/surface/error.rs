@@ -65,7 +65,10 @@ impl fmt::Display for SurfaceError {
                 write!(f, "degenerate surface geometry: {reason}")
             }
             Self::MismatchedObserver => {
-                write!(f, "horizontal observation belongs to a different surface site")
+                write!(
+                    f,
+                    "horizontal observation belongs to a different surface site"
+                )
             }
             Self::NonFiniteInput { field } => {
                 write!(f, "non-finite input in {field}")
