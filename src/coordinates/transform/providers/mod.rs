@@ -455,9 +455,13 @@ fn iau_body_fixed_to_icrs(params: &IauRotationParams, jd: JulianDate) -> Rotatio
     let w = params.w(jd).to::<crate::qtty::Radian>();
     let right_angle = crate::qtty::Degrees::new(90.0).to::<crate::qtty::Radian>();
 
-    let z1 = -w;
-    let x = -(right_angle - delta0);
-    let z2 = -(alpha0 + right_angle);
+    // IAU right-handed body-fixed -> ICRS (active, column-vector convention):
+    // Rz(alpha0 + 90°) * Rx(90° - delta0) * Rz(W).
+    // affn::from_euler_zxz applies z1 first, x second, then z2.
+    // Negating these angles would flip the ICRS pole's Y component.
+    let z1 = w;
+    let x = right_angle - delta0;
+    let z2 = alpha0 + right_angle;
     Rotation3::from_euler_zxz(z1, x, z2)
 }
 
