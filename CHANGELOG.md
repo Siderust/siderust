@@ -42,6 +42,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Correct the pre-existing IAU body-fixed → ICRS active ZXZ rotation
   convention; pin the Moon/Mars poles and prime meridians to independent
   J2000 reference vectors.
+- Bring the lunar analytical IAU_MOON orientation in line with the NAIF
+  text-PCK: all 13 periodic arguments and the quadratic term in W, with
+  multi-epoch pole and prime-meridian vector regression cases.
+- Use a consistent east-positive Cartesian Horizontal Y axis in both new
+  surface and legacy Earth-only transforms, matching affn's spherical
+  azimuth semantics (north through east). Previously Cartesian azimuth was
+  mirrored against spherical azimuth.
 - Make the ellipsoid surface normal the geometric vertical for both
   planetocentric and planetographic site representations; height is measured
   along that normal in either convention.
@@ -59,9 +66,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Geometric Alt/Az only: no refraction, aberration, light deflection,
   light-time, or terrain masking in the new path.
-- `MoonPrincipalAxes` is siderust's IAU 2015 analytical realisation, not
-  JPL DE `MOON_PA` or Mean-Earth (`MOON_ME`); comparisons to SPICE must
-  account for that difference.
+- The backward-compatible `MoonPrincipalAxes` frame marker now uses
+  NAIF's analytical `IAU_MOON` (IAU 2009) Mean-Earth/Polar-Axis orientation;
+  `MoonIauMeanEarth` is a clearer alias for this implementation. It is
+  **not** JPL DE `MOON_PA`, nor DE-specific binary-PCK `MOON_ME`.
+  The change corrects the orientation of existing `MoonPrincipalAxes`
+  coordinates. IAU time arguments use TDB (TT is an approximation here),
+  and this analytical model must not be marketed as DE-level precision.
 
 ## [0.15.1] - 2026-10-24
 
