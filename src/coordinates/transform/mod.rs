@@ -97,8 +97,10 @@ pub use providers::{
     frame_rotation_with, CenterShiftProvider, FrameRotationProvider,
 };
 pub use surface_horizontal::{
-    direction_to_horizontal, horizontal_to_body_fixed_direction, horizontal_to_direction,
-    position_to_horizontal, HorizontalObservation, SurfaceHorizontalExt,
+    direction_to_horizontal, horizontal_observation_to_direction,
+    horizontal_to_body_fixed_direction, horizontal_to_direction,
+    observed_direction_to_horizontal, position_to_horizontal, HorizontalDirectionObservation,
+    HorizontalObservation, SurfaceHorizontalExt,
 };
 
 use crate::coordinates::{
