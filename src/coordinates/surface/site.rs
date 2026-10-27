@@ -191,7 +191,7 @@ impl<B: BodySurfaceModel> SurfaceSite<B> {
 
     /// Convert to centre parameters for [`super::SurfaceObserver`].
     #[inline]
-    pub fn to_params(&self) -> SurfaceObserverParams {
+    pub fn to_params(&self) -> SurfaceObserverParams<B> {
         SurfaceObserverParams::from_site(self)
     }
 }
