@@ -11,7 +11,7 @@ use crate::coordinates::centers::{
     Venuscentric,
 };
 use crate::coordinates::frames::{
-    MarsFixed, MercuryFixed, MoonPrincipalAxes, PlutoFixed, ReferenceFrame, VenusFixed, ECEF,
+    MarsFixed, MercuryFixed, MoonIauMeanEarth, PlutoFixed, ReferenceFrame, VenusFixed, ECEF,
 };
 use crate::qtty::Meters;
 use affn::AffineCenter;
@@ -102,12 +102,13 @@ pub const EARTH_WGS84_SURFACE: ReferenceSurface = ReferenceSurface::Ellipsoid {
 /// cartographic convenience model, not a lunar topographic DEM. Selenodetic
 /// heights are measured above this sphere.
 ///
-/// The associated body-fixed frame is [`MoonPrincipalAxes`] as realised by
-/// siderust's IAU 2015 analytical `(α₀, δ₀, W)` polynomials — **not** the
-/// JPL DE-series principal-axes frame and **not** the Mean Earth/Polar Axis
-/// (ME) cartographic frame. Differences between these realisations can reach
-/// arcminutes and must be accounted for when comparing to SPICE `MOON_PA` or
-/// `MOON_ME` kernels.
+/// The associated body-fixed frame uses the complete NAIF text-PCK
+/// `IAU_MOON` analytical orientation (IAU 2009): Mean-Earth/Polar-Axis
+/// approximation, including 13 periodic terms and quadratic W. The
+/// `MoonPrincipalAxes` type is retained for compatibility and can also be
+/// named `MoonIauMeanEarth`; neither is the JPL DE `MOON_PA` frame nor
+/// the DE-specific binary-PCK `MOON_ME` realization. Model evaluation
+/// uses numerical J2000 TDB days; a TT epoch is an approximation.
 pub const MOON_IAU_SPHERE: ReferenceSurface = ReferenceSurface::Sphere {
     radius: Meters::new(1_737_400.0),
 };
@@ -170,7 +171,7 @@ impl BodySurfaceModel for Earth {
 
 impl BodySurfaceModel for Moon {
     type Center = Selenocentric;
-    type FixedFrame = MoonPrincipalAxes;
+    type FixedFrame = MoonIauMeanEarth;
 
     fn body_name() -> &'static str {
         "Moon"
