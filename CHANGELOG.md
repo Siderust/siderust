@@ -25,6 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   sphere 1737.4 km (Moon), IAU ellipsoid a = 3396.19 km (Mars), plus Mercury,
   Venus, and Pluto mean spheres. Planetocentric vs planetographic latitude
   conventions are explicit.
+- Observer-tagged horizontal direction results through `SurfaceHorizontalExt`;
+  observer parameters now carry the body at the type level, preventing
+  accidental site and body mismatches in checked inverse transforms.
 - Example `21_body_surface_horizontal` and offline scientific validation
   tests (`tests/body_surface_horizontal.rs`) covering zenith, cardinals,
   poles, parallax, epoch rotation, forward/inverse round-trips, and
