@@ -107,7 +107,7 @@ impl<B: BodySurfaceModel, U: LengthUnit> HorizontalObservation<B, U> {
 }
 
 /// Local geometric sky direction tied to its specific body and observer site.
-/// 
+///
 /// The raw `Direction<Horizontal>` alone has no centre parameters; this
 /// wrapper preserves them and prevents silently using the direction at another
 /// body or location.
