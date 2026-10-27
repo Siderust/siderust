@@ -349,4 +349,71 @@ mod tests {
         .unwrap();
         assert!((p[0].value() - 6_378_137.0).abs() < 1e-6);
     }
+
+    #[test]
+    fn direct_geometry_rejects_singular_interiors_and_bad_angles() {
+        let sphere = ReferenceSurface::sphere(1_000.0 * M).unwrap();
+        for height in [-1_000.0, -1_001.0] {
+            let point = body_fixed_position(
+                &sphere,
+                0.0 * DEG,
+                0.0 * DEG,
+                height * M,
+                LatitudeConvention::Planetocentric,
+            );
+            assert!(matches!(point, Err(SurfaceError::DegenerateGeometry { .. })));
+        }
+        let invalid_lat = local_enu_basis(
+            &sphere,
+            0.0 * DEG,
+            100.0 * DEG,
+            LatitudeConvention::Planetocentric,
+        );
+        assert!(matches!(invalid_lat, Err(SurfaceError::InvalidLatitude { .. })));
+        let invalid_lon = local_enu_basis(
+            &sphere,
+            f64::NAN * DEG,
+            0.0 * DEG,
+            LatitudeConvention::Planetocentric,
+        );
+        assert!(matches!(invalid_lon, Err(SurfaceError::NonFiniteInput { .. })));
+
+        let ellipsoid = ReferenceSurface::ellipsoid(4.0 * M, 0.25).unwrap();
+        let meridional = 4.0 * (1.0 - ellipsoid.e2());
+        let invalid_height = body_fixed_position(
+            &ellipsoid,
+            0.0 * DEG,
+            0.0 * DEG,
+            -meridional * M,
+            LatitudeConvention::Planetographic,
+        );
+        assert!(matches!(
+            invalid_height,
+            Err(SurfaceError::DegenerateGeometry { .. })
+        ));
+    }
+
+    #[test]
+    fn enu_orthonormality_rejects_left_handed_or_nonunit_basis() {
+        let sphere = ReferenceSurface::sphere(1_000.0 * M).unwrap();
+        let basis = local_enu_basis(
+            &sphere,
+            0.0 * DEG,
+            0.0 * DEG,
+            LatitudeConvention::Planetocentric,
+        )
+        .unwrap();
+        let left_handed = EnuBasis {
+            east: basis.north,
+            north: basis.east,
+            up: basis.up,
+        };
+        assert!(left_handed.assert_orthonormal(1e-12).is_err());
+        let nonunit = EnuBasis {
+            east: [0.0, 0.0, 0.0],
+            north: basis.north,
+            up: basis.up,
+        };
+        assert!(nonunit.assert_orthonormal(1e-12).is_err());
+    }
 }
