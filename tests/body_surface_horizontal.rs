@@ -439,17 +439,15 @@ fn zero_range_is_error() {
     let [x, y, z] = site.body_fixed_cartesian().unwrap();
     let target = Position::<Selenocentric, MoonPrincipalAxes, Meter>::new(x, y, z);
     let err = position_to_horizontal(&target, &site, &siderust::J2000, &ctx());
-    // Frame round-trip MoonPA→ICRS→MoonPA can leave a sub-micron residual;
-    // treat either an explicit zero-range error or a sub-millimetre range as OK.
-    match err {
-        Err(siderust::coordinates::surface::SurfaceError::DegenerateGeometry { .. }) => {}
-        Ok(obs) => assert!(
-            obs.range().value() < 1e-3,
-            "expected near-zero range, got {}",
-            obs.range()
+    // A coincident observer and target has no meaningful sky direction.
+    // Numerical frame round-trips must not turn it into a success.
+    assert!(
+        matches!(
+            err,
+            Err(siderust::coordinates::surface::SurfaceError::DegenerateGeometry { .. })
         ),
-        Err(other) => panic!("unexpected error: {other}"),
-    }
+        "coincident position must fail; got {err:?}"
+    );
 }
 
 // =============================================================================
@@ -646,4 +644,50 @@ fn lunar_iau_mean_earth_orientation_matches_independent_pck_vectors() {
             }
         }
     }
+}
+
+#[test]
+fn negative_height_domain_for_spheres_and_ellipsoids() {
+    use siderust::coordinates::surface::SurfaceError;
+
+    let moon = SurfaceSite::<MoonSurface>::new(0.0 * DEG, 0.0 * DEG, -100.0 * M).unwrap();
+    assert_near(
+        moon.body_fixed_cartesian().unwrap()[0].value(),
+        1_737_300.0,
+        1e-6,
+        "valid Moon subsurface",
+    );
+    assert!(matches!(
+        SurfaceSite::<MoonSurface>::new(0.0 * DEG, 0.0 * DEG, -1_737_400.0 * M),
+        Err(SurfaceError::DegenerateGeometry { .. })
+    ));
+    assert!(SurfaceSite::<MoonSurface>::new(0.0 * DEG, 0.0 * DEG, -1_737_401.0 * M).is_err());
+
+    let ellipsoid = MarsSurface::default_surface();
+    let a = ellipsoid.equatorial_radius().value();
+    let f = ellipsoid.flattening();
+    let meridional_radius = a * (1.0 - (2.0 * f - f * f));
+    let safe = SurfaceSite::<MarsSurface>::new(
+        0.0 * DEG,
+        0.0 * DEG,
+        (-meridional_radius + 100.0) * M,
+    );
+    assert!(safe.is_ok(), "valid shallow side of normal singularity");
+    assert!(matches!(
+        SurfaceSite::<MarsSurface>::new(
+            0.0 * DEG,
+            0.0 * DEG,
+            (-meridional_radius - 100.0) * M
+        ),
+        Err(SurfaceError::DegenerateGeometry { .. })
+    ));
+}
+
+#[cfg(feature = "serde")]
+#[test]
+fn invalid_subsurface_site_deserialization_is_rejected() {
+    let site = SurfaceSite::<MoonSurface>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
+    let mut payload = serde_json::to_value(site).unwrap();
+    payload["height"] = serde_json::to_value(-1_737_400.0 * M).unwrap();
+    assert!(serde_json::from_value::<SurfaceSite<MoonSurface>>(payload).is_err());
 }
