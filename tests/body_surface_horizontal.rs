@@ -10,9 +10,9 @@
 //! surfaces. They do **not** require network access.
 //!
 //! Where a case claims agreement with an external tool (e.g. SPICE), the
-//! body-fixed frame realisation must match. Siderust's `MoonPrincipalAxes`
-//! is the IAU 2015 analytical `(α₀, δ₀, W)` model, which is **not** identical
-//! to JPL DE `MOON_PA` or the Mean-Earth (`MOON_ME`) cartographic frame.
+//! body-fixed frame realisation must match. Siderust's compatibility marker
+//! `MoonPrincipalAxes` uses the NAIF IAU_MOON analytical Mean-Earth model,
+//! not the JPL DE `MOON_PA` or binary-PCK `MOON_ME` realizations.
 //!
 //! Geometric scope only: no refraction, aberration, light-time, or terrain.
 
@@ -641,8 +641,8 @@ fn lunar_iau_mean_earth_orientation_matches_independent_pck_vectors() {
             ([pole.x(), pole.y(), pole.z()], expected_pole),
             ([x_axis.x(), x_axis.y(), x_axis.z()], expected_x),
         ] {
-            for i in 0..3 {
-                assert_near(actual[i], expected[i], 1e-10, "IAU_MOON PCK vector");
+            for (measured, reference) in actual.into_iter().zip(expected) {
+                assert_near(measured, reference, 1e-10, "IAU_MOON PCK vector");
             }
         }
     }
