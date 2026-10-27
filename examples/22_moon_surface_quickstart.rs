@@ -4,7 +4,13 @@
 //! Minimal lunar surface Alt/Az example, with no external ephemeris files.
 //!
 //! Run: cargo run --example 22_moon_surface_quickstart
-//! Alt/Az is geometric only: no terrain, refraction or light-time.
+//! Azimuth: north through east; altitude: geometric horizon through zenith.
+//! Longitude positive east; planetocentric latitude on a 1737.4-km sphere.
+//! Local up is radial. Orientation: NAIF IAU_MOON analytical Mean Earth,
+//! exposed by the legacy MoonPrincipalAxes frame marker (not DE-specific PA).
+//! J2000 is interpreted as a TT date, approximating the model's TDB input.
+//! Alt/Az is geometric, not apparent; no terrain occultation, refraction,
+//! aberration, or light-time.
 #![allow(clippy::print_stdout)]
 
 use siderust::bodies::solar_system::Moon;
