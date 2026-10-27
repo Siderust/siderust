@@ -84,9 +84,9 @@ fn normalize(v: [f64; 3]) -> Result<[f64; 3], SurfaceError> {
 /// Convert surface coordinates to body-fixed Cartesian metres.
 ///
 /// Longitude is positive **east**. Latitude follows `convention`.
-/// Height is measured along the local vertical defined by `convention`
-/// (ellipsoid normal for planetographic; radius vector for planetocentric
-/// on an ellipsoid; identical on a sphere).
+/// Height is measured along the reference-surface normal for both latitude
+/// conventions (radially on a sphere). Planetocentric latitude selects the
+/// ellipsoid intersection radially; it does not change the local vertical.
 pub fn body_fixed_position(
     surface: &ReferenceSurface,
     lon: Degrees,
