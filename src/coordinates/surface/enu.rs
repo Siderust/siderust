@@ -361,7 +361,10 @@ mod tests {
                 height * M,
                 LatitudeConvention::Planetocentric,
             );
-            assert!(matches!(point, Err(SurfaceError::DegenerateGeometry { .. })));
+            assert!(matches!(
+                point,
+                Err(SurfaceError::DegenerateGeometry { .. })
+            ));
         }
         let invalid_lat = local_enu_basis(
             &sphere,
@@ -369,14 +372,20 @@ mod tests {
             100.0 * DEG,
             LatitudeConvention::Planetocentric,
         );
-        assert!(matches!(invalid_lat, Err(SurfaceError::InvalidLatitude { .. })));
+        assert!(matches!(
+            invalid_lat,
+            Err(SurfaceError::InvalidLatitude { .. })
+        ));
         let invalid_lon = local_enu_basis(
             &sphere,
             f64::NAN * DEG,
             0.0 * DEG,
             LatitudeConvention::Planetocentric,
         );
-        assert!(matches!(invalid_lon, Err(SurfaceError::NonFiniteInput { .. })));
+        assert!(matches!(
+            invalid_lon,
+            Err(SurfaceError::NonFiniteInput { .. })
+        ));
 
         let ellipsoid = ReferenceSurface::ellipsoid(4.0 * M, 0.25).unwrap();
         let meridional = 4.0 * (1.0 - ellipsoid.e2());
