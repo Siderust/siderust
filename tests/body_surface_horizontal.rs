@@ -723,8 +723,18 @@ fn microscopic_finite_range_preserves_altaz_in_au() {
     let obs_au = position_to_horizontal(&target_au, &site, &jd, &ctx).unwrap();
     assert_near(obs_m.az().value(), 90.0, 0.25, "microscopic metre azimuth");
     assert_near(obs_au.az().value(), 90.0, 0.25, "microscopic AU azimuth");
-    assert_near(obs_m.alt().value(), obs_au.alt().value(), 0.25, "micro alt parity");
-    assert_near(obs_m.az().value(), obs_au.az().value(), 0.25, "micro az parity");
+    assert_near(
+        obs_m.alt().value(),
+        obs_au.alt().value(),
+        0.25,
+        "micro alt parity",
+    );
+    assert_near(
+        obs_m.az().value(),
+        obs_au.az().value(),
+        0.25,
+        "micro az parity",
+    );
     assert_near(
         obs_au.direction().to_spherical().az().value(),
         obs_au.az().value(),
