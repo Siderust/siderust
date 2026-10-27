@@ -191,8 +191,11 @@ where
     if !r.is_finite() {
         return Err(SurfaceError::NonFiniteInput { field: "range" });
     }
-    // Sub-micron residual after body-fixed ↔ ICRS round-trips counts as coincident.
-    if r < 1e-6 {
+    // Compare against a physical distance, never a raw numeric value in U:
+    // 1e-6 AU would otherwise reject perfectly valid nearby targets.
+    // Sub-micron residual after frame round-trips counts as coincident.
+    let range_m: Quantity<Meter> = Quantity::<U>::new(r).into();
+    if range_m.value() < 1e-6 {
         return Err(SurfaceError::DegenerateGeometry {
             reason: "zero observer–target range",
         });
