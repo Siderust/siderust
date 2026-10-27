@@ -25,15 +25,15 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "serde", serde(bound(serialize = "")))]
 pub struct SurfaceObserverParams<B: BodySurfaceModel> {
     /// Longitude, positive eastward (degrees).
-    pub lon: Degrees,
+    lon: Degrees,
     /// Latitude per [`Self::latitude_convention`] (degrees).
-    pub lat: Degrees,
+    lat: Degrees,
     /// Height above the reference surface (metres).
-    pub height: Meters,
+    height: Meters,
     /// Reference surface used for Cartesian / ENU conversion.
-    pub surface: ReferenceSurface,
+    surface: ReferenceSurface,
     /// Latitude convention used by `lat`.
-    pub latitude_convention: LatitudeConvention,
+    latitude_convention: LatitudeConvention,
     #[cfg_attr(feature = "serde", serde(skip))]
     _body: PhantomData<B>,
 }
@@ -73,6 +73,31 @@ impl<B: BodySurfaceModel> PartialEq for SurfaceObserverParams<B> {
 }
 
 impl<B: BodySurfaceModel> SurfaceObserverParams<B> {
+    /// Observer longitude, positive east.
+    pub fn lon(&self) -> Degrees {
+        self.lon
+    }
+
+    /// Observer latitude, in the selected convention.
+    pub fn lat(&self) -> Degrees {
+        self.lat
+    }
+
+    /// Height above the reference surface (negative below).
+    pub fn height(&self) -> Meters {
+        self.height
+    }
+
+    /// The validated reference surface.
+    pub fn surface(&self) -> &ReferenceSurface {
+        &self.surface
+    }
+
+    /// Latitude convention for this observer.
+    pub fn latitude_convention(&self) -> LatitudeConvention {
+        self.latitude_convention
+    }
+
     /// Build params from a typed [`SurfaceSite`].
     pub fn from_site(site: &SurfaceSite<B>) -> Self {
         Self {
