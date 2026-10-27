@@ -123,6 +123,44 @@ fn moon_equator_cardinals_body_fixed() {
 }
 
 // =============================================================================
+// Absolute IAU pole-orientation reference at J2000 (not a round-trip test)
+// =============================================================================
+
+#[test]
+fn iau_body_poles_match_published_j2000_right_ascension_declination() {
+    let jd = siderust::J2000;
+    let ctx = ctx();
+
+    // IAU/WGCCRE 2015 values of (alpha0, delta0) at J2000.0.
+    // The +Z body-fixed axis is the spin pole, independently of W and of
+    // the observer's longitude. These reference vectors are computed from
+    // the tabulated angles, not by inverting the same provider rotation.
+    let pole_reference = |ra_deg: f64, dec_deg: f64| -> [f64; 3] {
+        let ra = ra_deg.to_radians();
+        let dec = dec_deg.to_radians();
+        [
+            dec.cos() * ra.cos(),
+            dec.cos() * ra.sin(),
+            dec.sin(),
+        ]
+    };
+
+    let moon_pole: Direction<ICRS> =
+        Direction::<MoonPrincipalAxes>::new_unchecked(0.0, 0.0, 1.0).to_frame_with(&jd, &ctx);
+    let moon_expected = pole_reference(269.9949, 66.5392);
+    assert_near(moon_pole.x(), moon_expected[0], 1e-10, "Moon pole ICRS x");
+    assert_near(moon_pole.y(), moon_expected[1], 1e-10, "Moon pole ICRS y");
+    assert_near(moon_pole.z(), moon_expected[2], 1e-10, "Moon pole ICRS z");
+
+    let mars_pole: Direction<ICRS> =
+        Direction::<MarsFixed>::new_unchecked(0.0, 0.0, 1.0).to_frame_with(&jd, &ctx);
+    let mars_expected = pole_reference(317.269, 54.432);
+    assert_near(mars_pole.x(), mars_expected[0], 1e-10, "Mars pole ICRS x");
+    assert_near(mars_pole.y(), mars_expected[1], 1e-10, "Mars pole ICRS y");
+    assert_near(mars_pole.z(), mars_expected[2], 1e-10, "Mars pole ICRS z");
+}
+
+// =============================================================================
 // Finite-distance parallax
 // =============================================================================
 
