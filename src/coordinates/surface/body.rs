@@ -292,14 +292,20 @@ mod tests {
             assert_eq!(latitude, LatitudeConvention::Planetocentric);
         }
 
-        let mercury = SurfaceSite::<MercurySurface>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M)
-            .unwrap();
-        let venus = SurfaceSite::<VenusSurface>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M)
-            .unwrap();
-        let pluto = SurfaceSite::<PlutoSurface>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M)
-            .unwrap();
-        assert_eq!(mercury.body_fixed_cartesian().unwrap()[0].value(), 2_439_700.0);
-        assert_eq!(venus.body_fixed_cartesian().unwrap()[0].value(), 6_051_800.0);
-        assert_eq!(pluto.body_fixed_cartesian().unwrap()[0].value(), 1_188_300.0);
+        let mercury = SurfaceSite::<MercurySurface>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
+        let venus = SurfaceSite::<VenusSurface>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
+        let pluto = SurfaceSite::<PlutoSurface>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
+        assert_eq!(
+            mercury.body_fixed_cartesian().unwrap()[0].value(),
+            2_439_700.0
+        );
+        assert_eq!(
+            venus.body_fixed_cartesian().unwrap()[0].value(),
+            6_051_800.0
+        );
+        assert_eq!(
+            pluto.body_fixed_cartesian().unwrap()[0].value(),
+            1_188_300.0
+        );
     }
 }
