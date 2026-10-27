@@ -250,7 +250,8 @@ where
     (): FrameRotationProvider<ICRS, B::FixedFrame>,
     (): FrameRotationProvider<B::FixedFrame, ICRS>,
 {
-    B::ensure_supported()?;
+    // SurfaceSite is validated at construction; custom reference surfaces
+    // are permitted for body models without a default surface.
     let params = site.to_params();
 
     // 1. Centre → body centre in source frame, then rotate to ICRS, then to body-fixed.
@@ -311,7 +312,6 @@ where
     (): FrameRotationProvider<F, ICRS>,
     (): FrameRotationProvider<ICRS, B::FixedFrame>,
 {
-    B::ensure_supported()?;
     let icrs: Direction<ICRS> = target.to_frame_with(jd, ctx);
     let fixed: Direction<B::FixedFrame> = icrs.to_frame_with(jd, ctx);
     let los = [fixed.x(), fixed.y(), fixed.z()];
@@ -336,7 +336,6 @@ pub fn horizontal_to_body_fixed_direction<B>(
 where
     B: BodySurfaceModel,
 {
-    B::ensure_supported()?;
     let sph = horizontal.to_spherical();
     let alt = deg_to_rad(sph.alt());
     let az = deg_to_rad(sph.az());
