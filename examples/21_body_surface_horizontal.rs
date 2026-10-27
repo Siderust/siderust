@@ -10,10 +10,14 @@
 //! Conventions:
 //! - Azimuth: north = 0°, east = 90° (north through east)
 //! - Altitude: geometric horizon = 0°, zenith = +90°
-//! - Moon frame: IAU 2015 analytical `MoonPrincipalAxes` (not JPL DE PA / ME)
+//! - Moon frame: NAIF IAU_MOON analytical Mean-Earth; `MoonPrincipalAxes` is
+//!   a compatibility alias, not JPL DE MOON_PA / binary-PCK MOON_ME
 //! - Moon surface: IAU mean sphere R = 1737.4 km
 //! - Mars surface: IAU ellipsoid a = 3396.19 km, planetographic latitude
 //! - Earth surface: WGS84 / ECEF
+//! - Longitude is positive east; heights and up refer to the surface normal.
+//! - Epoch is TT (IAU lunar rotation expects TDB; TT is approximated here).
+//! - No terrain occultation or atmosphere; geometric, not apparent, Alt/Az.
 //!
 //! Run with: `cargo run --example 21_body_surface_horizontal`
 #![allow(clippy::print_stdout)]
@@ -56,7 +60,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .value()
     );
     println!(
-        "  frame: MoonPrincipalAxes (IAU 2015 α0,δ0,W); lat={}",
+        "  frame: MoonIauMeanEarth (NAIF IAU_MOON analytical); lat={}",
         moon_site.latitude_convention().as_str()
     );
 
