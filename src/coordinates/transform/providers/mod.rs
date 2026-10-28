@@ -452,7 +452,7 @@ pub(crate) use impl_reverse_center_shifts_without_geocentric;
 fn iau_body_fixed_to_icrs(params: &IauRotationParams, jd: JulianDate) -> Rotation3 {
     let alpha0 = params.alpha0(jd).to::<crate::qtty::Radian>();
     let delta0 = params.delta0(jd).to::<crate::qtty::Radian>();
-    let w = params.w(jd).to::<crate::qtty::Radian>();
+    let w = params.w(jd).normalize().to::<crate::qtty::Radian>();
     let right_angle = crate::qtty::Degrees::new(90.0).to::<crate::qtty::Radian>();
 
     // IAU right-handed body-fixed -> ICRS (active, column-vector convention):

@@ -46,14 +46,14 @@ impl_body_fixed_rotation!(MarsFixed, crate::bodies::solar_system::Mars);
 // The NAIF text-PCK IAU_MOON orientation is an analytical approximation
 // of the lunar Mean-Earth/Polar-Axis frame (not a JPL DE MOON_PA frame).
 // Source: NAIF pck00011.tpc, BODY301_* and BODY3_NUT_PREC_ANGLES.
-// Angles use days/centuries past J2000 TDB; JulianDate is assumed to carry
-// the corresponding numerical epoch (TT is only an approximation).
+// Angles use days/centuries past J2000 TDB. Public epochs are typed TT;
+// convert with tempoch and retain J2000 seconds before forming days.
 use crate::qtty::{Degrees, Radian};
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar, Transcendental};
 
 fn iau_moon_mean_earth_to_icrs(jd: JulianDate) -> Rotation3 {
-    let days = (jd.raw() - crate::J2000.raw()).value();
+    let days = jd.to_scale::<crate::time::TDB>().to_j2000s().raw().value() / 86_400.0;
     let centuries = days / 36_525.0;
     let mut alpha = 269.9949 + 0.0031 * centuries;
     let mut delta = 66.5392 + 0.0130 * centuries;

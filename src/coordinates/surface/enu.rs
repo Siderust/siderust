@@ -27,6 +27,11 @@ pub struct EnuBasis {
 impl EnuBasis {
     /// Validate orthonormality and right-handedness within `tol`.
     pub fn assert_orthonormal(&self, tol: f64) -> Result<(), SurfaceError> {
+        if !tol.is_finite() || tol < 0.0 {
+            return Err(SurfaceError::DegenerateGeometry {
+                reason: "orthonormality tolerance must be finite and nonnegative",
+            });
+        }
         let dots = [
             ("e·e", dot(self.east, self.east) - 1.0),
             ("n·n", dot(self.north, self.north) - 1.0),
@@ -148,24 +153,22 @@ pub fn body_fixed_position(
             // along the radius vector is
             //   ρ = ab / sqrt((b cos φ′)² + (a sin φ′)²)
             let a = a.value();
-            let b = a * (1.0 - f);
-            let denom = ((b * cos_lat).powi(2) + (a * sin_lat).powi(2)).sqrt();
+            let axis_ratio = 1.0 - f;
+            // Scale out a before squaring: valid tiny/large ellipsoids must
+            // have the same geometry as kilometre-sized ones.
+            let denom = ((axis_ratio * cos_lat).powi(2) + sin_lat.powi(2)).sqrt();
             if denom == 0.0 {
                 return Err(SurfaceError::DegenerateGeometry {
                     reason: "ellipsoid radius undefined",
                 });
             }
-            let rho = (a * b) / denom;
+            let rho = a * (axis_ratio / denom);
             // The planetocentric angle selects the intersection of the
             // radius vector with the ellipsoid. Height, however, is measured
             // along the same surface normal used by planetographic sites.
             // Thus both latitude conventions describe the same physical
             // location and horizon when their coordinates are converted.
-            let normal = normalize([
-                cos_lat * cos_lon / (a * a),
-                cos_lat * sin_lon / (a * a),
-                sin_lat / (b * b),
-            ])?;
+            let normal = local_enu_basis(surface, lon, lat, convention)?.up;
             Ok([
                 Quantity::<Meter>::new(rho * cos_lat * cos_lon + h * normal[0]),
                 Quantity::<Meter>::new(rho * cos_lat * sin_lon + h * normal[1]),
@@ -212,15 +215,14 @@ pub fn local_enu_basis(
             // Geodetic latitude directly specifies the ellipsoid normal.
             normalize([cos_lat * cos_lon, cos_lat * sin_lon, sin_lat])?
         }
-        (ReferenceSurface::Ellipsoid { a, f }, LatitudeConvention::Planetocentric) => {
+        (ReferenceSurface::Ellipsoid { f, .. }, LatitudeConvention::Planetocentric) => {
             // Planetocentric latitude locates a point radially, but the
             // geometric local vertical remains the ellipsoid normal.
-            let a = a.value();
-            let b = a * (1.0 - f);
+            let ratio_squared = (1.0 - f) * (1.0 - f);
             normalize([
-                cos_lat * cos_lon / (a * a),
-                cos_lat * sin_lon / (a * a),
-                sin_lat / (b * b),
+                ratio_squared * cos_lat * cos_lon,
+                ratio_squared * cos_lat * sin_lon,
+                sin_lat,
             ])?
         }
     };
@@ -412,6 +414,9 @@ mod tests {
             LatitudeConvention::Planetocentric,
         )
         .unwrap();
+        for tolerance in [f64::NAN, f64::INFINITY, -1.0] {
+            assert!(basis.assert_orthonormal(tolerance).is_err());
+        }
         let left_handed = EnuBasis {
             east: basis.north,
             north: basis.east,

@@ -32,7 +32,8 @@ pub enum SurfaceError {
         /// Short reason.
         reason: &'static str,
     },
-    /// Degenerate geometry (zero range, undefined azimuth at pole, etc.).
+    /// Singular or numerically unresolved geometry (for example zero range).
+    /// Azimuth at zenith/nadir uses a convention and is not itself an error.
     DegenerateGeometry {
         /// Short reason.
         reason: &'static str,
@@ -79,3 +80,53 @@ impl fmt::Display for SurfaceError {
 
 #[cfg(feature = "std")]
 impl std::error::Error for SurfaceError {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use alloc::string::ToString;
+
+    #[test]
+    fn diagnostics_identify_the_invalid_parameter_or_site() {
+        for (error, expected) in [
+            (
+                SurfaceError::InvalidDimension {
+                    parameter: "radius",
+                    value: -1.0,
+                },
+                "invalid surface dimension radius=-1",
+            ),
+            (
+                SurfaceError::InvalidFlattening { value: 1.0 },
+                "invalid ellipsoid flattening f=1",
+            ),
+            (
+                SurfaceError::InvalidLatitude { degrees: 91.0 },
+                "invalid latitude 91°",
+            ),
+            (
+                SurfaceError::UnsupportedSurface {
+                    body: "test body",
+                    reason: "no reference level",
+                },
+                "unsupported surface model for test body: no reference level",
+            ),
+            (
+                SurfaceError::DegenerateGeometry {
+                    reason: "zero range",
+                },
+                "degenerate surface geometry: zero range",
+            ),
+            (
+                SurfaceError::MismatchedObserver,
+                "horizontal observation belongs to a different surface site",
+            ),
+            (
+                SurfaceError::NonFiniteInput { field: "longitude" },
+                "non-finite input in longitude",
+            ),
+        ] {
+            assert_eq!(error.to_string(), expected);
+        }
+    }
+}

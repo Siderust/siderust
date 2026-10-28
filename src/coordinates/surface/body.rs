@@ -25,7 +25,9 @@ use core::fmt::Debug;
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum LatitudeConvention {
     /// Angle between the equatorial plane and the radius vector from the
-    /// body centre to the point (also called planetocentric latitude).
+    /// body centre to the reference-surface point (planetocentric latitude).
+    /// Height then offsets that point along the surface normal; at nonzero
+    /// height this is not the latitude of the displaced Cartesian position.
     Planetocentric,
     /// Angle between the equatorial plane and the surface normal
     /// (geodetic / planetographic latitude).
@@ -108,7 +110,7 @@ pub const EARTH_WGS84_SURFACE: ReferenceSurface = ReferenceSurface::Ellipsoid {
 /// `MoonPrincipalAxes` type is retained for compatibility and can also be
 /// named `MoonIauMeanEarth`; neither is the JPL DE `MOON_PA` frame nor
 /// the DE-specific binary-PCK `MOON_ME` realization. Model evaluation
-/// uses numerical J2000 TDB days; a TT epoch is an approximation.
+/// converts the public TT epoch to TDB using tempoch before evaluation.
 pub const MOON_IAU_SPHERE: ReferenceSurface = ReferenceSurface::Sphere {
     radius: Meters::new(1_737_400.0),
 };

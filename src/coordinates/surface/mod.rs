@@ -27,7 +27,7 @@
 //!
 //! Lunar fixed orientation uses the NAIF IAU_MOON analytical Mean-Earth model
 //! with 13 periodic arguments, **not** a DE-specific principal-axes solution.
-//! Lunar orientation is defined in TDB arguments; TT is an approximation.
+//! Public epochs are TT; tempoch converts them to TDB for lunar orientation.
 //!
 //! Geometric Alt/Az computed here does **not** include atmospheric
 //! refraction, aberration, light deflection, light-time, or terrain

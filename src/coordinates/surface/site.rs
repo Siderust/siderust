@@ -102,6 +102,14 @@ impl<B: BodySurfaceModel> SurfaceSite<B> {
     }
 
     /// Construct a site with an explicit reference surface and latitude convention.
+    ///
+    /// Negative heights are valid for a sphere when `h > -radius`. For an
+    /// ellipsoid, require `h > -min(M, s)`, where `M` is the meridional
+    /// curvature radius at the selected surface point and `s` is its support
+    /// distance along the normal. This excludes focal singularities and
+    /// positions whose local vertical points towards the body centre. All
+    /// Cartesian components must remain finite. Deserialization uses the
+    /// same validation.
     pub fn with_surface(
         lon: Degrees,
         lat: Degrees,

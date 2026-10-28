@@ -37,6 +37,13 @@ fn ctx() -> Ctx {
     AstroContext::default()
 }
 
+fn chord<F: siderust::coordinates::frames::ReferenceFrame>(
+    a: &Direction<F>,
+    b: &Direction<F>,
+) -> f64 {
+    ((a.x() - b.x()).powi(2) + (a.y() - b.y()).powi(2) + (a.z() - b.z()).powi(2)).sqrt()
+}
+
 fn assert_near(actual: f64, expected: f64, tol: f64, label: &str) {
     assert!(
         (actual - expected).abs() < tol,
@@ -181,7 +188,7 @@ fn iau_body_prime_meridians_match_j2000_cartographic_axes() {
     for (actual, expected, label) in [
         (
             moon_x,
-            expected_x(266.85773344495135, 65.64110274784532, 41.19526398074522),
+            expected_x(266.85773344495135, 65.64110274784532, 41.19526396965),
             "Moon",
         ),
         (mars_x, expected_x(317.269, 54.432, 176.049), "Mars"),
@@ -292,7 +299,7 @@ fn direction_does_not_invent_parallax() {
             &horiz, &site, &jd, &ctx,
         )
         .unwrap();
-    assert!(icrs.angle_to(&recovered).value() < 1e-8);
+    assert!(chord(&icrs, &recovered) < 1e-8);
 }
 
 // =============================================================================
@@ -316,9 +323,8 @@ fn moon_direction_roundtrip_random_sky() {
         let icrs = Direction::<ICRS>::new_unchecked(x / n, y / n, z / n);
         let horiz = direction_to_horizontal(&icrs, &site, &jd, &ctx).unwrap();
         let back: Direction<ICRS> = horizontal_to_direction(&horiz, &site, &jd, &ctx).unwrap();
-        let ang = icrs.angle_to(&back).value();
-        // Orientation round-trips through ICRS at ~1e-8 rad numerical noise.
-        assert!(ang < 1e-7, "roundtrip angle {ang} rad");
+        let residual = chord(&icrs, &back);
+        assert!(residual < 1e-10, "roundtrip chord residual {residual}");
     }
 }
 
@@ -331,7 +337,7 @@ fn mars_direction_roundtrip() {
     let icrs = Direction::<ICRS>::new_unchecked(0.2 / n, -0.5 / n, 0.84 / n);
     let horiz = direction_to_horizontal(&icrs, &site, &jd, &ctx).unwrap();
     let back: Direction<ICRS> = horizontal_to_direction(&horiz, &site, &jd, &ctx).unwrap();
-    assert!(icrs.angle_to(&back).value() < 1e-10);
+    assert!(chord(&icrs, &back) < 1e-10);
 }
 
 // =============================================================================
@@ -619,51 +625,101 @@ fn finite_east_matches_direction_only_and_affn_horizontal_axes() {
 
 #[test]
 fn lunar_iau_mean_earth_orientation_matches_independent_pck_vectors() {
-    // Independently evaluated NAIF pck00011.tpc BODY301 and BODY3 angles.
-    // The fixed axes follow IAU_MOON (analytical Mean-Earth/Polar-Axis),
-    // NOT the JPL DE-specific principal-axes realization.
+    // CSPICE N0067 via SpiceyPy 8.3.0, pck00011.tpc + naif0012.tls:
+    // et = unitim((jd_tt - 2451545) * 86400, "TDT", "TDB")
+    // axes = pxform("IAU_MOON", "J2000", et).T
+    // All three axes, 1900--2050. The library uses tempoch's TT->TDB
+    // series, rather than SPICE's DELTET approximation. 1e-10 in direction
+    // cosine allows <40 microseconds of timescale-model disagreement.
     let samples = [
         (
-            2_451_545.0,
+            2451545.0,
             [
-                -0.022608671404182476,
-                -0.41183090094261293,
-                0.9109797785934293,
+                [0.7842270522119748, 0.5578471123206701, 0.2716514860154575],
+                [-0.6200619150990117, 0.720556665574856, 0.31035675139972596],
+                [
+                    -0.022608671404191448,
+                    -0.4118309009425287,
+                    0.9109797785934671,
+                ],
             ],
-            [0.7842270520919168, 0.557847112460164, 0.27165148607559475],
         ),
         (
-            2_455_197.5,
+            2455197.5,
             [
-                0.024575730238028167,
-                -0.38844430350837333,
-                0.9211444276307393,
+                [
+                    0.25823924831040457,
+                    -0.8876830435656354,
+                    -0.3812234315963898,
+                ],
+                [0.9657683594503107, 0.24724448879202301, 0.07849610593288507],
+                [
+                    0.024575730238036195,
+                    -0.3884443035082652,
+                    0.9211444276307847,
+                ],
             ],
-            [0.258239248504571, -0.8876830435158835, -0.3812234315807105],
         ),
         (
-            2_447_892.5,
+            2447892.5,
             [
-                0.017200848997715103,
-                -0.3789436182964894,
-                0.9252598904881386,
+                [
+                    -0.8802151956698334,
+                    0.43320727597351794,
+                    0.19378510096372514,
+                ],
+                [-0.4742629440570647, -0.817761083811191, -0.3261003981878464],
+                [
+                    0.017200848997720463,
+                    -0.3789436182963777,
+                    0.9252598904881844,
+                ],
             ],
-            [-0.8802151957580415, 0.4332072758214011, 0.1937851009031218],
+        ),
+        (
+            2415020.5,
+            [
+                [-0.1462181824757145, 0.904463719684885, 0.4007064048493364],
+                [
+                    -0.9889031878073268,
+                    -0.14439998435015727,
+                    -0.03491603734935458,
+                ],
+                [0.02628170957159834, -0.4013652006507987, 0.9155409589136568],
+            ],
+        ),
+        (
+            2469807.5,
+            [
+                [
+                    -0.9795554098249627,
+                    -0.19121626094134914,
+                    -0.06251032422135915,
+                ],
+                [
+                    0.1999606555147074,
+                    -0.8913653381783955,
+                    -0.40679671844822346,
+                ],
+                [0.02206661117566709, -0.41097953166273926, 0.911377468026008],
+            ],
         ),
     ];
     let ctx = ctx();
-    for (jd_num, expected_pole, expected_x) in samples {
-        let jd = JulianDate::new(jd_num);
-        let pole: Direction<ICRS> =
-            Direction::<MoonPrincipalAxes>::new_unchecked(0.0, 0.0, 1.0).to_frame_with(&jd, &ctx);
-        let x_axis: Direction<ICRS> =
-            Direction::<MoonPrincipalAxes>::new_unchecked(1.0, 0.0, 0.0).to_frame_with(&jd, &ctx);
-        for (actual, expected) in [
-            ([pole.x(), pole.y(), pole.z()], expected_pole),
-            ([x_axis.x(), x_axis.y(), x_axis.z()], expected_x),
-        ] {
-            for (measured, reference) in actual.into_iter().zip(expected) {
-                assert_near(measured, reference, 1e-10, "IAU_MOON PCK vector");
+    for (jd_tt, expected_axes) in samples {
+        let jd = JulianDate::new(jd_tt);
+        for (axis, expected) in [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
+            .into_iter()
+            .zip(expected_axes)
+        {
+            let actual: Direction<ICRS> =
+                Direction::<MoonPrincipalAxes>::new_unchecked(axis[0], axis[1], axis[2])
+                    .to_frame_with(&jd, &ctx);
+            for (measured, reference) in [actual.x(), actual.y(), actual.z()]
+                .into_iter()
+                .zip(expected)
+            {
+                assert_near(measured, reference, 1e-10, "IAU_MOON SPICE axis");
             }
         }
     }
@@ -741,4 +797,233 @@ fn microscopic_finite_range_preserves_altaz_in_au() {
         1e-6,
         "micro direction consistency",
     );
+}
+
+#[test]
+fn finite_cardinals_and_extreme_ranges_match_analytical_geometry() {
+    let site = SurfaceSite::<MoonSurface>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
+    let jd = siderust::J2000;
+    let ctx = ctx();
+    for (los, altitude, azimuth) in [
+        ([0.0, 0.0, 1.0], 0.0, 0.0),
+        ([0.0, 1.0, 0.0], 0.0, 90.0),
+        ([0.0, 0.0, -1.0], 0.0, 180.0),
+        ([0.0, -1.0, 0.0], 0.0, 270.0),
+        ([1.0, 0.0, 0.0], 90.0, 0.0),
+        ([-1.0, 0.0, 0.0], -90.0, 0.0),
+    ] {
+        for range in [1_000.0, 1e160] {
+            let target = Position::<Selenocentric, MoonPrincipalAxes, Meter>::new(
+                1_737_400.0 + range * los[0],
+                range * los[1],
+                range * los[2],
+            );
+            let finite = position_to_horizontal(&target, &site, &jd, &ctx).unwrap();
+            assert_near(finite.range().value() / range, 1.0, 1e-12, "scaled range");
+            assert_near(finite.alt().value(), altitude, 1e-8, "finite altitude");
+            if altitude.abs() < 90.0 {
+                let delta = (finite.az().value() - azimuth + 180.0).rem_euclid(360.0) - 180.0;
+                assert_near(delta, 0.0, 1e-8, "finite cardinal azimuth");
+            }
+        }
+    }
+}
+
+#[test]
+fn invalid_horizontal_directions_and_targets_return_errors() {
+    use siderust::coordinates::frames::Horizontal;
+    let site = SurfaceSite::<MoonSurface>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
+    for xyz in [[0.0; 3], [f64::NAN, 0.0, 0.0], [0.0, f64::INFINITY, 0.0]] {
+        let horizontal = Direction::<Horizontal>::new_unchecked(xyz[0], xyz[1], xyz[2]);
+        let inverse: Result<Direction<ICRS>, _> =
+            horizontal_to_direction(&horizontal, &site, &siderust::J2000, &ctx());
+        assert!(inverse.is_err());
+        let target = Position::<Selenocentric, MoonPrincipalAxes, Meter>::new(
+            xyz[0] + 1_737_400.0,
+            xyz[1],
+            xyz[2],
+        );
+        assert!(position_to_horizontal(&target, &site, &siderust::J2000, &ctx()).is_err());
+    }
+}
+
+#[test]
+fn ellipsoid_geometry_is_scale_independent() {
+    use siderust::coordinates::surface::ReferenceSurface;
+    // Squared dimensional axes used to overflow/underflow here, even though
+    // each position and its unit normal are representable.
+    for radius in [1e-160, 1.0, 1e160] {
+        let surface = ReferenceSurface::ellipsoid(radius * M, 0.25).unwrap();
+        let graphic_lat = 35.0_f64.to_radians();
+        let centric_lat = ((1.0 - surface.e2()) * graphic_lat.tan()).atan();
+        let graphic = SurfaceSite::<MarsSurface>::with_surface(
+            40.0 * DEG,
+            graphic_lat.to_degrees() * DEG,
+            radius * 0.1 * M,
+            surface,
+            LatitudeConvention::Planetographic,
+        )
+        .unwrap();
+        let centric = SurfaceSite::<MarsSurface>::with_surface(
+            40.0 * DEG,
+            centric_lat.to_degrees() * DEG,
+            radius * 0.1 * M,
+            surface,
+            LatitudeConvention::Planetocentric,
+        )
+        .unwrap();
+        for (g, c) in graphic
+            .body_fixed_cartesian()
+            .unwrap()
+            .into_iter()
+            .zip(centric.body_fixed_cartesian().unwrap())
+        {
+            assert_near(
+                g.value() / radius,
+                c.value() / radius,
+                1e-14,
+                "scaled ellipsoid",
+            );
+        }
+        for (g, c) in graphic
+            .enu_basis()
+            .unwrap()
+            .up
+            .into_iter()
+            .zip(centric.enu_basis().unwrap().up)
+        {
+            assert_near(g, c, 1e-14, "scale-free normal");
+        }
+    }
+}
+
+#[test]
+fn legacy_earth_cartesian_horizontal_matches_spherical_east() {
+    use siderust::coordinates::centers::{Geodetic, Topocentric};
+    use siderust::coordinates::frames::{EquatorialMeanOfDate, Horizontal};
+    use siderust::coordinates::transform::Transform;
+    let jd = siderust::J2000;
+    let site = Geodetic::<ECEF>::new(0.0 * DEG, 45.0 * DEG, 0.0 * M);
+    let ra =
+        siderust::astro::earth_rotation::gmst_from_tt(jd).value() + core::f64::consts::FRAC_PI_2;
+    let target = Position::<Topocentric, EquatorialMeanOfDate, Meter>::from_array(
+        site,
+        [ra.cos() * M, ra.sin() * M, 0.0 * M],
+    );
+    let horizontal: Position<Topocentric, Horizontal, Meter> = target.transform(jd);
+    assert_near(
+        horizontal.to_spherical().az().value(),
+        90.0,
+        1e-10,
+        "legacy east azimuth",
+    );
+    assert_near(horizontal.y().value(), 1.0, 1e-14, "legacy east component");
+    let inverse: Position<Topocentric, EquatorialMeanOfDate, Meter> = horizontal.transform(jd);
+    assert_near(
+        inverse.x().value(),
+        target.x().value(),
+        1e-14,
+        "legacy inverse x",
+    );
+    assert_near(
+        inverse.y().value(),
+        target.y().value(),
+        1e-14,
+        "legacy inverse y",
+    );
+}
+
+#[test]
+fn shared_planetary_rotation_matches_independent_axes_at_multiple_epochs() {
+    use siderust::coordinates::frames::*;
+    // Explicit scalar IAU basis: node=(-sin RA, cos RA, 0),
+    // equatorial tangent=(-sin DEC cos RA,-sin DEC sin RA,cos DEC).
+    // This checks every user of the corrected shared ZXZ provider. Existing
+    // planetary models retain their linear elements (including omissions of
+    // periodic terms); this test validates the convention, not full PCK accuracy.
+    macro_rules! check {
+        ($frame:ty, $ra:expr, $rar:expr, $dec:expr, $decr:expr, $w:expr, $wr:expr) => {
+            for days in [-36525.0, 0.0, 18262.5] {
+                let ra = ($ra + $rar * days / 36525.0_f64).to_radians();
+                let dec = ($dec + $decr * days / 36525.0_f64).to_radians();
+                let w = (($w + $wr * days).rem_euclid(360.0_f64)).to_radians();
+                let expected = [
+                    [
+                        -ra.sin() * w.cos() - dec.sin() * ra.cos() * w.sin(),
+                        ra.cos() * w.cos() - dec.sin() * ra.sin() * w.sin(),
+                        dec.cos() * w.sin(),
+                    ],
+                    [
+                        ra.sin() * w.sin() - dec.sin() * ra.cos() * w.cos(),
+                        -ra.cos() * w.sin() - dec.sin() * ra.sin() * w.cos(),
+                        dec.cos() * w.cos(),
+                    ],
+                    [dec.cos() * ra.cos(), dec.cos() * ra.sin(), dec.sin()],
+                ];
+                let jd = JulianDate::new(2451545.0 + days);
+                for (axis, expected) in [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
+                    .into_iter()
+                    .zip(expected)
+                {
+                    let actual: Direction<ICRS> =
+                        Direction::<$frame>::new_unchecked(axis[0], axis[1], axis[2])
+                            .to_frame_with(&jd, &ctx());
+                    for (value, reference) in [actual.x(), actual.y(), actual.z()]
+                        .into_iter()
+                        .zip(expected)
+                    {
+                        assert_near(value, reference, 1e-10, stringify!($frame));
+                    }
+                }
+            }
+        };
+    }
+    check!(
+        MercuryFixed,
+        281.0103,
+        -0.0328,
+        61.4155,
+        -0.0049,
+        329.5988,
+        6.1385108
+    );
+    check!(VenusFixed, 272.76, 0.0, 67.16, 0.0, 160.20, -1.4813688);
+    check!(
+        MarsFixed,
+        317.269,
+        -0.10927,
+        54.432,
+        -0.05827,
+        176.049,
+        350.891982443
+    );
+    check!(
+        JupiterSystemIII,
+        268.057,
+        -0.006,
+        64.495,
+        0.002,
+        284.95,
+        870.536
+    );
+    check!(
+        SaturnFixed,
+        40.589,
+        -0.036,
+        83.537,
+        -0.004,
+        38.90,
+        810.7939024
+    );
+    check!(
+        UranusFixed,
+        257.311,
+        0.0,
+        -15.175,
+        0.0,
+        203.81,
+        -501.1600928
+    );
+    check!(NeptuneFixed, 299.36, 0.0, 43.46, 0.0, 249.978, 541.1397757);
+    check!(PlutoFixed, 132.993, 0.0, -6.163, 0.0, 302.695, 56.3625225);
 }

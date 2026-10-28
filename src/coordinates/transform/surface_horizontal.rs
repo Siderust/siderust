@@ -112,7 +112,11 @@ impl<B: BodySurfaceModel, U: LengthUnit> HorizontalObservation<B, U> {
 
     /// Slant range from observer to target.
     pub fn range(&self) -> Quantity<U> {
-        self.position.distance()
+        Quantity::new(norm([
+            self.position.x().value(),
+            self.position.y().value(),
+            self.position.z().value(),
+        ]))
     }
 
     /// Observer site parameters attached to this observation.
@@ -242,7 +246,12 @@ fn dot(a: [f64; 3], b: [f64; 3]) -> f64 {
 
 #[inline]
 fn norm(v: [f64; 3]) -> f64 {
-    dot(v, v).sqrt()
+    let scale = v[0].abs().max(v[1].abs()).max(v[2].abs());
+    if scale == 0.0 {
+        return 0.0;
+    }
+    let scaled = [v[0] / scale, v[1] / scale, v[2] / scale];
+    scale * dot(scaled, scaled).sqrt()
 }
 
 /// Finite-distance geometric Alt/Az from a surface observer.
@@ -385,14 +394,17 @@ pub fn horizontal_to_body_fixed_direction<B>(
 where
     B: BodySurfaceModel,
 {
-    let sph = horizontal.to_spherical();
-    let alt = deg_to_rad(sph.alt());
-    let az = deg_to_rad(sph.az());
-    // Horizontal Cartesian: x=N, y=E, z=Up → ENU components
-    // e = sin(az) cos(alt), n = cos(az) cos(alt), u = sin(alt)
-    let e = az.sin() * alt.cos();
-    let n = az.cos() * alt.cos();
-    let u = alt.sin();
+    // Read canonical Horizontal axes directly: N, E, Up. Spherical
+    // conversion would assign (alt, az)=(0, 0) to an unchecked zero vector.
+    let length = norm([horizontal.x(), horizontal.y(), horizontal.z()]);
+    if !length.is_finite() || length == 0.0 {
+        return Err(SurfaceError::DegenerateGeometry {
+            reason: "zero or non-finite horizontal direction",
+        });
+    }
+    let n = horizontal.x() / length;
+    let e = horizontal.y() / length;
+    let u = horizontal.z() / length;
     let enu = site.enu_basis()?;
     let mut v = [
         e * enu.east[0] + n * enu.north[0] + u * enu.up[0],
