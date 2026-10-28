@@ -538,20 +538,20 @@ fn rad_to_deg(r: f64) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::bodies::solar_system::Moon;
     use crate::coordinates::cartesian::Position;
     use crate::coordinates::centers::Selenocentric;
-    use crate::coordinates::frames::MoonPrincipalAxes;
-    use crate::coordinates::surface::MoonSurface;
+    use crate::coordinates::frames::MoonIauMeanEarth;
     use crate::coordinates::transform::AstroContext;
     use crate::qtty::{Kilometer, DEG, KM, M};
 
     #[test]
     fn lunar_zenith_is_altitude_90() {
-        let site = SurfaceSite::<MoonSurface>::new(10.0 * DEG, 20.0 * DEG, 0.0 * M).unwrap();
+        let site = SurfaceSite::<Moon>::new(10.0 * DEG, 20.0 * DEG, 0.0 * M).unwrap();
         let [x, y, z] = site.body_fixed_cartesian().unwrap();
         // Target further along the same radius vector → zenith.
         let scale = 2.0;
-        let target = Position::<Selenocentric, MoonPrincipalAxes, Kilometer>::new(
+        let target = Position::<Selenocentric, MoonIauMeanEarth, Kilometer>::new(
             Quantity::<Kilometer>::new(x.value() * scale / 1000.0),
             Quantity::<Kilometer>::new(y.value() * scale / 1000.0),
             Quantity::<Kilometer>::new(z.value() * scale / 1000.0),
@@ -572,12 +572,12 @@ mod tests {
 
     #[test]
     fn direction_roundtrip_lunar() {
-        let site = SurfaceSite::<MoonSurface>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
+        let site = SurfaceSite::<Moon>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
         let jd = crate::J2000;
         let ctx =
             AstroContext::<crate::coordinates::transform::context::DefaultEphemeris>::default();
         // Local east in body-fixed at (0,0): east = (0,1,0)
-        let east_fixed = Direction::<MoonPrincipalAxes>::new_unchecked(0.0, 1.0, 0.0);
+        let east_fixed = Direction::<MoonIauMeanEarth>::new_unchecked(0.0, 1.0, 0.0);
         let icrs: Direction<ICRS> = east_fixed.to_frame_with(&jd, &ctx);
         let horiz = direction_to_horizontal(&icrs, &site, &jd, &ctx).unwrap();
         let sph = horiz.to_spherical();

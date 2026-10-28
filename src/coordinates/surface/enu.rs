@@ -88,7 +88,8 @@ fn normalize(v: [f64; 3]) -> Result<[f64; 3], SurfaceError> {
 
 /// Convert surface coordinates to body-fixed Cartesian metres.
 ///
-/// Longitude is positive **east**. Latitude follows `convention`.
+/// Longitude is positive **east** (Siderust internal convention; no implicit
+/// planetographic west→east remapping). Latitude follows `convention`.
 /// Height is measured along the reference-surface normal for both latitude
 /// conventions (radially on a sphere). Planetocentric latitude selects the
 /// ellipsoid intersection radially; it does not change the local vertical.

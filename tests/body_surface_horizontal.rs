@@ -10,18 +10,19 @@
 //! surfaces. They do **not** require network access.
 //!
 //! Where a case claims agreement with an external tool (e.g. SPICE), the
-//! body-fixed frame realisation must match. Siderust's compatibility marker
-//! `MoonPrincipalAxes` uses the NAIF IAU_MOON analytical Mean-Earth model,
-//! not the JPL DE `MOON_PA` or binary-PCK `MOON_ME` realizations.
+//! body-fixed frame realisation must match. Siderust's lunar marker
+//! `MoonIauMeanEarth` (legacy alias `MoonPrincipalAxes`) uses the NAIF
+//! IAU_MOON analytical Mean-Earth model, not the JPL DE `MOON_PA` or
+//! binary-PCK `MOON_ME` realizations.
 //!
 //! Geometric scope only: no refraction, aberration, light-time, or terrain.
 
+use siderust::bodies::solar_system::{Earth, Mars, Moon};
 use siderust::coordinates::cartesian::{Direction, Position};
 use siderust::coordinates::centers::{Geocentric, Marscentric, Selenocentric};
-use siderust::coordinates::frames::{MarsFixed, MoonPrincipalAxes, ECEF, ICRS};
+use siderust::coordinates::frames::{MarsFixed, MoonIauMeanEarth, ECEF, ICRS};
 use siderust::coordinates::surface::{
-    BodySurfaceModel, EarthSurface, EnuBasis, LatitudeConvention, MarsSurface, MoonSurface,
-    SurfaceSite, EARTH_WGS84_SURFACE,
+    BodySurfaceModel, EnuBasis, LatitudeConvention, SurfaceSite, EARTH_WGS84_SURFACE,
 };
 use siderust::coordinates::transform::context::{DefaultEop, DefaultEphemeris};
 use siderust::coordinates::transform::{
@@ -64,13 +65,13 @@ fn enu_basis_orthonormal_earth_mars_moon() {
         (0.0, 89.9),
         (10.0, -89.9),
     ] {
-        let moon = SurfaceSite::<MoonSurface>::new(lon * DEG, lat * DEG, 0.0 * M).unwrap();
+        let moon = SurfaceSite::<Moon>::new(lon * DEG, lat * DEG, 0.0 * M).unwrap();
         moon.enu_basis().unwrap().assert_orthonormal(1e-12).unwrap();
 
-        let mars = SurfaceSite::<MarsSurface>::new(lon * DEG, lat * DEG, 0.0 * M).unwrap();
+        let mars = SurfaceSite::<Mars>::new(lon * DEG, lat * DEG, 0.0 * M).unwrap();
         mars.enu_basis().unwrap().assert_orthonormal(1e-12).unwrap();
 
-        let earth = SurfaceSite::<EarthSurface>::new(lon * DEG, lat * DEG, 0.0 * M).unwrap();
+        let earth = SurfaceSite::<Earth>::new(lon * DEG, lat * DEG, 0.0 * M).unwrap();
         earth
             .enu_basis()
             .unwrap()
@@ -81,7 +82,7 @@ fn enu_basis_orthonormal_earth_mars_moon() {
 
 #[test]
 fn north_pole_azimuth_follows_longitude_meridian() {
-    let site = SurfaceSite::<MoonSurface>::new(30.0 * DEG, 90.0 * DEG, 0.0 * M).unwrap();
+    let site = SurfaceSite::<Moon>::new(30.0 * DEG, 90.0 * DEG, 0.0 * M).unwrap();
     let enu = site.enu_basis().unwrap();
     // up ≈ +Z
     assert_near(enu.up[2], 1.0, 1e-12, "up.z");
@@ -97,7 +98,7 @@ fn north_pole_azimuth_follows_longitude_meridian() {
 
 #[test]
 fn moon_equator_cardinals_body_fixed() {
-    let site = SurfaceSite::<MoonSurface>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
+    let site = SurfaceSite::<Moon>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
     let jd = siderust::J2000;
     let ctx = ctx();
 
@@ -111,7 +112,7 @@ fn moon_equator_cardinals_body_fixed() {
         ([-1.0, 0.0, 0.0], -90.0, 0.0, "nadir/−X"),
     ];
     for (v, alt_deg, az_deg, label) in cases {
-        let fixed = Direction::<MoonPrincipalAxes>::new_unchecked(v[0], v[1], v[2]);
+        let fixed = Direction::<MoonIauMeanEarth>::new_unchecked(v[0], v[1], v[2]);
         let icrs: Direction<ICRS> = fixed.to_frame_with(&jd, &ctx);
         let horiz = direction_to_horizontal(&icrs, &site, &jd, &ctx).unwrap();
         let sph = horiz.to_spherical();
@@ -149,7 +150,7 @@ fn iau_body_poles_match_published_j2000_right_ascension_declination() {
     };
 
     let moon_pole: Direction<ICRS> =
-        Direction::<MoonPrincipalAxes>::new_unchecked(0.0, 0.0, 1.0).to_frame_with(&jd, &ctx);
+        Direction::<MoonIauMeanEarth>::new_unchecked(0.0, 0.0, 1.0).to_frame_with(&jd, &ctx);
     let moon_expected = pole_reference(266.85773344495135, 65.64110274784532);
     assert_near(moon_pole.x(), moon_expected[0], 1e-10, "Moon pole ICRS x");
     assert_near(moon_pole.y(), moon_expected[1], 1e-10, "Moon pole ICRS y");
@@ -181,7 +182,7 @@ fn iau_body_prime_meridians_match_j2000_cartographic_axes() {
     let jd = siderust::J2000;
     let ctx = ctx();
     let moon_x: Direction<ICRS> =
-        Direction::<MoonPrincipalAxes>::new_unchecked(1.0, 0.0, 0.0).to_frame_with(&jd, &ctx);
+        Direction::<MoonIauMeanEarth>::new_unchecked(1.0, 0.0, 0.0).to_frame_with(&jd, &ctx);
     let mars_x: Direction<ICRS> =
         Direction::<MarsFixed>::new_unchecked(1.0, 0.0, 0.0).to_frame_with(&jd, &ctx);
 
@@ -201,12 +202,12 @@ fn iau_body_prime_meridians_match_j2000_cartographic_axes() {
 
 #[test]
 fn mars_altaz_invariant_under_equivalent_latitude_conventions() {
-    let s = MarsSurface::default_surface();
+    let s = Mars::default_surface();
     let graphic = 45.0_f64;
     let centric = ((1.0 - s.e2()) * graphic.to_radians().tan())
         .atan()
         .to_degrees();
-    let site_g = SurfaceSite::<MarsSurface>::with_surface(
+    let site_g = SurfaceSite::<Mars>::with_surface(
         137.0 * DEG,
         graphic * DEG,
         100.0 * M,
@@ -214,7 +215,7 @@ fn mars_altaz_invariant_under_equivalent_latitude_conventions() {
         LatitudeConvention::Planetographic,
     )
     .unwrap();
-    let site_c = SurfaceSite::<MarsSurface>::with_surface(
+    let site_c = SurfaceSite::<Mars>::with_surface(
         137.0 * DEG,
         centric * DEG,
         100.0 * M,
@@ -249,12 +250,12 @@ fn mars_altaz_invariant_under_equivalent_latitude_conventions() {
 
 #[test]
 fn moon_finite_parallax_shifts_altitude() {
-    let site = SurfaceSite::<MoonSurface>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
+    let site = SurfaceSite::<Moon>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
     let jd = siderust::J2000;
     let ctx = ctx();
 
     // Same sky direction (+Z body-fixed): direction-only vs finite near target.
-    let dir_fixed = Direction::<MoonPrincipalAxes>::new_unchecked(0.0, 0.0, 1.0);
+    let dir_fixed = Direction::<MoonIauMeanEarth>::new_unchecked(0.0, 0.0, 1.0);
     let dir_icrs: Direction<ICRS> = dir_fixed.to_frame_with(&jd, &ctx);
     let dir_alt = direction_to_horizontal(&dir_icrs, &site, &jd, &ctx)
         .unwrap()
@@ -262,7 +263,7 @@ fn moon_finite_parallax_shifts_altitude() {
         .alt()
         .value();
 
-    let near = Position::<Selenocentric, MoonPrincipalAxes, Kilometer>::new(0.0, 0.0, 2_000.0);
+    let near = Position::<Selenocentric, MoonIauMeanEarth, Kilometer>::new(0.0, 0.0, 2_000.0);
     let near_alt = position_to_horizontal(&near, &site, &jd, &ctx)
         .unwrap()
         .alt()
@@ -277,15 +278,15 @@ fn moon_finite_parallax_shifts_altitude() {
 
 #[test]
 fn direction_does_not_invent_parallax() {
-    let site = SurfaceSite::<MoonSurface>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
+    let site = SurfaceSite::<Moon>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
     let jd = siderust::J2000;
     let ctx = ctx();
-    let fixed = Direction::<MoonPrincipalAxes>::new_unchecked(0.0, 0.0, 1.0);
+    let fixed = Direction::<MoonIauMeanEarth>::new_unchecked(0.0, 0.0, 1.0);
     let icrs: Direction<ICRS> = fixed.to_frame_with(&jd, &ctx);
     let horiz = site.observe_direction(&icrs, &jd, &ctx).unwrap();
     assert_near(horiz.to_spherical().alt().value(), 0.0, 1e-8, "dir alt");
     assert_eq!(horiz.site_params(), &site.to_params());
-    let other = SurfaceSite::<MoonSurface>::new(15.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
+    let other = SurfaceSite::<Moon>::new(15.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
     let bad: Result<Direction<ICRS>, _> =
         siderust::coordinates::transform::horizontal_observation_to_direction(
             &horiz, &other, &jd, &ctx,
@@ -308,7 +309,7 @@ fn direction_does_not_invent_parallax() {
 
 #[test]
 fn moon_direction_roundtrip_random_sky() {
-    let site = SurfaceSite::<MoonSurface>::new((-15.0) * DEG, 42.0 * DEG, 100.0 * M).unwrap();
+    let site = SurfaceSite::<Moon>::new((-15.0) * DEG, 42.0 * DEG, 100.0 * M).unwrap();
     let jd = JulianDate::new(2_460_000.5);
     let ctx = ctx();
 
@@ -330,7 +331,7 @@ fn moon_direction_roundtrip_random_sky() {
 
 #[test]
 fn mars_direction_roundtrip() {
-    let site = SurfaceSite::<MarsSurface>::new(75.0 * DEG, (-15.0) * DEG, 0.0 * M).unwrap();
+    let site = SurfaceSite::<Mars>::new(75.0 * DEG, (-15.0) * DEG, 0.0 * M).unwrap();
     let jd = siderust::J2000;
     let ctx = ctx();
     let n = (0.2_f64.powi(2) + 0.5_f64.powi(2) + 0.84_f64.powi(2)).sqrt();
@@ -349,7 +350,7 @@ fn earth_wgs84_zenith_matches_geodetic_cartesian() {
     use siderust::coordinates::centers::Geodetic;
 
     let geo = Geodetic::<ECEF>::new(0.0 * DEG, 45.0 * DEG, 0.0 * M);
-    let site = SurfaceSite::<EarthSurface>::from_geodetic(geo).unwrap();
+    let site = SurfaceSite::<Earth>::from_geodetic(geo).unwrap();
     let cart: Position<Geocentric, ECEF, Meter> = geo.to_cartesian();
     let enu = site.enu_basis().unwrap();
     // Target along the ellipsoid normal (local up), not the radius vector.
@@ -366,9 +367,9 @@ fn earth_wgs84_zenith_matches_geodetic_cartesian() {
 
 #[test]
 fn earth_surface_matches_wgs84_constants() {
-    assert_eq!(EarthSurface::default_surface(), EARTH_WGS84_SURFACE);
+    assert_eq!(Earth::default_surface(), EARTH_WGS84_SURFACE);
     assert_eq!(
-        EarthSurface::default_latitude_convention(),
+        Earth::default_latitude_convention(),
         LatitudeConvention::Planetographic
     );
 }
@@ -382,24 +383,14 @@ fn mars_lat_conventions_differ_on_ellipsoid() {
     let lon = 0.0 * DEG;
     let lat = 45.0 * DEG;
     let h = 0.0 * M;
-    let surf = MarsSurface::default_surface();
+    let surf = Mars::default_surface();
 
-    let site_g = SurfaceSite::<MarsSurface>::with_surface(
-        lon,
-        lat,
-        h,
-        surf,
-        LatitudeConvention::Planetographic,
-    )
-    .unwrap();
-    let site_c = SurfaceSite::<MarsSurface>::with_surface(
-        lon,
-        lat,
-        h,
-        surf,
-        LatitudeConvention::Planetocentric,
-    )
-    .unwrap();
+    let site_g =
+        SurfaceSite::<Mars>::with_surface(lon, lat, h, surf, LatitudeConvention::Planetographic)
+            .unwrap();
+    let site_c =
+        SurfaceSite::<Mars>::with_surface(lon, lat, h, surf, LatitudeConvention::Planetocentric)
+            .unwrap();
     let pg = site_g.body_fixed_cartesian().unwrap();
     let pc = site_c.body_fixed_cartesian().unwrap();
     let dx = (pg[0] - pc[0]).value();
@@ -419,7 +410,7 @@ fn mars_lat_conventions_differ_on_ellipsoid() {
 
 #[test]
 fn mars_azimuth_changes_with_epoch() {
-    let site = SurfaceSite::<MarsSurface>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
+    let site = SurfaceSite::<Mars>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
     let ctx = ctx();
     // Fixed ICRS direction
     let icrs = Direction::<ICRS>::new_unchecked(1.0, 0.0, 0.0);
@@ -439,15 +430,15 @@ fn mars_azimuth_changes_with_epoch() {
 
 #[test]
 fn rejects_non_finite_site() {
-    let err = SurfaceSite::<MoonSurface>::new(Degrees::new(f64::NAN), 0.0 * DEG, 0.0 * M);
+    let err = SurfaceSite::<Moon>::new(Degrees::new(f64::NAN), 0.0 * DEG, 0.0 * M);
     assert!(err.is_err());
 }
 
 #[test]
 fn zero_range_is_error() {
-    let site = SurfaceSite::<MoonSurface>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
+    let site = SurfaceSite::<Moon>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
     let [x, y, z] = site.body_fixed_cartesian().unwrap();
-    let target = Position::<Selenocentric, MoonPrincipalAxes, Meter>::new(x, y, z);
+    let target = Position::<Selenocentric, MoonIauMeanEarth, Meter>::new(x, y, z);
     let err = position_to_horizontal(&target, &site, &siderust::J2000, &ctx());
     // A coincident observer and target has no meaningful sky direction.
     // Numerical frame round-trips must not turn it into a success.
@@ -466,11 +457,11 @@ fn zero_range_is_error() {
 
 #[test]
 fn finite_observation_range_is_invariant_under_length_units() {
-    let site = SurfaceSite::<MoonSurface>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
+    let site = SurfaceSite::<Moon>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
     let [x, y, z] = site.body_fixed_cartesian().unwrap();
     // 1 km above the surface: 1 km = ~6.7e-9 AU. Comparing the
     // raw numeric range to 1e-6 would incorrectly reject the AU target.
-    let target_m = Position::<Selenocentric, MoonPrincipalAxes, Meter>::new(
+    let target_m = Position::<Selenocentric, MoonIauMeanEarth, Meter>::new(
         Quantity::<Meter>::new(x.value() + 1_000.0),
         y,
         z,
@@ -513,7 +504,7 @@ fn finite_observation_range_is_invariant_under_length_units() {
 fn analytical_enu_projection_reference() {
     // Pure geometry check of los_to_horizontal via site ENU, independent of
     // orientation providers: observer at lunar equator, LOS = east+up.
-    let site = SurfaceSite::<MoonSurface>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
+    let site = SurfaceSite::<Moon>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
     let EnuBasis { east, north: _, up } = site.enu_basis().unwrap();
     let los = [
         (east[0] + up[0]) / 2.0_f64.sqrt(),
@@ -523,7 +514,7 @@ fn analytical_enu_projection_reference() {
     // Reconstruct via body-fixed direction → ICRS → horizontal at J2000.
     // Because we use the same ENU, alt should be 45°, az 90°.
     let n = (los[0] * los[0] + los[1] * los[1] + los[2] * los[2]).sqrt();
-    let fixed = Direction::<MoonPrincipalAxes>::new_unchecked(los[0] / n, los[1] / n, los[2] / n);
+    let fixed = Direction::<MoonIauMeanEarth>::new_unchecked(los[0] / n, los[1] / n, los[2] / n);
     let jd = siderust::J2000;
     let ctx = ctx();
     let icrs: Direction<ICRS> = fixed.to_frame_with(&jd, &ctx);
@@ -535,7 +526,7 @@ fn analytical_enu_projection_reference() {
 
 #[test]
 fn mars_zenith_along_ellipsoid_normal() {
-    let site = SurfaceSite::<MarsSurface>::new(10.0 * DEG, 25.0 * DEG, 0.0 * M).unwrap();
+    let site = SurfaceSite::<Mars>::new(10.0 * DEG, 25.0 * DEG, 0.0 * M).unwrap();
     let [x, y, z] = site.body_fixed_cartesian().unwrap();
     // Radial extension is *not* the zenith at nonzero planetographic
     // latitude on an oblate ellipsoid.
@@ -576,19 +567,17 @@ fn mars_zenith_along_ellipsoid_normal() {
 // Compile-time: SurfaceSite is parameterized by body (Moon ≠ Mars).
 #[test]
 fn site_params_body_name() {
-    let moon = SurfaceSite::<MoonSurface>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
-    let mars = SurfaceSite::<MarsSurface>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
+    let moon = SurfaceSite::<Moon>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
+    let mars = SurfaceSite::<Mars>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
     assert_eq!(moon.body_name(), "Moon");
     assert_eq!(mars.body_name(), "Mars");
     // Params equality is within the same body centre type only.
     assert_eq!(moon.to_params(), moon.to_params());
     // The default params are body-specific, never implicitly lunar for Mars.
-    let moon_default =
-        siderust::coordinates::surface::SurfaceObserverParams::<MoonSurface>::default();
-    let mars_default =
-        siderust::coordinates::surface::SurfaceObserverParams::<MarsSurface>::default();
-    assert_eq!(*moon_default.surface(), MoonSurface::default_surface());
-    assert_eq!(*mars_default.surface(), MarsSurface::default_surface());
+    let moon_default = siderust::coordinates::surface::SurfaceObserverParams::<Moon>::default();
+    let mars_default = siderust::coordinates::surface::SurfaceObserverParams::<Mars>::default();
+    assert_eq!(*moon_default.surface(), Moon::default_surface());
+    assert_eq!(*mars_default.surface(), Mars::default_surface());
     assert_eq!(
         mars_default.latitude_convention(),
         LatitudeConvention::Planetographic
@@ -599,13 +588,13 @@ fn site_params_body_name() {
 fn finite_east_matches_direction_only_and_affn_horizontal_axes() {
     // On the lunar equator at longitude zero, +Y is local east. A target
     // 1000 metres along +Y must report azimuth +90°, not 270°.
-    let site = SurfaceSite::<MoonSurface>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
+    let site = SurfaceSite::<Moon>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
     let [x, y, z] = site.body_fixed_cartesian().unwrap();
-    let target = Position::<Selenocentric, MoonPrincipalAxes, Meter>::new(x, y + 1_000.0 * M, z);
+    let target = Position::<Selenocentric, MoonIauMeanEarth, Meter>::new(x, y + 1_000.0 * M, z);
     let jd = siderust::J2000;
     let ctx = ctx();
     let finite = position_to_horizontal(&target, &site, &jd, &ctx).unwrap();
-    let fixed_east = Direction::<MoonPrincipalAxes>::new_unchecked(0.0, 1.0, 0.0);
+    let fixed_east = Direction::<MoonIauMeanEarth>::new_unchecked(0.0, 1.0, 0.0);
     let icrs_east: Direction<ICRS> = fixed_east.to_frame_with(&jd, &ctx);
     let direction = direction_to_horizontal(&icrs_east, &site, &jd, &ctx).unwrap();
     let sph = direction.to_spherical();
@@ -720,7 +709,7 @@ fn lunar_iau_mean_earth_orientation_matches_independent_pck_vectors() {
             .zip(expected_axes)
         {
             let actual: Direction<ICRS> =
-                Direction::<MoonPrincipalAxes>::new_unchecked(axis[0], axis[1], axis[2])
+                Direction::<MoonIauMeanEarth>::new_unchecked(axis[0], axis[1], axis[2])
                     .to_frame_with(&jd, &ctx);
             for (measured, reference) in [actual.x(), actual.y(), actual.z()]
                 .into_iter()
@@ -736,7 +725,7 @@ fn lunar_iau_mean_earth_orientation_matches_independent_pck_vectors() {
 fn negative_height_domain_for_spheres_and_ellipsoids() {
     use siderust::coordinates::surface::SurfaceError;
 
-    let moon = SurfaceSite::<MoonSurface>::new(0.0 * DEG, 0.0 * DEG, -100.0 * M).unwrap();
+    let moon = SurfaceSite::<Moon>::new(0.0 * DEG, 0.0 * DEG, -100.0 * M).unwrap();
     assert_near(
         moon.body_fixed_cartesian().unwrap()[0].value(),
         1_737_300.0,
@@ -744,20 +733,19 @@ fn negative_height_domain_for_spheres_and_ellipsoids() {
         "valid Moon subsurface",
     );
     assert!(matches!(
-        SurfaceSite::<MoonSurface>::new(0.0 * DEG, 0.0 * DEG, -1_737_400.0 * M),
+        SurfaceSite::<Moon>::new(0.0 * DEG, 0.0 * DEG, -1_737_400.0 * M),
         Err(SurfaceError::DegenerateGeometry { .. })
     ));
-    assert!(SurfaceSite::<MoonSurface>::new(0.0 * DEG, 0.0 * DEG, -1_737_401.0 * M).is_err());
+    assert!(SurfaceSite::<Moon>::new(0.0 * DEG, 0.0 * DEG, -1_737_401.0 * M).is_err());
 
-    let ellipsoid = MarsSurface::default_surface();
+    let ellipsoid = Mars::default_surface();
     let a = ellipsoid.equatorial_radius().value();
     let f = ellipsoid.flattening();
     let meridional_radius = a * (1.0 - (2.0 * f - f * f));
-    let safe =
-        SurfaceSite::<MarsSurface>::new(0.0 * DEG, 0.0 * DEG, (-meridional_radius + 100.0) * M);
+    let safe = SurfaceSite::<Mars>::new(0.0 * DEG, 0.0 * DEG, (-meridional_radius + 100.0) * M);
     assert!(safe.is_ok(), "valid shallow side of normal singularity");
     assert!(matches!(
-        SurfaceSite::<MarsSurface>::new(0.0 * DEG, 0.0 * DEG, (-meridional_radius - 100.0) * M),
+        SurfaceSite::<Mars>::new(0.0 * DEG, 0.0 * DEG, (-meridional_radius - 100.0) * M),
         Err(SurfaceError::DegenerateGeometry { .. })
     ));
 }
@@ -765,10 +753,10 @@ fn negative_height_domain_for_spheres_and_ellipsoids() {
 #[cfg(feature = "serde")]
 #[test]
 fn invalid_subsurface_site_deserialization_is_rejected() {
-    let site = SurfaceSite::<MoonSurface>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
+    let site = SurfaceSite::<Moon>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
     let mut payload = serde_json::to_value(site).unwrap();
     payload["height"] = serde_json::to_value(-1_737_400.0 * M).unwrap();
-    assert!(serde_json::from_value::<SurfaceSite<MoonSurface>>(payload).is_err());
+    assert!(serde_json::from_value::<SurfaceSite<Moon>>(payload).is_err());
 }
 
 #[test]
@@ -776,9 +764,9 @@ fn microscopic_finite_range_preserves_altaz_in_au() {
     // affn spherical Cartesian->spherical historically treats radii smaller
     // than machine epsilon in the *current unit* as zero. A 10-µm LOS
     // expressed in AU is below that numeric threshold but not physically zero.
-    let site = SurfaceSite::<MoonSurface>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
+    let site = SurfaceSite::<Moon>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
     let [x, y, z] = site.body_fixed_cartesian().unwrap();
-    let target = Position::<Selenocentric, MoonPrincipalAxes, Meter>::new(x, y + 0.00001 * M, z);
+    let target = Position::<Selenocentric, MoonIauMeanEarth, Meter>::new(x, y + 0.00001 * M, z);
     let target_au = target.to_unit::<AstronomicalUnit>();
     let jd = siderust::J2000;
     let ctx = ctx();
@@ -808,7 +796,7 @@ fn microscopic_finite_range_preserves_altaz_in_au() {
 
 #[test]
 fn finite_cardinals_and_extreme_ranges_match_analytical_geometry() {
-    let site = SurfaceSite::<MoonSurface>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
+    let site = SurfaceSite::<Moon>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
     let jd = siderust::J2000;
     let ctx = ctx();
     for (los, altitude, azimuth) in [
@@ -820,7 +808,7 @@ fn finite_cardinals_and_extreme_ranges_match_analytical_geometry() {
         ([-1.0, 0.0, 0.0], -90.0, 0.0),
     ] {
         for range in [1_000.0, 1e160] {
-            let target = Position::<Selenocentric, MoonPrincipalAxes, Meter>::new(
+            let target = Position::<Selenocentric, MoonIauMeanEarth, Meter>::new(
                 1_737_400.0 + range * los[0],
                 range * los[1],
                 range * los[2],
@@ -839,13 +827,13 @@ fn finite_cardinals_and_extreme_ranges_match_analytical_geometry() {
 #[test]
 fn invalid_horizontal_directions_and_targets_return_errors() {
     use siderust::coordinates::frames::Horizontal;
-    let site = SurfaceSite::<MoonSurface>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
+    let site = SurfaceSite::<Moon>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M).unwrap();
     for xyz in [[0.0; 3], [f64::NAN, 0.0, 0.0], [0.0, f64::INFINITY, 0.0]] {
         let horizontal = Direction::<Horizontal>::new_unchecked(xyz[0], xyz[1], xyz[2]);
         let inverse: Result<Direction<ICRS>, _> =
             horizontal_to_direction(&horizontal, &site, &siderust::J2000, &ctx());
         assert!(inverse.is_err());
-        let target = Position::<Selenocentric, MoonPrincipalAxes, Meter>::new(
+        let target = Position::<Selenocentric, MoonIauMeanEarth, Meter>::new(
             xyz[0] + 1_737_400.0,
             xyz[1],
             xyz[2],
@@ -863,7 +851,7 @@ fn ellipsoid_geometry_is_scale_independent() {
         let surface = ReferenceSurface::ellipsoid(radius * M, 0.25).unwrap();
         let graphic_lat = 35.0_f64.to_radians();
         let centric_lat = ((1.0 - surface.e2()) * graphic_lat.tan()).atan();
-        let graphic = SurfaceSite::<MarsSurface>::with_surface(
+        let graphic = SurfaceSite::<Mars>::with_surface(
             40.0 * DEG,
             graphic_lat.to_degrees() * DEG,
             radius * 0.1 * M,
@@ -871,7 +859,7 @@ fn ellipsoid_geometry_is_scale_independent() {
             LatitudeConvention::Planetographic,
         )
         .unwrap();
-        let centric = SurfaceSite::<MarsSurface>::with_surface(
+        let centric = SurfaceSite::<Mars>::with_surface(
             40.0 * DEG,
             centric_lat.to_degrees() * DEG,
             radius * 0.1 * M,
@@ -1039,13 +1027,13 @@ fn shared_planetary_rotation_matches_independent_axes_at_multiple_epochs() {
 fn requested_length_unit_must_represent_finite_geometry() {
     use siderust::coordinates::surface::SurfaceError;
     // The site and LOS are finite in metres, but not in millimetres.
-    let site = SurfaceSite::<MoonSurface>::new(0.0 * DEG, 0.0 * DEG, 1e307 * M).unwrap();
+    let site = SurfaceSite::<Moon>::new(0.0 * DEG, 0.0 * DEG, 1e307 * M).unwrap();
     assert!(site.observer_position::<Meter>().is_ok());
     assert!(matches!(
         site.observer_position::<Millimeter>(),
         Err(SurfaceError::NonFiniteInput { .. })
     ));
-    let target = Position::<Selenocentric, MoonPrincipalAxes, Millimeter>::new(0.0, 0.0, 0.0);
+    let target = Position::<Selenocentric, MoonIauMeanEarth, Millimeter>::new(0.0, 0.0, 0.0);
     assert!(matches!(
         position_to_horizontal(&target, &site, &siderust::J2000, &ctx()),
         Err(SurfaceError::NonFiniteInput { .. })
@@ -1058,7 +1046,7 @@ fn requested_length_unit_must_represent_finite_geometry() {
         1e-14,
         "finite metre geometry",
     );
-    let tiny = SurfaceSite::<MoonSurface>::with_surface(
+    let tiny = SurfaceSite::<Moon>::with_surface(
         0.0 * DEG,
         0.0 * DEG,
         0.0 * M,
@@ -1071,4 +1059,122 @@ fn requested_length_unit_must_represent_finite_geometry() {
         tiny.observer_position::<AstronomicalUnit>(),
         Err(SurfaceError::DegenerateGeometry { .. })
     ));
+}
+
+// =============================================================================
+// End-to-end geometric Alt/Az against offline CSPICE references
+// =============================================================================
+//
+// Provenance (regenerate with tools/cspice_surface_references.py):
+//   CSPICE N0067 via SpiceyPy 8.3.0
+//   Kernels: pck00011.tpc, naif0012.tls (NAIF generic kernels)
+//   Epoch: JD TT 2451545.0 (J2000.0); ET = unitim((jd_tt-2451545)*86400,"TDT","TDB")
+//   Lunar frame: IAU_MOON (analytical text-PCK Mean-Earth; same model as siderust)
+//   Surface: IAU mean sphere R = 1737.4 km; lon east-positive, planetocentric lat
+//   Target: body-fixed point offset +50 km east, +10 km north, +5 km up from site
+//   Procedure: pxform("IAU_MOON","J2000",et) rotates body-fixed → J2000/ICRS;
+//              Alt/Az/range from independent ENU projection of the body-fixed LOS
+//   Tolerances: 1e-9 deg / 1e-9 km — composition of CSPICE orientation (already
+//              checked to 1e-10 direction cosine) with exact sphere ENU geometry.
+//
+// Mars case below is body-fixed only: siderust's linear IAU_MARS model differs
+// from pck00011 periodic terms by ~0.02 in direction cosine at J2000, so an
+// ICRS-mediated Mars comparison would mix inequivalent orientation models.
+
+#[test]
+fn lunar_e2e_altaz_matches_offline_cspice_iau_moon_reference() {
+    // Site: lon=20°E, lat=−3.5°, h=0 on IAU sphere.
+    let site = SurfaceSite::<Moon>::new(20.0 * DEG, (-3.5) * DEG, 0.0 * M).unwrap();
+    // CSPICE-derived body-fixed target [km], then converted to metres:
+    // obs + 50*east + 10*north + 5*up on R=1737.4 km sphere.
+    let target = Position::<Selenocentric, MoonIauMeanEarth, Kilometer>::new(
+        1617.7391512763131,
+        642.0177864954426,
+        -96.38962730131595,
+    );
+    let jd = JulianDate::new(2_451_545.0);
+    let ctx = ctx();
+
+    // Path A: observe in the body-fixed frame (orientation cancelled).
+    let obs_fixed = position_to_horizontal(&target, &site, &jd, &ctx).unwrap();
+    assert_near(
+        obs_fixed.alt().value(),
+        5.60040918481664,
+        1e-9,
+        "CSPICE alt",
+    );
+    assert_near(obs_fixed.az().value(), 78.69006752597979, 1e-9, "CSPICE az");
+    assert_near(
+        obs_fixed.range().to::<Kilometer>().value(),
+        51.23475382979799,
+        1e-9,
+        "CSPICE slant range",
+    );
+
+    // Path B: same target expressed in ICRS using the CSPICE pxform matrix
+    // (columns = body axes in J2000). Exercises TT→TDB, IAU_MOON orientation,
+    // observer position, LOS, ENU, Alt/Az, and slant range together.
+    // M = pxform("IAU_MOON","J2000", et) at JD TT 2451545.0:
+    let m = [
+        [
+            0.7842270522119748,
+            -0.6200619150990117,
+            -0.022608671404191448,
+        ],
+        [0.5578471123206701, 0.720556665574856, -0.4118309009425287],
+        [0.2716514860154575, 0.31035675139972596, 0.9109797785934671],
+    ];
+    let tf = [1617.7391512763131, 642.0177864954426, -96.38962730131595];
+    let target_icrs = Position::<Selenocentric, ICRS, Kilometer>::new(
+        m[0][0] * tf[0] + m[0][1] * tf[1] + m[0][2] * tf[2],
+        m[1][0] * tf[0] + m[1][1] * tf[1] + m[1][2] * tf[2],
+        m[2][0] * tf[0] + m[2][1] * tf[1] + m[2][2] * tf[2],
+    );
+    let obs_icrs = position_to_horizontal(&target_icrs, &site, &jd, &ctx).unwrap();
+    // ICRS mediation recomposes the CSPICE matrix through siderust's
+    // TT→TDB + IAU_MOON provider. Orientation alone is held to 1e-10 in
+    // direction cosine (~2e-8 deg); Alt/Az inherit that floor.
+    assert_near(
+        obs_icrs.alt().value(),
+        5.60040918481664,
+        5e-8,
+        "ICRS path alt",
+    );
+    assert_near(
+        obs_icrs.az().value(),
+        78.69006752597979,
+        5e-8,
+        "ICRS path az",
+    );
+    assert_near(
+        obs_icrs.range().to::<Kilometer>().value(),
+        51.23475382979799,
+        1e-6, // ~1 mm; matrix round-trip through ICRS
+        "ICRS path range",
+    );
+}
+
+#[test]
+fn mars_e2e_body_fixed_cardinal_and_spice_longitude_interop() {
+    // SPICE pgrrec (west-positive 137.4°, lat −4.6°, a=3396.19, b=3376.20 km)
+    // agrees with Siderust when longitude is converted to east-positive −137.4°.
+    let site =
+        SurfaceSite::<Mars>::from_planetographic_longitude(137.4 * DEG, (-4.6) * DEG, 0.0 * M)
+            .unwrap();
+    let [x, y, z] = site.body_fixed_cartesian().unwrap();
+    assert_near(x.value() / 1000.0, -2491.967067275659, 1e-9, "Mars x");
+    assert_near(y.value() / 1000.0, -2291.481184471932, 1e-9, "Mars y");
+    assert_near(z.value() / 1000.0, -269.1840291055111, 1e-9, "Mars z");
+
+    // 1 km along local east in the body-fixed frame → az=90°, alt≈0, range=1 km.
+    let enu = site.enu_basis().unwrap();
+    let target = Position::<Marscentric, MarsFixed, Meter>::new(
+        Quantity::<Meter>::new(x.value() + enu.east[0] * 1_000.0),
+        Quantity::<Meter>::new(y.value() + enu.east[1] * 1_000.0),
+        Quantity::<Meter>::new(z.value() + enu.east[2] * 1_000.0),
+    );
+    let obs = position_to_horizontal(&target, &site, &siderust::J2000, &ctx()).unwrap();
+    assert_near(obs.alt().value(), 0.0, 1e-8, "Mars east alt");
+    assert_near(obs.az().value(), 90.0, 1e-8, "Mars east az");
+    assert_near(obs.range().value(), 1_000.0, 1e-6, "Mars east range");
 }

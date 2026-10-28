@@ -186,8 +186,16 @@ pub mod position {
     pub type VenusFixed<U> = Position<centers::Venuscentric, frames::VenusFixed, U>;
     /// **Marscentric** body-fixed cartesian position.
     pub type MarsFixed<U> = Position<centers::Marscentric, frames::MarsFixed, U>;
-    /// **Selenocentric** cartesian position in Moon principal axes frame.
+    /// **Selenocentric** cartesian position in the NAIF `IAU_MOON` analytical
+    /// Mean-Earth frame ([`frames::MoonIauMeanEarth`]).
+    ///
+    /// The type name retains the historical `MoonPrincipalAxes` spelling for
+    /// compatibility; it is **not** a JPL DE `MOON_PA` realization. Prefer
+    /// [`MoonIauMeanEarth`].
     pub type MoonPrincipalAxes<U> = Position<centers::Selenocentric, frames::MoonPrincipalAxes, U>;
+    /// **Selenocentric** cartesian position in the NAIF `IAU_MOON` analytical
+    /// Mean-Earth frame (preferred name).
+    pub type MoonIauMeanEarth<U> = Position<centers::Selenocentric, frames::MoonIauMeanEarth, U>;
     /// **Jovicentric** System III cartesian position.
     pub type JupiterSystemIII<U> = Position<centers::Jovicentric, frames::JupiterSystemIII, U>;
     /// **Saturnocentric** body-fixed cartesian position.

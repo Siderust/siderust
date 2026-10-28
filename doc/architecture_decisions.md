@@ -35,7 +35,20 @@ Surface observers on Earth, the Moon, Mars, and other supported bodies share one
 3. Form the observer-relative line of sight (finite targets include parallax; directions do not invent a distance).
 4. Project onto the local east–north–up basis derived from the site's reference surface.
 
-`SurfaceSite<B>` and `SurfaceObserver<B>` carry the body at the type level; site geometry is validated at runtime. Earth retains `Topocentric` / `Geodetic<ECEF>` / GAST helpers for backward compatibility; the generic path is available via `SurfaceSite<Earth>` for API uniformity. Geometric Alt/Az remains separate from refraction, aberration, light-time, and terrain masking.
+`SurfaceSite<B>` and `SurfaceObserver<B>` carry the body at the type level
+(use solar-system markers such as `Moon` / `Mars` / `Earth` directly; redundant
+`*Surface` aliases were removed). Site geometry is validated at runtime.
+`BodySurfaceModel` is implemented only for bodies with a documented default
+reference surface — gas giants simply omit the trait rather than reporting
+runtime “unsupported” flags. `SurfaceObserverParams::default` exists because
+affn requires `Params: Default`; application code should prefer
+`try_origin` / `from_site`. Earth retains `Topocentric` / `Geodetic<ECEF>` /
+GMST–GAST helpers as a scientifically distinct Earth-only path; the generic
+ENU pipeline is available via `SurfaceSite::<Earth>` for API uniformity.
+Longitude is always east-positive internally, with an explicit conversion API
+for external planetographic senses (e.g. Mars west-positive in SPICE).
+Geometric Alt/Az remains separate from refraction, aberration, light-time,
+and terrain masking.
 
 ## Modular Provider Registry with Explicit Hubs
 

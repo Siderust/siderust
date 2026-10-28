@@ -1,33 +1,36 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Generic body-surface geometric Alt/Az (Moon, Mars, Earth).
+//! # Body-surface geometric Alt/Az (Moon → Mars → Earth)
 //!
-//! Demonstrates the shared [`SurfaceSite`] / ENU pipeline for observers on
-//! the Moon, Mars, and Earth. Results are **geometric** (no refraction,
-//! aberration, or light-time).
+//! Progressive workflow after `22_moon_surface_quickstart`:
+//!
+//! 1. **Moon, finite target** — Earth and Sun as selenocentric positions
+//!    (parallax included because range is known).
+//! 2. **Mars, direction-only** — a fixed ICRS star direction (no parallax).
+//! 3. **Earth, generic API** — same `SurfaceSite` pipeline with WGS84 / ECEF.
 //!
 //! Conventions:
 //! - Azimuth: north = 0°, east = 90° (north through east)
 //! - Altitude: geometric horizon = 0°, zenith = +90°
-//! - Moon frame: NAIF IAU_MOON analytical Mean-Earth; `MoonPrincipalAxes` is
-//!   a compatibility alias, not JPL DE MOON_PA / binary-PCK MOON_ME
-//! - Moon surface: IAU mean sphere R = 1737.4 km
-//! - Mars surface: IAU ellipsoid a = 3396.19 km, planetographic latitude
-//! - Earth surface: WGS84 / ECEF
-//! - Longitude is positive east; heights and up refer to the surface normal.
-//! - Epoch is TT; lunar orientation converts TT to TDB through tempoch.
-//! - No terrain occultation or atmosphere; geometric, not apparent, Alt/Az.
+//! - Longitude: always east-positive in Siderust. Mars SPICE planetographic
+//!   longitudes are west-positive — convert with
+//!   `Mars::east_positive_longitude` / `SurfaceSite::from_planetographic_longitude`.
+//! - Moon frame: NAIF `IAU_MOON` analytical Mean-Earth (`MoonIauMeanEarth`)
+//! - Epoch is TT; lunar orientation converts TT → TDB through tempoch
+//! - Geometric only: no refraction, aberration, light-time, or terrain
 //!
-//! Run with: `cargo run --example 21_body_surface_horizontal`
+//! ```text
+//! cargo run --example 21_body_surface_horizontal
+//! ```
 #![allow(clippy::print_stdout)]
 
+use siderust::bodies::solar_system::{Earth, Mars, Moon};
 use siderust::coordinates::cartesian::{Direction, Position};
 use siderust::coordinates::centers::{Geocentric, Selenocentric};
 use siderust::coordinates::frames::{EclipticMeanJ2000, ICRS};
 use siderust::coordinates::surface::{
-    EarthSurface, MarsSurface, MoonSurface, SurfaceSite, EARTH_WGS84_SURFACE, MARS_IAU_ELLIPSOID,
-    MOON_IAU_SPHERE,
+    BodySurfaceModel, SurfaceSite, EARTH_WGS84_SURFACE, MARS_IAU_ELLIPSOID, MOON_IAU_SPHERE,
 };
 use siderust::coordinates::transform::{
     direction_to_horizontal, horizontal_to_direction, position_to_horizontal, AstroContext,
@@ -46,11 +49,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Azimuth: N=0° → E=90°; Altitude: horizon=0°, zenith=+90°");
     println!("Corrections: none (geometric only)\n");
 
-    // ── Moon: observe Earth from a lunar site ─────────────────────────────
-    let moon_site = SurfaceSite::<MoonSurface>::new(20.0 * DEG, (-3.5) * DEG, 0.0 * M)?;
+    // ── 1. Moon: finite-distance Earth and Sun (parallax applied) ─────────
+    let moon_site = SurfaceSite::<Moon>::new(20.0 * DEG, (-3.5) * DEG, 0.0 * M)?;
     println!("Moon observer");
     println!(
-        "  site: lon={:.3}, lat={:.3}, h={}, surface=IAU sphere R={} km",
+        "  site: lon={:.3} east, lat={:.3}, h={}, surface=IAU sphere R={} km",
         moon_site.lon(),
         moon_site.lat(),
         moon_site.height(),
@@ -79,9 +82,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         lunar_obs.range().to::<Kilometer>()
     );
 
-    // Convert the Sun's *barycentric position* to a Moon-centred position
-    // before observing it. Normalising sun_bary directly would instead yield
-    // the barycentre-to-Sun direction, which is not the Sun's lunar sky position.
+    // Convert the Sun's barycentric position to a Moon-centred position first.
+    // Normalising sun_bary directly would yield the barycentre→Sun direction.
     let sun_bary = Vsop87Ephemeris::sun_barycentric(jd);
     let sun_sel: Position<Selenocentric, EclipticMeanJ2000, AstronomicalUnit> =
         TransformCenter::to_center_with(&sun_bary, (), jd, &ctx);
@@ -93,12 +95,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         sun_obs.range().to::<AstronomicalUnit>()
     );
 
-    // ── Mars: observe a fixed ICRS direction ──────────────────────────────
-    let mars_site = SurfaceSite::<MarsSurface>::new(137.4 * DEG, (-4.6) * DEG, 0.0 * M)?;
-    println!("Mars observer (Gale-crater-like)");
+    // ── 2. Mars: direction-only ICRS target (no invented parallax) ────────
+    // Gale crater ≈ 137.4°E east-positive. If you have a SPICE planetographic
+    // west longitude W, use Mars::east_positive_longitude(W) instead.
+    let mars_site = SurfaceSite::<Mars>::new(137.4 * DEG, (-4.6) * DEG, 0.0 * M)?;
+    println!("Mars observer (Gale-crater-like, lon east-positive)");
+    let pgr_west = mars_site
+        .planetographic_longitude()
+        .value()
+        .rem_euclid(360.0);
     println!(
-        "  site: lon={:.3}, lat={:.3} ({}), surface=IAU ellipsoid a={} km",
+        "  site: lon={} east (= {:.3}° west planetographic), lat={} ({}), a={} km",
         mars_site.lon(),
+        pgr_west,
         mars_site.lat(),
         mars_site.latitude_convention().as_str(),
         MARS_IAU_ELLIPSOID
@@ -106,7 +115,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .to::<Kilometer>()
             .value()
     );
-    println!("  frame: MarsFixed (linear IAU α0,δ0,W approximation)");
+    println!(
+        "  frame: MarsFixed (linear IAU α0,δ0,W); pgr lon sense={}",
+        Mars::planetographic_longitude_sense().as_str()
+    );
 
     let n = (0.1_f64.powi(2) + 0.7_f64.powi(2) + 0.7_f64.powi(2)).sqrt();
     let star = Direction::<ICRS>::new_unchecked(0.1 / n, 0.7 / n, 0.7 / n);
@@ -123,8 +135,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         star.angle_to(&back_m).value()
     );
 
-    // ── Earth: same generic API with WGS84 ────────────────────────────────
-    let earth_site = SurfaceSite::<EarthSurface>::new((-17.89) * DEG, 28.75 * DEG, 2326.0 * M)?;
+    // ── 3. Earth: same generic API with WGS84 (coexists with Topocentric) ─
+    let earth_site = SurfaceSite::<Earth>::new((-17.89) * DEG, 28.75 * DEG, 2326.0 * M)?;
     println!("Earth observer (La Palma-like)");
     println!(
         "  site: lon={:.3}, lat={:.3}, h={}, surface=WGS84 a={:.0} m",
@@ -134,6 +146,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         EARTH_WGS84_SURFACE.equatorial_radius().value()
     );
     println!("  frame: ECEF (ITRF orientation chain via ICRS hub)");
+    println!("  note: Earth-only GMST/GAST Topocentric APIs remain available");
 
     let moon_target = Position::<Geocentric, EclipticMeanJ2000, Kilometer>::new(
         moon_geo.x(),

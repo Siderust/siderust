@@ -77,11 +77,12 @@ pub mod planetary {
         SaturnFixed, UranusFixed, VenusFixed,
     };
 
-    /// NAIF IAU_MOON analytical lunar Mean-Earth/Polar-Axis orientation.
+    /// NAIF `IAU_MOON` analytical lunar Mean-Earth orientation (preferred name).
     ///
-    /// This preserves the `affn`-defined [`MoonPrincipalAxes`] marker as a
-    /// compatibility alias. Neither name denotes a DE-specific `MOON_PA`
-    /// realization; use an explicit SPICE binary PCK for that precision.
+    /// This is a type alias for the `affn`-defined [`MoonPrincipalAxes`] marker,
+    /// retained so existing code continues to compile. **Neither** name is a
+    /// JPL DE `MOON_PA` or binary-PCK `MOON_ME` realization; use an explicit
+    /// SPICE binary PCK / frame kernel for that precision.
     pub type MoonIauMeanEarth = MoonPrincipalAxes;
 
     // Re-export planetary IAU rotation parameters from solar-system body metadata.

@@ -4,6 +4,7 @@
 //! Parameterized surface-observer reference centre.
 
 use super::body::{BodySurfaceModel, LatitudeConvention};
+use super::error::SurfaceError;
 use super::reference_surface::ReferenceSurface;
 use super::site::SurfaceSite;
 use crate::coordinates::centers::ReferenceCenter;
@@ -20,6 +21,9 @@ use serde::{Deserialize, Serialize};
 /// [`SurfaceObserver<B>`]; these fields carry the site geometry only.
 /// Parameter equality is checked at runtime (same pattern as
 /// [`crate::coordinates::centers::Topocentric`]).
+///
+/// Longitude is east-positive. Prefer constructing via a validated
+/// [`SurfaceSite`] rather than [`Default`].
 #[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 #[cfg_attr(feature = "serde", serde(bound(serialize = "")))]
@@ -109,17 +113,36 @@ impl<B: BodySurfaceModel> SurfaceObserverParams<B> {
             _body: PhantomData,
         }
     }
+
+    /// Fallible origin-site parameters (`lon = lat = height = 0`).
+    ///
+    /// Prefer this over [`Default::default`] when working with a custom
+    /// [`BodySurfaceModel`] that might violate the origin-site contract.
+    pub fn try_origin() -> Result<Self, SurfaceError> {
+        let site = SurfaceSite::<B>::new(Degrees::new(0.0), Degrees::new(0.0), Meters::new(0.0))?;
+        Ok(Self::from_site(&site))
+    }
 }
 
 impl<B: BodySurfaceModel> Default for SurfaceObserverParams<B> {
-    /// Default body-specific site parameters at lon=lat=height=0.
+    /// Origin site (`lon = lat = height = 0`) on `B`'s default surface.
     ///
-    /// The body, reference surface, and latitude convention always match `B`.
-    /// Prefer building params from a validated [`SurfaceSite`].
+    /// Required by affn's `ReferenceCenter::Params: Default` bound. Prefer
+    /// [`Self::try_origin`] or [`Self::from_site`] in application code.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if `B` violates the [`BodySurfaceModel`] contract that
+    /// [`BodySurfaceModel::default_surface`] admits a valid origin site.
+    /// All shipped rocky-body implementations satisfy this; a panic indicates
+    /// a defective custom model, not recoverable geometry.
     fn default() -> Self {
-        let site = SurfaceSite::<B>::new(Degrees::new(0.0), Degrees::new(0.0), Meters::new(0.0))
-            .expect("BodySurfaceModel default site must be geometrically valid");
-        Self::from_site(&site)
+        Self::try_origin().unwrap_or_else(|err| {
+            panic!(
+                "BodySurfaceModel::default_surface for {} must admit an origin site: {err}",
+                B::body_name()
+            )
+        })
     }
 }
 
@@ -163,31 +186,30 @@ impl<B: BodySurfaceModel> SurfaceObserver<B> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::coordinates::surface::MoonSurface;
+    use crate::bodies::solar_system::Moon;
+    use crate::qtty::{DEG, M};
 
     #[cfg(feature = "serde")]
     #[test]
     fn observer_params_deserialization_enforces_site_invariants() {
-        use crate::qtty::{DEG, M};
-        let site = SurfaceSite::<MoonSurface>::new(10.0 * DEG, 20.0 * DEG, 0.0 * M).unwrap();
+        let site = SurfaceSite::<Moon>::new(10.0 * DEG, 20.0 * DEG, 0.0 * M).unwrap();
         let mut payload = serde_json::to_value(site.to_params()).unwrap();
         payload["lat"] = serde_json::to_value(95.0 * DEG).unwrap();
-        assert!(serde_json::from_value::<SurfaceObserverParams<MoonSurface>>(payload).is_err());
+        assert!(serde_json::from_value::<SurfaceObserverParams<Moon>>(payload).is_err());
     }
 
     #[test]
     fn center_name_is_stable() {
         assert_eq!(
-            <SurfaceObserver<MoonSurface> as ReferenceCenter>::center_name(),
+            <SurfaceObserver<Moon> as ReferenceCenter>::center_name(),
             "SurfaceObserver"
         );
-        assert_eq!(SurfaceObserver::<MoonSurface>::body_name(), "Moon");
+        assert_eq!(SurfaceObserver::<Moon>::body_name(), "Moon");
     }
 
     #[test]
-    fn observer_params_getters_preserve_site_and_cannot_mutate_invariants() {
-        use crate::qtty::{DEG, M};
-        let site = SurfaceSite::<MoonSurface>::new(30.0 * DEG, 20.0 * DEG, -10.0 * M).unwrap();
+    fn observer_params_getters_preserve_site_and_try_origin() {
+        let site = SurfaceSite::<Moon>::new(30.0 * DEG, 20.0 * DEG, -10.0 * M).unwrap();
         let params = SurfaceObserverParams::from_site(&site);
         assert_eq!(params.lon(), site.lon());
         assert_eq!(params.lat(), site.lat());
@@ -195,5 +217,11 @@ mod tests {
         assert_eq!(params.surface(), site.surface());
         assert_eq!(params.latitude_convention(), site.latitude_convention());
         assert_eq!(params, site.to_params());
+
+        let origin = SurfaceObserverParams::<Moon>::try_origin().unwrap();
+        assert_eq!(origin.lon().value(), 0.0);
+        assert_eq!(origin.lat().value(), 0.0);
+        assert_eq!(origin.height().value(), 0.0);
+        assert_eq!(origin, SurfaceObserverParams::<Moon>::default());
     }
 }

@@ -278,15 +278,24 @@ provider for periodic lunar orientation.
 
 | Body | Surface default | Fixed frame | Notes |
 |---|---|---|---|
-| Earth | WGS84 ellipsoid | `ECEF` | Coexists with `Topocentric` / GAST APIs |
-| Moon | IAU sphere 1737.4 km | `MoonIauMeanEarth` (`MoonPrincipalAxes` compatibility alias) | NAIF IAU_MOON analytical Mean-Earth model, **not** JPL DE PA / binary-PCK ME |
-| Mars | IAU ellipsoid 3396.19 km | `MarsFixed` | Default latitude: planetographic |
-| Mercury, Venus, Pluto | IAU mean spheres | `*Fixed` | Same generic path |
-| Gas giants | No default | Body-specific | Require a custom `BodySurfaceModel` with a documented reference surface and fixed frame |
+| Earth | WGS84 ellipsoid | `ECEF` | Coexists with `Topocentric` / GAST APIs; pgr lon east-positive |
+| Moon | IAU sphere 1737.4 km | `MoonIauMeanEarth` (`MoonPrincipalAxes` compatibility alias) | NAIF IAU_MOON analytical Mean-Earth, **not** JPL DE PA / binary-PCK ME; pgr lon east-positive |
+| Mars | IAU ellipsoid 3396.19 km | `MarsFixed` | Default latitude planetographic; **SPICE pgr lon west-positive** — convert explicitly |
+| Mercury, Venus, Pluto | IAU mean spheres | `*Fixed` | Mercury/Pluto pgr lon west-positive; Venus east-positive |
+| Gas giants | *(no `BodySurfaceModel`)* | — | Implement the trait only with a documented reference surface |
 
-Planetocentric and planetographic latitudes are distinct on ellipsoids and
-must not be mixed silently. See `coordinates::surface` rustdocs and
-`examples/21_body_surface_horizontal.rs`.
+**Longitude:** Siderust stores east-positive longitudes for every body.
+Planetocentric longitude (SPICE `latrec`/`reclat`) matches this directly.
+Planetographic longitude (SPICE `pgrrec`/`recpgr`) is west-positive for
+prograde rotators such as Mars and east-positive for Earth/Moon/Venus;
+convert with `BodySurfaceModel::east_positive_longitude` or
+`SurfaceSite::from_planetographic_longitude`. No hidden sign flips.
+
+Planetocentric and planetographic **latitudes** are distinct on ellipsoids and
+must not be mixed silently. See `coordinates::surface` rustdocs,
+`examples/22_moon_surface_quickstart.rs`, and
+`examples/21_body_surface_horizontal.rs`. Offline CSPICE regeneration:
+`tools/cspice_refs/cspice_surface_references.py`.
 
 ---
 

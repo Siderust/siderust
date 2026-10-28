@@ -15,16 +15,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `SurfaceObserver<B>`, and `coordinates::transform::surface_horizontal`
   (`position_to_horizontal`, `direction_to_horizontal`, inverse helpers,
   `SurfaceHorizontalExt`). One ENU pipeline serves Earth, Moon, Mars, and
-  other rocky bodies with documented reference surfaces; gas giants are
-  rejected unless an explicit surface model is supplied.
+  other rocky bodies with documented reference surfaces; gas giants omit
+  `BodySurfaceModel` unless a mission supplies an explicit surface.
 - First-class lunar and Martian surface Alt/Az using existing
-  `Selenocentric` / `MoonPrincipalAxes` and `Marscentric` / `MarsFixed`
-  orientation providers (IAU WGCCRE). Finite-distance parallax is applied
-  only to positions; direction-only inputs do not invent a range.
+  `Selenocentric` / `MoonIauMeanEarth` (legacy `MoonPrincipalAxes`) and
+  `Marscentric` / `MarsFixed` orientation providers (IAU WGCCRE).
+  Finite-distance parallax is applied only to positions; direction-only
+  inputs do not invent a range.
+- Explicit east-positive longitude storage with
+  `PlanetographicLongitudeSense`, `east_positive_from_planetographic`, and
+  `SurfaceSite::from_planetographic_longitude` for NAIF SPICE interoperability
+  (Mars/Mercury/Pluto planetographic longitudes are west-positive).
+- Offline CSPICE end-to-end lunar Alt/Az references and regeneration script
+  `tools/cspice_refs/cspice_surface_references.py`.
+- Preferred `MoonIauMeanEarth` position aliases alongside the legacy
+  `MoonPrincipalAxes` names; documentation no longer describes the analytical
+  model as a true principal-axes frame.
 - Default surfaces with documented provenance: WGS84 (Earth), IAU mean
   sphere 1737.4 km (Moon), IAU ellipsoid a = 3396.19 km (Mars), plus Mercury,
   Venus, and Pluto mean spheres. Planetocentric vs planetographic latitude
   conventions are explicit.
+- `SurfaceObserverParams::try_origin` as the fallible counterpart to `Default`
+  (affn still requires `Params: Default`; the trait contract is that
+  `default_surface` admits an origin site).
+
+### Changed
+
+- Surface sites are parameterized directly by solar-system body markers
+  (`SurfaceSite::<Moon>`, `SurfaceSite::<Mars>`, …). Redundant pre-release
+  `*Surface` type aliases were removed.
+- `BodySurfaceModel` no longer exposes runtime `has_reference_surface` /
+  `ensure_supported` checks; unsupported bodies simply do not implement the
+  trait.
 - Observer-tagged horizontal direction results through `SurfaceHorizontalExt`;
   observer parameters now carry the body at the type level, preventing
   accidental site and body mismatches in checked inverse transforms.
