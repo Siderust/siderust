@@ -18,7 +18,7 @@ Feature-gated examples list the required feature in the command.
 - `14_nutation_models`: default and custom nutation-model transform paths.
 - `19_horizontal_coordinates`: equatorial ↔ horizontal for spherical/cartesian directions and positions.
 - `21_body_surface_horizontal`: complete Moon/Mars/Earth geometric Alt/Az workflow.
-- `22_moon_surface_quickstart`: minimal lunar site and inertial-direction Alt/Az (no downloads). Both lunar examples use NAIF IAU_MOON analytical Mean-Earth orientation, geometric north-through-east azimuth, east-positive longitude and a spherical local vertical. No terrain occultation or apparent corrections are included; J2000 TT approximates the orientation model's TDB argument.
+- `22_moon_surface_quickstart`: minimal lunar site and inertial-direction Alt/Az (no downloads). Both lunar examples use NAIF IAU_MOON analytical Mean-Earth orientation, geometric north-through-east azimuth, east-positive longitude and a spherical local vertical. No terrain occultation or apparent corrections are included; TT epochs are converted to TDB for lunar orientation through tempoch.
 
 ```bash
 cargo run --example 01_basic_coordinates
