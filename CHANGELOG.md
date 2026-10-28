@@ -6,10 +6,106 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-10-27
+
 ### Added
 
+- Generic celestial-body surface observers and geometric Alt/Az transforms:
+  `SurfaceSite<B>`, `ReferenceSurface`, `BodySurfaceModel`,
+  `SurfaceObserver<B>`, and `coordinates::transform::surface_horizontal`
+  (`position_to_horizontal`, `direction_to_horizontal`, inverse helpers,
+  `SurfaceHorizontalExt`). One ENU pipeline serves Earth, Moon, Mars, and
+  other rocky bodies with documented reference surfaces; gas giants omit
+  `BodySurfaceModel` unless a mission supplies an explicit surface.
+- First-class lunar and Martian surface Alt/Az using existing
+  `Selenocentric` / `MoonIauMeanEarth` (legacy `MoonPrincipalAxes`) and
+  `Marscentric` / `MarsFixed` orientation providers (IAU WGCCRE).
+  Finite-distance parallax is applied only to positions; direction-only
+  inputs do not invent a range.
+- Explicit east-positive longitude storage with
+  `PlanetographicLongitudeSense`, `east_positive_from_planetographic`, and
+  `SurfaceSite::from_planetographic_longitude` for NAIF SPICE interoperability
+  (Mars/Mercury/Pluto planetographic longitudes are west-positive).
+- Composite lunar Alt/Az validation: CSPICE `IAU_MOON` orientation plus
+  independent ENU geometry, with regeneration script
+  `tools/cspice_refs/cspice_surface_references.py`.
+- Scale-free zenith/nadir azimuth singularity (`32 ε`) so exact vertical
+  lines of sight report the documented `0°` azimuth convention without
+  inventing noise-driven bearings.
+- Preferred `MoonIauMeanEarth` position aliases alongside the legacy
+  `MoonPrincipalAxes` names; documentation no longer describes the analytical
+  model as a true principal-axes frame.
+- Default surfaces with documented provenance: WGS84 (Earth), IAU mean
+  sphere 1737.4 km (Moon), IAU ellipsoid a = 3396.19 km (Mars), plus Mercury,
+  Venus, and Pluto mean spheres. Planetocentric vs planetographic latitude
+  conventions are explicit.
+- `SurfaceObserverParams::try_origin` as the fallible counterpart to `Default`
+  (affn still requires `Params: Default`; the trait contract is that
+  `default_surface` admits an origin site).
+
+### Changed
+
+- Surface sites are parameterized directly by solar-system body markers
+  (`SurfaceSite::<Moon>`, `SurfaceSite::<Mars>`, …). Redundant pre-release
+  `*Surface` type aliases were removed.
+- `BodySurfaceModel` no longer exposes runtime `has_reference_surface` /
+  `ensure_supported` checks; unsupported bodies simply do not implement the
+  trait.
+- Observer-tagged horizontal direction results through `SurfaceHorizontalExt`;
+  observer parameters now carry the body at the type level, preventing
+  accidental site and body mismatches in checked inverse transforms.
+- Examples `21_body_surface_horizontal` and beginner-friendly
+  `22_moon_surface_quickstart`, plus offline scientific validation
+  tests (`tests/body_surface_horizontal.rs`) covering zenith, cardinals,
+  poles, parallax, epoch rotation, forward/inverse round-trips, and
+  invalid inputs.
+- EquatorialMeanJ2000 ↔ planetary body-fixed frame rotations via the ICRS hub.
 - Add `CITATION.cff` for scholarly software citations and document how to
   cite Siderust in the README.
+
+### Fixed
+
+- Correct the pre-existing IAU body-fixed → ICRS active ZXZ rotation
+  convention; pin the Moon/Mars poles and prime meridians to independent
+  J2000 reference vectors.
+- Bring the lunar analytical IAU_MOON orientation in line with the NAIF
+  text-PCK: all 13 periodic arguments and the quadratic term in W, with
+  multi-epoch pole and prime-meridian vector regression cases.
+- Use a consistent east-positive Cartesian Horizontal Y axis in both new
+  surface and legacy Earth-only transforms, matching affn's spherical
+  azimuth semantics (north through east). Previously Cartesian azimuth was
+  mirrored against spherical azimuth.
+- Make the ellipsoid surface normal the geometric vertical for both
+  planetocentric and planetographic site representations; height is measured
+  along that normal in either convention.
+- Validate deserialized reference surfaces, sites, and observer parameters;
+  permit subsurface heights up to the documented normal-coordinate singularity.
+- Stabilize small-angle round-trip assertions without loosening tolerances;
+  reject zero/non-finite inverse directions; preserve range for extremely
+  distant targets and scale-independent normals for tiny/large ellipsoids.
+  Reject requested units that overflow or erase an observer position.
+- Convert lunar orientation epochs from TT to TDB using tempoch and validate
+  all three axes against offline CSPICE references spanning 1900--2050.
+
+### Changed
+
+- Synchronize `siderust` and unpublished `siderust-ffi` metadata at 0.16.0,
+  including the internal dependency and C ABI version 1600.
+- Document generic surface observers in `doc/frames_and_centers.md` and
+  `doc/architecture_decisions.md`. Earth `Topocentric` / GAST horizontal
+  APIs remain unchanged for backward compatibility.
+
+### Notes
+
+- Geometric Alt/Az only: no refraction, aberration, light deflection,
+  light-time, or terrain masking in the new path.
+- The backward-compatible `MoonPrincipalAxes` frame marker now uses
+  NAIF's analytical `IAU_MOON` (IAU 2009) Mean-Earth/Polar-Axis orientation;
+  `MoonIauMeanEarth` is a clearer alias for this implementation. It is
+  **not** JPL DE `MOON_PA`, nor DE-specific binary-PCK `MOON_ME`.
+  The change corrects the orientation of existing `MoonPrincipalAxes`
+  coordinates. Lunar time arguments use TDB, explicitly converted from TT
+  by tempoch; this analytical model must not be marketed as DE-level precision.
 
 ## [0.15.1] - 2026-10-24
 

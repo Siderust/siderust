@@ -24,8 +24,9 @@
 //! **Most** reference centers (`Barycentric`, `Heliocentric`, `Geocentric`) use `Params = ()`,
 //! so all coordinate invariants are enforced at **compile time** with no runtime overhead.
 //!
-//! **Parameterized** centers (`Topocentric`, `Bodycentric`) carry runtime data (e.g.,
-//! [`Geodetic<ECEF>`](centers::Geodetic), [`BodycentricParams`](centers::BodycentricParams)).
+//! **Parameterized** centers (`Topocentric`, `Bodycentric`, `SurfaceObserver`) carry runtime data
+//! (e.g., [`Geodetic<ECEF>`](centers::Geodetic), [`BodycentricParams`](centers::BodycentricParams),
+//! [`SurfaceObserverParams`](surface::SurfaceObserverParams)).
 //! For these, the *center type* is still checked at compile time (you can't mix `Topocentric`
 //! and `Geocentric` positions), but the specific *site/body parameters* are checked at **runtime**.
 //!
@@ -34,6 +35,10 @@
 //! | `Geocentric` etc.   | `()`      | compile-time             | compile-time (trivial `()`) |
 //! | `Topocentric`       | `Geodetic<ECEF>`    | compile-time     | **runtime** (`assert!` or `Result`) |
 //! | `Bodycentric`       | `BodycentricParams` | compile-time   | **runtime** (`assert!` or `Result`) |
+//! | `SurfaceObserver<B>`| `SurfaceObserverParams` | compile-time (body in `B`) | **runtime** |
+//!
+//! Generic body-surface Alt/Az lives in [`surface`] and
+//! [`transform::surface_horizontal`].
 //!
 //! Operations that require matching parameters (e.g., `Position - Position`, `distance_to`)
 //! **panic** by default on mismatch in all build profiles. Non-panicking alternatives are
@@ -123,6 +128,7 @@ pub mod horizontal;
 pub mod observation;
 pub mod sampling;
 pub mod spherical;
+pub mod surface;
 pub mod transform;
 pub mod types;
 

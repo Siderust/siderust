@@ -260,7 +260,10 @@ pub type Marscentric = crate::bodies::solar_system::Mars;
 /// Center of mass of the Moon (selenocentric).
 ///
 /// Zero-cost, compile-time–safe center type for Moon-centered coordinate
-/// systems. Used with body-fixed frames such as [`super::frames::MoonPrincipalAxes`].
+/// systems. Used with body-fixed frames such as
+/// [`super::frames::MoonIauMeanEarth`] (legacy alias
+/// [`super::frames::MoonPrincipalAxes`]; NAIF `IAU_MOON` analytical Mean-Earth,
+/// not JPL DE `MOON_PA`).
 pub type Selenocentric = crate::bodies::solar_system::Moon;
 
 /// Center of mass of Jupiter (jovicentric).

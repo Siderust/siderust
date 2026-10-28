@@ -228,21 +228,103 @@ Local horizontal frame centred on the observer.  Spherical coordinates are
 azimuth measured from North through East.
 
 Every `Position<Topocentric, Horizontal, U>` implicitly carries a
-`Geodetic<ECEF>` via the `Topocentric` center parameter.
+`Geodetic<ECEF>` via the `Topocentric` center parameter (Earth-only path).
+
+### 4.1 Generic body-surface observers
+
+For observers on bodies other than Earth — and for a uniform Earth API —
+use `coordinates::surface`:
+
+| Type | Role |
+|---|---|
+| `SurfaceSite<B>` | Lat/lon/height on body `B` with an explicit `ReferenceSurface` |
+| `SurfaceObserver<B>` | Parameterized centre carrying `SurfaceObserverParams` |
+| `BodySurfaceModel` | Compile-time link: body → centre, fixed frame, default surface |
+
+**Pipeline** (geometric Alt/Az):
+
+```text
+target → body-centred (Barycentric hub) → body-fixed (ICRS hub)
+      → observer-relative LOS → local ENU → Horizontal
+```
+
+Earth sidereal-time (GMST/GAST/UT1) is **not** used for lunar or planetary
+sites. Body orientation follows the corresponding IAU/WGCCRE model; the
+Moon uses the complete analytical IAU_MOON periodic terms. The underlying
+lunar arguments use TDB, converted from TT by tempoch. Other planetary
+providers retain their existing linear elements and numerical TT approximation;
+they do not implement all periodic terms of the current text PCK.
+
+
+Lunar numerical validation uses all three axes of CSPICE `pxform` with
+`pck00011.tpc` and `naif0012.tls`, at five TT epochs spanning 1900--2050.
+Direction cosines agree within `1e-10` after TT-to-TDB conversion. This tests
+implementation agreement, not absolute lunar pointing accuracy. NAIF describes
+the analytical model's discrepancy from DE421 ME over about 2000--2020
+as having an amplitude of 0.0051 degrees (155 m on the lunar surface);
+this is not a universal error bound. Use binary PCKs and their
+matching DE frame kernels for precision lunar cartography. The tests do not
+establish a physical accuracy bound outside that epoch span.
+
+Sources: [NAIF text PCK](https://naif.jpl.nasa.gov/pub/naif/generic_kernels/pck/pck00011.tpc),
+[lunar frame definitions](https://naif.jpl.nasa.gov/pub/naif/generic_kernels/fk/satellites/moon_080317.tf),
+[WGCCRE 2009](https://doi.org/10.1007/s10569-010-9320-4),
+[WGCCRE 2015](https://doi.org/10.1007/s10569-017-9805-5).
+`Moon::ROTATION` / `IauRotationParams` retain the secular linear elements for
+compatibility; they are not the complete lunar orientation. Use the frame
+provider for periodic lunar orientation.
+
+**Support matrix**
+
+| Body | Surface default | Fixed frame | Notes |
+|---|---|---|---|
+| Earth | WGS84 ellipsoid | `ECEF` | Coexists with `Topocentric` / GAST APIs; pgr lon east-positive |
+| Moon | IAU sphere 1737.4 km | `MoonIauMeanEarth` (`MoonPrincipalAxes` compatibility alias) | NAIF IAU_MOON analytical Mean-Earth, **not** JPL DE PA / binary-PCK ME; pgr lon east-positive |
+| Mars | IAU ellipsoid 3396.19 km | `MarsFixed` | Default latitude planetographic; **SPICE pgr lon west-positive** — convert explicitly |
+| Mercury, Venus, Pluto | IAU mean spheres | `*Fixed` | Mercury/Pluto pgr lon west-positive; Venus east-positive |
+| Gas giants | *(no `BodySurfaceModel`)* | — | Implement the trait only with a documented reference surface |
+
+**Longitude:** Siderust stores east-positive longitudes for every body.
+Planetocentric longitude (SPICE `latrec`/`reclat`) matches this directly.
+Planetographic longitude (SPICE `pgrrec`/`recpgr`) defaults to west-positive
+for prograde rotators such as Mars and east-positive for Earth/Moon/Venus;
+convert with `BodySurfaceModel::east_positive_longitude` or
+`SurfaceSite::from_planetographic_longitude`. No hidden sign flips.
+SPICE kernel-pool overrides (`BODY*_PGR_POSITIVE_LON`) are **not** read by
+Siderust — if an external product used a non-default sense, pass that sense
+explicitly to the conversion helpers.
+
+Planetocentric and planetographic **latitudes** are distinct on ellipsoids and
+must not be mixed silently. See `coordinates::surface` rustdocs,
+`examples/22_moon_surface_quickstart.rs`, and
+`examples/21_body_surface_horizontal.rs`.
+
+**Offline reference regeneration** (development only; SpiceyPy optional):
+`python3 tools/cspice_refs/cspice_surface_references.py`.
+CSPICE supplies lunar `pxform` / Mars `pgrrec` and TT→TDB; ENU Alt/Az/range
+literals are independent sphere geometry, not CSPICE `azlcpo`.
 
 ---
 
 ## 5. Planetary Body-Fixed Frames
 
-These frames rotate with the respective body, defined by IAU 2015 rotation
-parameters (α₀, δ₀, W).  The transformation from body-fixed to ICRS is:
+These frames rotate with the respective body, using IAU pole and prime-meridian
+orientation parameters (α₀, δ₀, W). The active, column-vector body-fixed to
+ICRS rotation implemented by the provider is:
 
 ```
-R = Rz(−(α₀ + 90°)) · Rx(−(90° − δ₀)) · Rz(−W)
+R = Rz(α₀ + 90°) · Rx(90° − δ₀) · Rz(W)
 ```
 
 where α₀ and δ₀ define the body's north pole direction in ICRS, and W is
-the prime meridian angle (degrees).
+the prime meridian angle (degrees). This order matters: `affn`'s ZXZ constructor
+applies its first Z rotation first, then X, then the second Z. For the Moon,
+α₀, δ₀ and W additionally include the 13 periodic arguments of the NAIF
+IAU_MOON text-PCK and W includes a quadratic term. The `MoonPrincipalAxes`
+name is retained for API compatibility but does **not** denote a JPL DE
+principal-axes realization. Use the `MoonIauMeanEarth` alias to convey the
+implemented analytical ME orientation; DE-specific `MOON_PA` and `MOON_ME`
+require separate SPICE binary PCK frames.
 
 The **frame marker types** (zero-sized structs) are defined in `affn::frames`
 behind `feature = "astro"` so that `affn`'s derive macros can generate
@@ -259,7 +341,7 @@ The corresponding `FrameRotationProvider` implementations are organized under
 | Mercury body-fixed | `MercuryFixed` | Mercury | (lat, lon, radius) |
 | Venus body-fixed | `VenusFixed` | Venus | (lat, lon, radius) |
 | Mars body-fixed | `MarsFixed` | Mars | (lat, lon, radius) |
-| Moon PA | `MoonPrincipalAxes` | Moon | (lat, lon, radius) |
+| Moon analytical ME | `MoonIauMeanEarth` / `MoonPrincipalAxes` | Moon | (lat, lon, radius) |
 | Jupiter System III | `JupiterSystemIII` | Jupiter | (lat, lon, radius) |
 | Saturn body-fixed | `SaturnFixed` | Saturn | (lat, lon, radius) |
 | Uranus body-fixed | `UranusFixed` | Uranus | (lat, lon, radius) |
@@ -403,7 +485,7 @@ Named getters (`lat()`, `lon()`, `altitude()`) are generated automatically by th
 | MercuryFixed | Mercury body-fixed | IAU 2015 rotation | Mercury surface |
 | VenusFixed | Venus body-fixed | IAU 2015 rotation | Venus surface |
 | MarsFixed | Mars body-fixed | IAU 2015 rotation | Mars surface |
-| MoonPA | Moon Principal Axes | IAU 2015 rotation | Lunar surface |
+| MoonIauMeanEarth | Moon analytical Mean-Earth | NAIF IAU_MOON (2009), periodic | Lunar surface |
 | JupiterSysIII | Jupiter System III | IAU 2015 rotation | Jupiter magnetosphere |
 | SaturnFixed | Saturn body-fixed | IAU 2015 rotation | Saturn surface |
 | UranusFixed | Uranus body-fixed | IAU 2015 rotation | Uranus surface |
@@ -422,10 +504,10 @@ orbit-relative API in `astro::dynamics::frames::LocalOrbitalFrame<M>` and
 from a concrete `OrbitState`, so the state-dependent nature of the frame is
 preserved at the type level.
 
-Other operational frames (e.g. body-fixed frames for minor planets, or
-observer-defined topocentric frames beyond `Horizontal`) are still out of
-scope for the typed frame system.
+Other operational frames (e.g. body-fixed frames for minor planets) remain
+out of scope for the typed frame system. Generic surface observers for the
+major rocky bodies are in scope as of v0.16 via `coordinates::surface`.
 
 ---
 
-*Last updated by the P0–P2 coordinate model refactor.*
+*Last updated for v0.16 generic body-surface horizontal transforms.*

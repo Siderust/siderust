@@ -77,6 +77,7 @@ pub mod ext;
 mod frames;
 pub mod horizontal;
 pub mod providers;
+pub mod surface_horizontal;
 mod to_cartesian;
 mod to_spherical;
 
@@ -94,6 +95,12 @@ pub use horizontal::{
 pub use providers::{
     center_shift, center_shift_as, center_shift_with, frame_rotation, frame_rotation_as,
     frame_rotation_with, CenterShiftProvider, FrameRotationProvider,
+};
+pub use surface_horizontal::{
+    direction_to_horizontal, horizontal_observation_to_direction,
+    horizontal_to_body_fixed_direction, horizontal_to_direction, observed_direction_to_horizontal,
+    position_to_horizontal, HorizontalDirectionObservation, HorizontalObservation,
+    SurfaceHorizontalExt,
 };
 
 use crate::coordinates::{

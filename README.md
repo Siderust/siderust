@@ -266,7 +266,21 @@ The public frame set includes:
 For most centers (`Barycentric`, `Heliocentric`, `Geocentric`) all invariants are
 enforced at **compile time** with zero runtime cost (`Params = ()`).
 
-**Parameterized centers** (`Topocentric`, `Bodycentric`) carry runtime data
+**Surface observers** (`SurfaceSite::<Moon>`, `SurfaceObserver<B>`, …) provide
+geometric Alt/Az from Earth, Moon, Mars, and other supported bodies through one
+ENU pipeline. Start with `examples/22_moon_surface_quickstart.rs`, then
+`examples/21_body_surface_horizontal.rs`. Earth also keeps the distinct
+`Topocentric` / GMST–GAST path (`examples/19_horizontal_coordinates.rs`).
+Longitude is always east-positive internally; Mars SPICE planetographic
+longitudes are west-positive and must be converted explicitly
+(`BodySurfaceModel::east_positive_longitude`). Azimuth is north through east;
+altitude is above the reference-surface horizon (not terrain-occulted). Lunar
+observations use the analytical NAIF `IAU_MOON` Mean-Earth model
+(`MoonIauMeanEarth`; legacy alias `MoonPrincipalAxes`), **not** JPL DE
+`MOON_PA` / binary-PCK `MOON_ME`. Finite `Position<C,F,U>` targets include
+parallax; a distance-free `Direction<F>` does not invent a range.
+
+**Parameterized centers** (`Topocentric`, `Bodycentric`, `SurfaceObserver`) carry runtime data
 (e.g., `ObserverSite`). The *center type* is still checked at compile time, but
 *parameter equality* (e.g., "are these two positions at the same site?") is
 checked at **runtime**:

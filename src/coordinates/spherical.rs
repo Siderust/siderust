@@ -170,8 +170,15 @@ pub mod position {
     /// **Marscentric** body-fixed coordinates (lat, lon, radius).
     pub type MarsFixed<U> = Position<centers::Marscentric, frames::MarsFixed, U>;
 
-    /// **Selenocentric** body-fixed coordinates (lat, lon, radius).
+    /// **Selenocentric** body-fixed coordinates (lat, lon, radius) in the NAIF
+    /// `IAU_MOON` analytical Mean-Earth frame.
+    ///
+    /// Historical name retained for compatibility; prefer [`MoonIauMeanEarth`].
+    /// This is **not** a JPL DE `MOON_PA` realization.
     pub type MoonPrincipalAxes<U> = Position<centers::Selenocentric, frames::MoonPrincipalAxes, U>;
+    /// **Selenocentric** body-fixed coordinates in the NAIF `IAU_MOON`
+    /// analytical Mean-Earth frame (preferred name).
+    pub type MoonIauMeanEarth<U> = Position<centers::Selenocentric, frames::MoonIauMeanEarth, U>;
 
     /// **Jovicentric** System III coordinates (lat, lon, radius).
     pub type JupiterSystemIII<U> = Position<centers::Jovicentric, frames::JupiterSystemIII, U>;

@@ -36,7 +36,11 @@
 use crate::qtty::Degrees;
 use crate::time::JulianDate;
 
-/// IAU pole and prime meridian rotation parameters for a body.
+/// Linear secular IAU pole and prime meridian parameters for a body.
+///
+/// This type does not encode periodic terms or higher-order polynomials.
+/// In particular, the lunar frame provider adds those terms independently;
+/// evaluating `Moon::ROTATION` alone is not the complete lunar orientation.
 ///
 /// These parameters define a body's orientation at J2000.0 and its rates
 /// of change. Time *T* is in Julian centuries of 36525 days from J2000.0 TDB,

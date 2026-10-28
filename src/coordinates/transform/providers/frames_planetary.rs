@@ -43,7 +43,77 @@ macro_rules! impl_body_fixed_rotation {
 impl_body_fixed_rotation!(MercuryFixed, crate::bodies::solar_system::Mercury);
 impl_body_fixed_rotation!(VenusFixed, crate::bodies::solar_system::Venus);
 impl_body_fixed_rotation!(MarsFixed, crate::bodies::solar_system::Mars);
-impl_body_fixed_rotation!(MoonPrincipalAxes, crate::bodies::solar_system::Moon);
+// The NAIF text-PCK IAU_MOON orientation is an analytical approximation
+// of the lunar Mean-Earth/Polar-Axis frame (not a JPL DE MOON_PA frame).
+// Source: NAIF pck00011.tpc, BODY301_* and BODY3_NUT_PREC_ANGLES.
+// Angles use days/centuries past J2000 TDB. Public epochs are typed TT;
+// convert with tempoch and retain J2000 seconds before forming days.
+use crate::qtty::{Degrees, Radian};
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar, Transcendental};
+
+fn iau_moon_mean_earth_to_icrs(jd: JulianDate) -> Rotation3 {
+    let days = jd.to_scale::<crate::time::TDB>().to_j2000s().raw().value() / 86_400.0;
+    let centuries = days / 36_525.0;
+    let mut alpha = 269.9949 + 0.0031 * centuries;
+    let mut delta = 66.5392 + 0.0130 * centuries;
+    let mut w = 38.3213 + 13.17635815 * days - 1.4e-12 * days * days;
+
+    // (phase at J2000 [deg], rate [deg/day], RA sine [deg],
+    //  DEC cosine [deg], W sine [deg]); the 13 E1..E13 arguments.
+    const TERMS: [(f64, f64, f64, f64, f64); 13] = [
+        (125.045, -0.0529921, -3.8787, 1.5419, 3.5610),
+        (250.089, -0.1059842, -0.1204, 0.0239, 0.1208),
+        (260.008, 13.0120009, 0.0700, -0.0278, -0.0642),
+        (176.625, 13.3407154, -0.0172, 0.0068, 0.0158),
+        (357.529, 0.9856003, 0.0, 0.0, 0.0252),
+        (311.589, 26.4057084, 0.0072, -0.0029, -0.0066),
+        (134.963, 13.0649930, 0.0, 0.0009, -0.0047),
+        (276.617, 0.3287146, 0.0, 0.0, -0.0046),
+        (34.226, 1.7484877, 0.0, 0.0, 0.0028),
+        (15.134, -0.1589763, -0.0052, 0.0008, 0.0052),
+        (119.743, 0.0036096, 0.0, 0.0, 0.0040),
+        (239.961, 0.1643573, 0.0, 0.0, 0.0019),
+        (25.053, 12.9590088, 0.0043, -0.0009, -0.0044),
+    ];
+    for (phase, rate, ra_sine, dec_cosine, w_sine) in TERMS {
+        let argument = (phase + rate * days).rem_euclid(360.0).to_radians();
+        let (sine, cosine) = argument.sin_cos();
+        alpha += ra_sine * sine;
+        delta += dec_cosine * cosine;
+        w += w_sine * sine;
+    }
+
+    // Active, column-vector body-fixed -> ICRS, validated by independent
+    // pole and prime-meridian reference vectors.
+    let ninety = Degrees::new(90.0).to::<Radian>();
+    Rotation3::from_euler_zxz(
+        Degrees::new(w.rem_euclid(360.0)).to::<Radian>(),
+        ninety - Degrees::new(delta).to::<Radian>(),
+        Degrees::new(alpha).to::<Radian>() + ninety,
+    )
+}
+
+impl FrameRotationProvider<MoonPrincipalAxes, ICRS> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
+        jd: JulianDate,
+        _ctx: &AstroContext<Eph, Eop>,
+    ) -> Rotation3 {
+        iau_moon_mean_earth_to_icrs(jd)
+    }
+}
+
+impl FrameRotationProvider<ICRS, MoonPrincipalAxes> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop>,
+    ) -> Rotation3 {
+        inverse_rotation::<ICRS, MoonPrincipalAxes, Eph, Eop, Nut>(jd, ctx)
+    }
+}
+
 impl_body_fixed_rotation!(JupiterSystemIII, crate::bodies::solar_system::Jupiter);
 impl_body_fixed_rotation!(SaturnFixed, crate::bodies::solar_system::Saturn);
 impl_body_fixed_rotation!(UranusFixed, crate::bodies::solar_system::Uranus);
@@ -69,3 +139,14 @@ impl_via_icrs_bidirectional!(EME2000, SaturnFixed);
 impl_via_icrs_bidirectional!(EME2000, UranusFixed);
 impl_via_icrs_bidirectional!(EME2000, NeptuneFixed);
 impl_via_icrs_bidirectional!(EME2000, PlutoFixed);
+
+// EquatorialMeanJ2000 ↔ body-fixed (compose through ICRS) for surface Alt/Az.
+impl_via_icrs_bidirectional!(EquatorialMeanJ2000, MercuryFixed);
+impl_via_icrs_bidirectional!(EquatorialMeanJ2000, VenusFixed);
+impl_via_icrs_bidirectional!(EquatorialMeanJ2000, MarsFixed);
+impl_via_icrs_bidirectional!(EquatorialMeanJ2000, MoonPrincipalAxes);
+impl_via_icrs_bidirectional!(EquatorialMeanJ2000, JupiterSystemIII);
+impl_via_icrs_bidirectional!(EquatorialMeanJ2000, SaturnFixed);
+impl_via_icrs_bidirectional!(EquatorialMeanJ2000, UranusFixed);
+impl_via_icrs_bidirectional!(EquatorialMeanJ2000, NeptuneFixed);
+impl_via_icrs_bidirectional!(EquatorialMeanJ2000, PlutoFixed);

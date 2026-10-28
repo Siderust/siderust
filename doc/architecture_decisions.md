@@ -22,9 +22,33 @@ The consequence is that mismatches can trigger panics in default operations. For
 
 Transformations are separated according to their physical meaning rather than bundled under a single abstraction. Frame rotations are implemented as pure rotation matrices. Center shifts are modeled as affine translations. Observation effects, such as aberration or apparent place corrections, are treated as a distinct processing pipeline.
 
-Each of these operations carries different invariants and requires different contextual inputs. For example, horizontal transformations depend on an observer site and Earth orientation parameters such as UT1 and polar motion. By keeping these domains distinct, the API makes such dependencies explicit rather than implicit.
+Each of these operations carries different invariants and requires different contextual inputs. For example, Earth-specific GAST horizontal transforms depend on an observer site and Earth orientation parameters such as UT1 and polar motion. Generic body-surface Alt/Az transforms depend on the body's orientation model and an explicit reference surface. Non-Earth sites do **not** reuse Earth's GMST/GAST/UT1; Earth sites use the existing EOP-based ECEF orientation chain. The lunar IAU_MOON model converts TT input to TDB using tempoch and is the analytical Mean-Earth orientation, not a JPL DE principal-axes realization. By keeping these domains distinct, the API makes such dependencies explicit rather than implicit.
 
 This design avoids hidden assumptions, particularly regarding Earth orientation and observational context. The user is required to supply the appropriate information where necessary, reinforcing clarity over convenience.
+
+## Generic Surface Observers (v0.16)
+
+Surface observers on Earth, the Moon, Mars, and other supported bodies share one pipeline rather than body-specific Alt/Az engines:
+
+1. Translate the target to the body centre (barycentric hub).
+2. Rotate into the body-fixed frame (ICRS hub + IAU WGCCRE orientation).
+3. Form the observer-relative line of sight (finite targets include parallax; directions do not invent a distance).
+4. Project onto the local east–north–up basis derived from the site's reference surface.
+
+`SurfaceSite<B>` and `SurfaceObserver<B>` carry the body at the type level
+(use solar-system markers such as `Moon` / `Mars` / `Earth` directly; redundant
+`*Surface` aliases were removed). Site geometry is validated at runtime.
+`BodySurfaceModel` is implemented only for bodies with a documented default
+reference surface — gas giants simply omit the trait rather than reporting
+runtime “unsupported” flags. `SurfaceObserverParams::default` exists because
+affn requires `Params: Default`; application code should prefer
+`try_origin` / `from_site`. Earth retains `Topocentric` / `Geodetic<ECEF>` /
+GMST–GAST helpers as a scientifically distinct Earth-only path; the generic
+ENU pipeline is available via `SurfaceSite::<Earth>` for API uniformity.
+Longitude is always east-positive internally, with an explicit conversion API
+for external planetographic senses (e.g. Mars west-positive in SPICE).
+Geometric Alt/Az remains separate from refraction, aberration, light-time,
+and terrain masking.
 
 ## Modular Provider Registry with Explicit Hubs
 
