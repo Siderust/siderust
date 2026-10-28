@@ -251,8 +251,28 @@ target → body-centred (Barycentric hub) → body-fixed (ICRS hub)
 Earth sidereal-time (GMST/GAST/UT1) is **not** used for lunar or planetary
 sites. Body orientation follows the corresponding IAU/WGCCRE model; the
 Moon uses the complete analytical IAU_MOON periodic terms. The underlying
-IAU rotation arguments are TDB: a TT Julian date is a practical approximation,
-not a mathematically exact timescale conversion.
+lunar arguments use TDB, converted from TT by tempoch. Other planetary
+providers retain their existing linear elements and numerical TT approximation;
+they do not implement all periodic terms of the current text PCK.
+
+
+Lunar numerical validation uses all three axes of CSPICE `pxform` with
+`pck00011.tpc` and `naif0012.tls`, at five TT epochs spanning 1900--2050.
+Direction cosines agree within `1e-10` after TT-to-TDB conversion. This tests
+implementation agreement, not absolute lunar pointing accuracy. NAIF describes
+the analytical model's discrepancy from DE421 ME over about 2000--2020
+as having an amplitude of 0.0051 degrees (155 m on the lunar surface);
+this is not a universal error bound. Use binary PCKs and their
+matching DE frame kernels for precision lunar cartography. The tests do not
+establish a physical accuracy bound outside that epoch span.
+
+Sources: [NAIF text PCK](https://naif.jpl.nasa.gov/pub/naif/generic_kernels/pck/pck00011.tpc),
+[lunar frame definitions](https://naif.jpl.nasa.gov/pub/naif/generic_kernels/fk/satellites/moon_080317.tf),
+[WGCCRE 2009](https://doi.org/10.1007/s10569-010-9320-4),
+[WGCCRE 2015](https://doi.org/10.1007/s10569-017-9805-5).
+`Moon::ROTATION` / `IauRotationParams` retain the secular linear elements for
+compatibility; they are not the complete lunar orientation. Use the frame
+provider for periodic lunar orientation.
 
 **Support matrix**
 

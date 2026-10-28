@@ -52,7 +52,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Make the ellipsoid surface normal the geometric vertical for both
   planetocentric and planetographic site representations; height is measured
   along that normal in either convention.
-- Validate deserialized reference surfaces, sites, and observer parameters.
+- Validate deserialized reference surfaces, sites, and observer parameters;
+  permit subsurface heights up to the documented normal-coordinate singularity.
+- Stabilize small-angle round-trip assertions without loosening tolerances;
+  reject zero/non-finite inverse directions; preserve range for extremely
+  distant targets and scale-independent normals for tiny/large ellipsoids.
+- Convert lunar orientation epochs from TT to TDB using tempoch and validate
+  all three axes against offline CSPICE references spanning 1900--2050.
 
 ### Changed
 
@@ -71,8 +77,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `MoonIauMeanEarth` is a clearer alias for this implementation. It is
   **not** JPL DE `MOON_PA`, nor DE-specific binary-PCK `MOON_ME`.
   The change corrects the orientation of existing `MoonPrincipalAxes`
-  coordinates. IAU time arguments use TDB (TT is an approximation here),
-  and this analytical model must not be marketed as DE-level precision.
+  coordinates. Lunar time arguments use TDB, explicitly converted from TT
+  by tempoch; this analytical model must not be marketed as DE-level precision.
 
 ## [0.15.1] - 2026-10-24
 

@@ -8,7 +8,7 @@
 //! Longitude positive east; planetocentric latitude on a 1737.4-km sphere.
 //! Local up is radial. Orientation: NAIF IAU_MOON analytical Mean Earth,
 //! exposed by the legacy MoonPrincipalAxes frame marker (not DE-specific PA).
-//! J2000 is interpreted as a TT date, approximating the model's TDB input.
+//! J2000 is a TT epoch; tempoch converts it to TDB for the lunar model.
 //! Alt/Az is geometric, not apparent; no terrain occultation, refraction,
 //! aberration, or light-time.
 #![allow(clippy::print_stdout)]

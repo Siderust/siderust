@@ -16,7 +16,7 @@
 //! - Mars surface: IAU ellipsoid a = 3396.19 km, planetographic latitude
 //! - Earth surface: WGS84 / ECEF
 //! - Longitude is positive east; heights and up refer to the surface normal.
-//! - Epoch is TT (IAU lunar rotation expects TDB; TT is approximated here).
+//! - Epoch is TT; lunar orientation converts TT to TDB through tempoch.
 //! - No terrain occultation or atmosphere; geometric, not apparent, Alt/Az.
 //!
 //! Run with: `cargo run --example 21_body_surface_horizontal`
@@ -106,7 +106,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .to::<Kilometer>()
             .value()
     );
-    println!("  frame: MarsFixed (IAU 2015 α0,δ0,W)");
+    println!("  frame: MarsFixed (linear IAU α0,δ0,W approximation)");
 
     let n = (0.1_f64.powi(2) + 0.7_f64.powi(2) + 0.7_f64.powi(2)).sqrt();
     let star = Direction::<ICRS>::new_unchecked(0.1 / n, 0.7 / n, 0.7 / n);
