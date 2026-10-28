@@ -562,7 +562,13 @@ mod tests {
         assert!((az - 90.0).abs() < 1e-4, "az={az}");
 
         let back: Direction<ICRS> = horizontal_to_direction(&horiz, &site, &jd, &ctx).unwrap();
-        let ang = icrs.angle_to(&back).value();
-        assert!(ang < 1e-10, "roundtrip angle={ang}");
+        // acos(dot) loses all angular resolution near zero (O(sqrt(eps))).
+        // The chord residual is O(angle) and resolves machine-scale errors.
+        let residual = norm([
+            icrs.x() - back.x(),
+            icrs.y() - back.y(),
+            icrs.z() - back.z(),
+        ]);
+        assert!(residual < 1e-10, "roundtrip chord residual={residual}");
     }
 }
