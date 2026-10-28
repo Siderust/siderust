@@ -184,11 +184,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     let options = parse_args(&args)
         .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidInput, message))?;
-    let site = SurfaceSite::<Moon>::new(
-        options.lon_deg * DEG,
-        options.lat_deg * DEG,
-        0.0 * M,
-    )?;
+    let site = SurfaceSite::<Moon>::new(options.lon_deg * DEG, options.lat_deg * DEG, 0.0 * M)?;
     let ctx = AstroContext::default();
 
     if options.csv {
@@ -215,8 +211,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut earth_above_samples = 0usize;
     // Include both endpoints. The final interval may be shorter than step_minutes.
     for i in 0..=options.intervals {
-        let elapsed_minutes =
-            (i as f64 * options.step_minutes).min(options.duration_minutes);
+        let elapsed_minutes = (i as f64 * options.step_minutes).min(options.duration_minutes);
         let jd_tt = options.start_jd_tt + elapsed_minutes / 1440.0;
         let (sun, earth) = observe_sun_and_earth(&site, JulianDate::new(jd_tt), &ctx)?;
         let sun_above = sun.alt_deg > 0.0;
