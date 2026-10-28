@@ -57,6 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Stabilize small-angle round-trip assertions without loosening tolerances;
   reject zero/non-finite inverse directions; preserve range for extremely
   distant targets and scale-independent normals for tiny/large ellipsoids.
+  Reject requested units that overflow or erase an observer position.
 - Convert lunar orientation epochs from TT to TDB using tempoch and validate
   all three axes against offline CSPICE references spanning 1900--2050.
 

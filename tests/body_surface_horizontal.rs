@@ -1034,3 +1034,41 @@ fn shared_planetary_rotation_matches_independent_axes_at_multiple_epochs() {
     check!(NeptuneFixed, 299.36, 0.0, 43.46, 0.0, 249.978, 541.1397757);
     check!(PlutoFixed, 132.993, 0.0, -6.163, 0.0, 302.695, 56.3625225);
 }
+
+#[test]
+fn requested_length_unit_must_represent_finite_geometry() {
+    use siderust::coordinates::surface::SurfaceError;
+    // The site and LOS are finite in metres, but not in millimetres.
+    let site = SurfaceSite::<MoonSurface>::new(0.0 * DEG, 0.0 * DEG, 1e307 * M).unwrap();
+    assert!(site.observer_position::<Meter>().is_ok());
+    assert!(matches!(
+        site.observer_position::<Millimeter>(),
+        Err(SurfaceError::NonFiniteInput { .. })
+    ));
+    let target = Position::<Selenocentric, MoonPrincipalAxes, Millimeter>::new(0.0, 0.0, 0.0);
+    assert!(matches!(
+        position_to_horizontal(&target, &site, &siderust::J2000, &ctx()),
+        Err(SurfaceError::NonFiniteInput { .. })
+    ));
+    let target_m = target.to_unit::<Meter>();
+    let observation = position_to_horizontal(&target_m, &site, &siderust::J2000, &ctx()).unwrap();
+    assert_near(
+        observation.range().value() / 1e307,
+        1.0,
+        1e-14,
+        "finite metre geometry",
+    );
+    let tiny = SurfaceSite::<MoonSurface>::with_surface(
+        0.0 * DEG,
+        0.0 * DEG,
+        0.0 * M,
+        siderust::coordinates::surface::ReferenceSurface::sphere(1e-320 * M).unwrap(),
+        LatitudeConvention::Planetocentric,
+    )
+    .unwrap();
+    assert!(tiny.observer_position::<Meter>().is_ok());
+    assert!(matches!(
+        tiny.observer_position::<AstronomicalUnit>(),
+        Err(SurfaceError::DegenerateGeometry { .. })
+    ));
+}

@@ -260,7 +260,8 @@ fn norm(v: [f64; 3]) -> f64 {
 /// fixed frame at `jd` (TT). The observer-relative vector includes
 /// topocentric parallax. Direction-only inputs must use
 /// [`direction_to_horizontal`] instead — this function will not invent a
-/// distance.
+/// distance. Coincident or numerically unresolved sightlines, and ranges
+/// not representable in the requested output unit, return an error.
 ///
 /// # Type constraints
 ///
@@ -345,9 +346,20 @@ where
     // Horizontal Cartesian: x=North, y=East, z=Zenith (affn spherical convention).
     let az_r = deg_to_rad(az);
     let alt_r = deg_to_rad(alt);
-    let hx = Quantity::<U>::from(Quantity::<Meter>::new(r_m * alt_r.cos() * az_r.cos()));
-    let hy = Quantity::<U>::from(Quantity::<Meter>::new(r_m * alt_r.cos() * az_r.sin()));
-    let hz = Quantity::<U>::from(Quantity::<Meter>::new(r_m * alt_r.sin()));
+    let range = Quantity::<U>::from(Quantity::<Meter>::new(r_m));
+    if !range.value().is_finite() {
+        return Err(SurfaceError::NonFiniteInput {
+            field: "range in output unit",
+        });
+    }
+    if range.value() == 0.0 {
+        return Err(SurfaceError::DegenerateGeometry {
+            reason: "range is not representable in output unit",
+        });
+    }
+    let hx = range * alt_r.cos() * az_r.cos();
+    let hy = range * alt_r.cos() * az_r.sin();
+    let hz = range * alt_r.sin();
 
     let position = Position::<SurfaceObserver<B>, Horizontal, U>::from_array(params, [hx, hy, hz]);
     Ok(HorizontalObservation { position })

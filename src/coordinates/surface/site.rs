@@ -207,6 +207,9 @@ impl<B: BodySurfaceModel> SurfaceSite<B> {
     }
 
     /// Observer position as a typed body-centred body-fixed Cartesian vector.
+    ///
+    /// Returns an error if the requested unit overflows or rounds the entire
+    /// nonzero position to zero.
     pub fn observer_position<U>(
         &self,
     ) -> Result<Position<B::Center, B::FixedFrame, U>, SurfaceError>
@@ -215,10 +218,23 @@ impl<B: BodySurfaceModel> SurfaceSite<B> {
         Quantity<U>: From<Quantity<Meter>>,
     {
         let [x, y, z] = self.body_fixed_cartesian()?;
-        Ok(Position::<B::Center, B::FixedFrame, U>::new(
+        let xyz = [
             Quantity::<U>::from(x),
             Quantity::<U>::from(y),
             Quantity::<U>::from(z),
+        ];
+        if !xyz.iter().all(|component| component.value().is_finite()) {
+            return Err(SurfaceError::NonFiniteInput {
+                field: "observer position in output unit",
+            });
+        }
+        if xyz.iter().all(|component| component.value() == 0.0) {
+            return Err(SurfaceError::DegenerateGeometry {
+                reason: "observer position is not representable in output unit",
+            });
+        }
+        Ok(Position::<B::Center, B::FixedFrame, U>::new(
+            xyz[0], xyz[1], xyz[2],
         ))
     }
 
