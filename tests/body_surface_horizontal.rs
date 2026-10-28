@@ -564,6 +564,13 @@ fn mars_zenith_along_ellipsoid_normal() {
         1e-6,
         "mars ellipsoid-normal zenith",
     );
+    let nadir_target = Position::<Marscentric, MarsFixed, Meter>::new(
+        Quantity::<Meter>::new(x.value() - enu.up[0] * 1_000.0),
+        Quantity::<Meter>::new(y.value() - enu.up[1] * 1_000.0),
+        Quantity::<Meter>::new(z.value() - enu.up[2] * 1_000.0),
+    );
+    let nadir = position_to_horizontal(&nadir_target, &site, &siderust::J2000, &ctx()).unwrap();
+    assert_near(nadir.alt().value(), -90.0, 1e-6, "mars normal nadir");
 }
 
 // Compile-time: SurfaceSite is parameterized by body (Moon ≠ Mars).
