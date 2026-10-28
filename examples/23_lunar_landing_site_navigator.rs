@@ -67,7 +67,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let site = SurfaceSite::<Moon>::new(longitude * DEG, latitude * DEG, 0.0 * M)?;
     let ctx = AstroContext::default();
 
-    println!("Lunar site: lat={}, east lon={} (JD in TT)", site.lat(), site.lon());
+    println!(
+        "Lunar site: lat={}, east lon={} (JD in TT)",
+        site.lat(),
+        site.lon()
+    );
     println!("Geometric horizon: azimuth N=0°, E=90°; altitude > 0° means above.");
 
     for hours in (0..=48).step_by(6) {
