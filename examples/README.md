@@ -17,8 +17,8 @@ Beginner path for geometric altitude/azimuth on celestial bodies:
    (no parallax), epoch, Alt/Az, and `AstroContext`.
 2. `21_body_surface_horizontal` — progressive Moon (finite targets with
    parallax) → Mars (direction-only) → Earth (WGS84) workflow.
-3. `23_lunar_landing_site_navigator` — solar and terrestrial Alt/Az over a lunar
-   site and a time interval, with an optional CSV export for comparing sites.
+3. `23_lunar_landing_site_navigator` — typed Sun/Earth lunar Alt/Az at six-hour
+   intervals over two days, with a small command-line site/date interface.
 4. `19_horizontal_coordinates` — Earth-only equatorial ↔ horizontal using
    `Topocentric` with **GMST** (positions) / **GAST** (directions). Scientifically
    distinct from the generic body-surface ENU pipeline.
@@ -64,34 +64,31 @@ cargo run --example 23_lunar_landing_site_navigator
 
 ## Lunar Landing Site Navigator (NASA Space Apps 2026)
 
-The [Lunar Landing Site Navigator challenge](https://www.spaceappschallenge.org/2026/challenges/lunar-landing-site-navigator/)
-asks participants to compare Sun and Earth positions relative to the horizon at
-candidate lunar landing sites and dates. Example `23_lunar_landing_site_navigator`
-is a no-download Rust CLI starting point: enter a lunar site and a TT Julian
-start date, sample a time span, and optionally export CSV for plots or a UI.
+`23_lunar_landing_site_navigator` demonstrates the [Lunar Landing Site Navigator
+challenge](https://www.spaceappschallenge.org/2026/challenges/lunar-landing-site-navigator/)
+using the same typed `SurfaceSite<Moon>`, `position::EclipticMeanJ2000`,
+`TransformCenter` and `qtty` quantities as the rest of Siderust.
 
 ```bash
-# Defaults: latitude -89 degrees, east longitude 0 degrees; 48 h, 60 min steps
+# South-polar default site, two days sampled every six hours
 cargo run --example 23_lunar_landing_site_navigator
 
-# LAT_DEG LON_EAST_DEG START_JD_TT [HOURS STEP_MINUTES]
-cargo run --example 23_lunar_landing_site_navigator -- -89.5 0 2461358.5 48 60
-
-# Write rows of JD(TT), Sun/Earth azimuth, altitude, and above-horizon flags
-cargo run --example 23_lunar_landing_site_navigator -- -89.5 0 2461358.5 48 60 --csv > lunar.csv
-
-# Repeat with a different site to compare
-cargo run --example 23_lunar_landing_site_navigator -- -88.5 30 2461358.5 48 60 --csv > second_site.csv
+# LAT_DEG LON_EAST_DEG START_JD_TT
+cargo run --example 23_lunar_landing_site_navigator -- -89.5 0 2461358.5
 ```
 
-All coordinates are lunar planetocentric latitude / **east-positive longitude**;
-zero height is on the IAU 1737.4 km reference sphere. Input Julian dates are in
-**TT, not UTC**. Samples include both endpoints (possibly a shorter last step).
-The CSV flags mean only that the Sun's or Earth's *centre* is above the
-reference-sphere geometric horizon. This does **not** model terrain/LOLA
-obstructions, the solar disc, antenna masks, light-time, aberration, power
-availability, or radio-link quality; even uninterrupted positive samples do not
-establish real illumination or a direct-to-Earth communications window.
+Latitude is planetocentric and longitude east-positive, both in degrees.
+Time is a Julian Date in **TT** (not UTC). The output directly prints typed
+altitude and azimuth quantities with degree units and indicates whether each
+object's centre lies above the reference-sphere geometric horizon. To explore
+other sites or dates, change the arguments; the sample interval is deliberately
+fixed to keep the example focused on the Siderust API.
+
+This is a geometric demonstration, **not** a terrain-aware or mission-grade
+landing-site assessment. It does not model LOLA topography, partial solar-disc
+visibility, aberration, light-time, antenna masks, power availability, or
+communications link quality. The lunar orientation uses analytical `IAU_MOON`
+rather than a JPL DE binary-PCK realization.
 
 ## Observing Workflows
 
