@@ -17,7 +17,9 @@ Beginner path for geometric altitude/azimuth on celestial bodies:
    (no parallax), epoch, Alt/Az, and `AstroContext`.
 2. `21_body_surface_horizontal` — progressive Moon (finite targets with
    parallax) → Mars (direction-only) → Earth (WGS84) workflow.
-3. `19_horizontal_coordinates` — Earth-only equatorial ↔ horizontal using
+3. `23_lunar_landing_site_navigator` — typed Sun/Earth lunar Alt/Az at six-hour
+   intervals over two days, with a small command-line site/date interface.
+4. `19_horizontal_coordinates` — Earth-only equatorial ↔ horizontal using
    `Topocentric` with **GMST** (positions) / **GAST** (directions). Scientifically
    distinct from the generic body-surface ENU pipeline.
 
@@ -30,6 +32,7 @@ refraction, aberration, light-time, or terrain).
 ```bash
 cargo run --example 22_moon_surface_quickstart
 cargo run --example 21_body_surface_horizontal
+cargo run --example 23_lunar_landing_site_navigator
 cargo run --example 19_horizontal_coordinates
 ```
 
@@ -44,6 +47,7 @@ cargo run --example 19_horizontal_coordinates
 - `19_horizontal_coordinates`: Earth-only equatorial ↔ horizontal (GMST/GAST).
 - `21_body_surface_horizontal`: complete Moon/Mars/Earth geometric Alt/Az workflow.
 - `22_moon_surface_quickstart`: minimal lunar geometric Alt/Az (no downloads).
+- `23_lunar_landing_site_navigator`: lunar Sun/Earth geometric horizon sampling CLI.
 
 ```bash
 cargo run --example 01_basic_coordinates
@@ -55,7 +59,36 @@ cargo run --example 14_nutation_models
 cargo run --example 19_horizontal_coordinates
 cargo run --example 22_moon_surface_quickstart
 cargo run --example 21_body_surface_horizontal
+cargo run --example 23_lunar_landing_site_navigator
 ```
+
+## Lunar Landing Site Navigator (NASA Space Apps 2026)
+
+`23_lunar_landing_site_navigator` demonstrates the [Lunar Landing Site Navigator
+challenge](https://www.spaceappschallenge.org/2026/challenges/lunar-landing-site-navigator/)
+using the same typed `SurfaceSite<Moon>`, `position::EclipticMeanJ2000`,
+`TransformCenter` and `qtty` quantities as the rest of Siderust.
+
+```bash
+# South-polar default site, two days sampled every six hours
+cargo run --example 23_lunar_landing_site_navigator
+
+# LAT_DEG LON_EAST_DEG START_JD_TT
+cargo run --example 23_lunar_landing_site_navigator -- -89.5 0 2461358.5
+```
+
+Latitude is planetocentric and longitude east-positive, both in degrees.
+Time is a Julian Date in **TT** (not UTC). The output directly prints typed
+altitude and azimuth quantities with degree units and indicates whether each
+object's centre lies above the reference-sphere geometric horizon. To explore
+other sites or dates, change the arguments; the sample interval is deliberately
+fixed to keep the example focused on the Siderust API.
+
+This is a geometric demonstration, **not** a terrain-aware or mission-grade
+landing-site assessment. It does not model LOLA topography, partial solar-disc
+visibility, aberration, light-time, antenna masks, power availability, or
+communications link quality. The lunar orientation uses analytical `IAU_MOON`
+rather than a JPL DE binary-PCK realization.
 
 ## Observing Workflows
 
