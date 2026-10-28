@@ -34,7 +34,10 @@
 //! - [`SurfaceHorizontalExt`] — ergonomic method on [`SurfaceSite`]
 //!
 //! Azimuth convention: north = 0°, east = 90°, increasing north through east.
-//! Altitude: geometric horizon = 0°, zenith = +90°.
+//! Altitude: geometric horizon = 0°, zenith = +90°. At zenith/nadir azimuth is
+//! physically undefined and is reported as `0°` by convention whenever the
+//! horizontal ENU projection falls below a scale-free singularity floor tied
+//! to `f64` round-off and the ENU orthonormality tolerance (`1e-12`).
 //!
 //! ## References
 //!
@@ -85,19 +88,7 @@ impl<B: BodySurfaceModel, U: LengthUnit> HorizontalObservation<B, U> {
         let x = self.position.x().value();
         let y = self.position.y().value();
         let z = self.position.z().value();
-        let scale = x.abs().max(y.abs()).max(z.abs());
-        if scale == 0.0 {
-            return (Degrees::new(0.0), Degrees::new(0.0));
-        }
-        let (north, east, up) = (x / scale, y / scale, z / scale);
-        let horizontal = (north * north + east * east).sqrt();
-        let altitude = rad_to_deg(up.atan2(horizontal));
-        let azimuth = if horizontal == 0.0 {
-            0.0
-        } else {
-            rad_to_deg(east.atan2(north).rem_euclid(TAU))
-        };
-        (Degrees::new(altitude), Degrees::new(azimuth))
+        angles_from_horizontal_cartesian(x, y, z)
     }
 
     /// Altitude above the geometric horizon.
@@ -155,18 +146,29 @@ impl<B: BodySurfaceModel> HorizontalDirectionObservation<B> {
     }
 
     /// Horizontal sky direction in spherical coordinates.
+    ///
+    /// Uses the same singularity-aware Alt/Az extraction as
+    /// [`HorizontalObservation`] so zenith/nadir azimuth stays at the
+    /// documented `0°` convention.
     pub fn to_spherical(&self) -> spherical::Direction<Horizontal> {
-        self.direction.to_spherical()
+        let (alt, az) = angles_from_horizontal_cartesian(
+            self.direction.x(),
+            self.direction.y(),
+            self.direction.z(),
+        );
+        spherical::Direction::<Horizontal>::new_unchecked(alt, az)
     }
 
     /// Geometric altitude at the observer site.
     pub fn alt(&self) -> Degrees {
-        self.to_spherical().alt()
+        angles_from_horizontal_cartesian(self.direction.x(), self.direction.y(), self.direction.z())
+            .0
     }
 
     /// Azimuth (north through east) at the observer site.
     pub fn az(&self) -> Degrees {
-        self.to_spherical().az()
+        angles_from_horizontal_cartesian(self.direction.x(), self.direction.y(), self.direction.z())
+            .1
     }
 }
 
@@ -213,6 +215,65 @@ where
     })
 }
 
+/// Relative floor below which a horizontal ENU projection is treated as
+/// singular for azimuth.
+///
+/// Two contributions, both scale-free via multiplication by `hypot(e,n,u)`:
+///
+/// 1. `32 ε` — local fused multiply–add noise when forming the ENU dots.
+/// 2. `1e-12` — the orthonormality tolerance enforced by
+///    [`crate::coordinates::surface::EnuBasis::assert_orthonormal`]. A
+///    horizontal component below that level is not meaningful relative to
+///    the basis itself, and also covers the ~1e-14 unit-LOS residual seen
+///    when a short vertical offset is formed via ICRS subtraction of two
+///    body-centred positions of order the body's radius.
+///
+/// This does **not** claim mathematical exactness from arbitrary floating
+/// point. Near-zenith directions with `horiz ≳ 1e-10` (≳ 20 µas) still
+/// retain a well-defined azimuth. Coarser “practically vertical” policies
+/// remain the caller's responsibility.
+const AZIMUTH_SINGULARITY_REL: f64 = {
+    let eps_floor = 32.0 * f64::EPSILON;
+    if eps_floor > 1e-12 {
+        eps_floor
+    } else {
+        1e-12
+    }
+};
+
+/// Azimuth from north-through-east ENU components, with a scale-free
+/// zenith/nadir singularity.
+///
+/// Returns the documented convention `0` when
+/// `sqrt(e² + n²) ≤ `[`AZIMUTH_SINGULARITY_REL`]` · hypot(e, n, u)`.
+#[inline]
+fn azimuth_from_enu(east: f64, north: f64, up: f64) -> f64 {
+    let horiz = (east * east + north * north).sqrt();
+    let radial = (east * east + north * north + up * up).sqrt();
+    if !horiz.is_finite() || !radial.is_finite() || radial == 0.0 {
+        return 0.0;
+    }
+    if horiz <= AZIMUTH_SINGULARITY_REL * radial {
+        0.0
+    } else {
+        east.atan2(north).rem_euclid(TAU)
+    }
+}
+
+/// Scale-free Alt/Az from affn Horizontal Cartesian `(N, E, Up)`.
+#[inline]
+fn angles_from_horizontal_cartesian(north: f64, east: f64, up: f64) -> (Degrees, Degrees) {
+    let scale = north.abs().max(east.abs()).max(up.abs());
+    if scale == 0.0 || !scale.is_finite() {
+        return (Degrees::new(0.0), Degrees::new(0.0));
+    }
+    let (n, e, u) = (north / scale, east / scale, up / scale);
+    let horiz = (n * n + e * e).sqrt();
+    let altitude = rad_to_deg(u.atan2(horiz));
+    let azimuth = rad_to_deg(azimuth_from_enu(e, n, u));
+    (Degrees::new(altitude), Degrees::new(azimuth))
+}
+
 /// Project a unit line-of-sight in a body-fixed frame onto local ENU / Horizontal.
 fn los_to_horizontal(
     los_unit: [f64; 3],
@@ -229,12 +290,7 @@ fn los_to_horizontal(
         });
     }
     let horiz = (e * e + n * n).sqrt();
-    let az = if horiz == 0.0 {
-        // Zenith / nadir: azimuth undefined; adopt 0° by convention.
-        0.0
-    } else {
-        e.atan2(n).rem_euclid(TAU)
-    };
+    let az = azimuth_from_enu(e, n, u);
     let alt = u.atan2(horiz);
     Ok((Degrees::new(rad_to_deg(alt)), Degrees::new(rad_to_deg(az))))
 }
@@ -297,12 +353,16 @@ where
     let body_centred: Position<B::Center, F, Meter> =
         TransformCenter::to_center_with(&target_m, (), *jd, ctx);
     let body_icrs: Position<B::Center, ICRS, Meter> = body_centred.to_frame_with(jd, ctx);
-    let body_fixed: Position<B::Center, B::FixedFrame, Meter> = body_icrs.to_frame_with(jd, ctx);
+    // Form the observer-relative vector in ICRS, then rotate only the unit
+    // LOS into the body-fixed frame. Subtracting after a Fixed↔ICRS round-trip
+    // of the absolute positions would leave an O(ε·R) residual that swamps a
+    // short vertical offset and invents a spurious azimuth at zenith/nadir.
     let observer = site.observer_position::<Meter>()?;
+    let observer_icrs: Position<B::Center, ICRS, Meter> = observer.to_frame_with(jd, ctx);
 
-    let dx = (body_fixed.x() - observer.x()).value();
-    let dy = (body_fixed.y() - observer.y()).value();
-    let dz = (body_fixed.z() - observer.z()).value();
+    let dx = (body_icrs.x() - observer_icrs.x()).value();
+    let dy = (body_icrs.y() - observer_icrs.y()).value();
+    let dz = (body_icrs.z() - observer_icrs.z()).value();
     if ![dx, dy, dz].iter().all(|value| value.is_finite()) {
         return Err(SurfaceError::NonFiniteInput {
             field: "observer_relative_position",
@@ -322,23 +382,25 @@ where
     }
     // The tolerance is physical (metres), independent of requested U.
     // It also includes the round-off floor for subtracting two absolute
-    // body-fixed positions of order the body's radius.
-    let absolute_scale = body_fixed
+    // positions of order the body's radius.
+    let absolute_scale = body_icrs
         .x()
         .value()
         .abs()
-        .max(body_fixed.y().value().abs())
-        .max(body_fixed.z().value().abs())
-        .max(observer.x().value().abs())
-        .max(observer.y().value().abs())
-        .max(observer.z().value().abs());
+        .max(body_icrs.y().value().abs())
+        .max(body_icrs.z().value().abs())
+        .max(observer_icrs.x().value().abs())
+        .max(observer_icrs.y().value().abs())
+        .max(observer_icrs.z().value().abs());
     let resolution_m = (64.0 * f64::EPSILON * absolute_scale).max(1.0e-6);
     if r_m <= resolution_m {
         return Err(SurfaceError::DegenerateGeometry {
             reason: "coincident or numerically indistinguishable observer and target",
         });
     }
-    let los = [dx / r_m, dy / r_m, dz / r_m];
+    let los_icrs = Direction::<ICRS>::new_unchecked(dx / r_m, dy / r_m, dz / r_m);
+    let los_fixed: Direction<B::FixedFrame> = los_icrs.to_frame_with(jd, ctx);
+    let los = [los_fixed.x(), los_fixed.y(), los_fixed.z()];
 
     let enu = site.enu_basis()?;
     let (alt, az) = los_to_horizontal(los, enu.east, enu.north, enu.up)?;
@@ -561,6 +623,7 @@ mod tests {
             AstroContext::<crate::coordinates::transform::context::DefaultEphemeris>::default();
         let obs = position_to_horizontal(&target, &site, &jd, &ctx).unwrap();
         assert!((obs.alt().value() - 90.0).abs() < 1e-6, "alt={}", obs.alt());
+        assert_eq!(obs.az().value(), 0.0, "zenith az convention");
         let expected_range_km = 1_737.4;
         assert!(
             (obs.range().value() - expected_range_km).abs() < 1e-3,
@@ -568,6 +631,23 @@ mod tests {
             obs.range()
         );
         let _ = KM;
+    }
+
+    #[test]
+    fn azimuth_singularity_is_scale_free_and_preserves_near_zenith() {
+        // Exact vertical (any scale) → az = 0.
+        assert_eq!(azimuth_from_enu(0.0, 0.0, 1.0), 0.0);
+        assert_eq!(azimuth_from_enu(0.0, 0.0, -1e6), 0.0);
+        // Noise at/below the ENU orthonormality floor is singular.
+        assert_eq!(azimuth_from_enu(1e-13, -1e-13, 1.0), 0.0);
+        assert_eq!(azimuth_from_enu(4.0 * f64::EPSILON, 0.0, 1.0), 0.0);
+        // A distinguishable near-zenith offset keeps its quadrant.
+        // horiz ≈ 1e-8 ≫ 1e-12; expected az = atan2(e,n) = 90°.
+        let az = azimuth_from_enu(1e-8, 0.0, 1.0);
+        assert!((az - core::f64::consts::FRAC_PI_2).abs() < 1e-12, "az={az}");
+        let (alt, az) = angles_from_horizontal_cartesian(0.0, 1e-8, 1.0);
+        assert!(alt.value() > 89.999, "alt={}", alt.value());
+        assert!((az.value() - 90.0).abs() < 1e-6, "az={}", az.value());
     }
 
     #[test]

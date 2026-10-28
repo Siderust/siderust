@@ -31,10 +31,11 @@
 //! cargo run --example 22_moon_surface_quickstart
 //! ```
 //!
-//! Representative output (values drift only if the lunar model changes):
+//! Representative output (deterministic for this fixed site, direction, and
+//! J2000 TT epoch; values change only if the lunar orientation model changes):
 //! ```text
-//! Lunar site: lon=20°, lat=-3.5°
-//! Geometric Alt/Az at J2000 TT: alt=..., az=... (N=0°, E=90°)
+//! Lunar site: lon=20 °, lat=-3.5 °
+//! Geometric Alt/Az at J2000 TT: alt=17.765928422856998 °, az=12.045094675187446 ° (N=0°, E=90°)
 //! ```
 #![allow(clippy::print_stdout)]
 

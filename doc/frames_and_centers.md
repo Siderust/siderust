@@ -286,16 +286,23 @@ provider for periodic lunar orientation.
 
 **Longitude:** Siderust stores east-positive longitudes for every body.
 Planetocentric longitude (SPICE `latrec`/`reclat`) matches this directly.
-Planetographic longitude (SPICE `pgrrec`/`recpgr`) is west-positive for
-prograde rotators such as Mars and east-positive for Earth/Moon/Venus;
+Planetographic longitude (SPICE `pgrrec`/`recpgr`) defaults to west-positive
+for prograde rotators such as Mars and east-positive for Earth/Moon/Venus;
 convert with `BodySurfaceModel::east_positive_longitude` or
 `SurfaceSite::from_planetographic_longitude`. No hidden sign flips.
+SPICE kernel-pool overrides (`BODY*_PGR_POSITIVE_LON`) are **not** read by
+Siderust — if an external product used a non-default sense, pass that sense
+explicitly to the conversion helpers.
 
 Planetocentric and planetographic **latitudes** are distinct on ellipsoids and
 must not be mixed silently. See `coordinates::surface` rustdocs,
 `examples/22_moon_surface_quickstart.rs`, and
-`examples/21_body_surface_horizontal.rs`. Offline CSPICE regeneration:
-`tools/cspice_refs/cspice_surface_references.py`.
+`examples/21_body_surface_horizontal.rs`.
+
+**Offline reference regeneration** (development only; SpiceyPy optional):
+`python3 tools/cspice_refs/cspice_surface_references.py`.
+CSPICE supplies lunar `pxform` / Mars `pgrrec` and TT→TDB; ENU Alt/Az/range
+literals are independent sphere geometry, not CSPICE `azlcpo`.
 
 ---
 

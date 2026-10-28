@@ -54,13 +54,30 @@ impl LatitudeConvention {
 /// `y = ρ cos φ sin λ` with λ east). Never apply a hidden sign flip inside
 /// [`super::SurfaceSite`] constructors.
 ///
-/// NAIF/WGCCRE planetographic longitude (distinct from latitude):
+/// ## Default NAIF / WGCCRE rules (what Siderust encodes)
+///
+/// Distinct from latitude. Under the usual SPICE defaults:
 /// - **West-positive** for most prograde rotators (e.g. Mars, Mercury).
-/// - **East-positive** for retrograde rotators (e.g. Venus).
+/// - **East-positive** for retrograde rotators (e.g. Venus; negative `W` rate).
 /// - **East-positive** exceptions for Earth, Moon, and Sun.
+///
+/// Pluto is treated here as west-positive because its published `W` rate is
+/// positive under NAIF’s spin-sense rule. Cartographic practice for dwarf
+/// planets can vary; always confirm the convention of your external source.
 ///
 /// Planetocentric longitude is always east-positive in SPICE (`latrec` /
 /// `reclat`) and needs no conversion for Siderust.
+///
+/// ## SPICE kernel-pool overrides are not automatic
+///
+/// SPICE may redefine the planetographic longitude sense via kernel-pool
+/// assignments such as `BODY<body ID>_PGR_POSITIVE_LON = 'EAST'|'WEST'`
+/// (see NAIF `pgrrec` / `plnsns` documentation). Siderust’s
+/// [`BodySurfaceModel::planetographic_longitude_sense`] reflects the **default**
+/// body rules above; it does **not** read SPICE kernel pools or track such
+/// overrides. If an external dataset was produced under a non-default
+/// `PGR_POSITIVE_LON` setting, convert with an explicit
+/// [`PlanetographicLongitudeSense`] rather than assuming the body default.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum PlanetographicLongitudeSense {

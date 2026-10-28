@@ -26,8 +26,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `PlanetographicLongitudeSense`, `east_positive_from_planetographic`, and
   `SurfaceSite::from_planetographic_longitude` for NAIF SPICE interoperability
   (Mars/Mercury/Pluto planetographic longitudes are west-positive).
-- Offline CSPICE end-to-end lunar Alt/Az references and regeneration script
+- Composite lunar Alt/Az validation: CSPICE `IAU_MOON` orientation plus
+  independent ENU geometry, with regeneration script
   `tools/cspice_refs/cspice_surface_references.py`.
+- Scale-free zenith/nadir azimuth singularity (`32 ε`) so exact vertical
+  lines of sight report the documented `0°` azimuth convention without
+  inventing noise-driven bearings.
 - Preferred `MoonIauMeanEarth` position aliases alongside the legacy
   `MoonPrincipalAxes` names; documentation no longer describes the analytical
   model as a true principal-axes frame.

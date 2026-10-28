@@ -1062,20 +1062,35 @@ fn requested_length_unit_must_represent_finite_geometry() {
 }
 
 // =============================================================================
-// End-to-end geometric Alt/Az against offline CSPICE references
+// Composite lunar Alt/Az validation (CSPICE orientation + independent ENU)
 // =============================================================================
 //
-// Provenance (regenerate with tools/cspice_surface_references.py):
-//   CSPICE N0067 via SpiceyPy 8.3.0
+// Regenerate literals with:
+//   tools/cspice_refs/cspice_surface_references.py
+//
+// Provenance of stored constants (CSPICE N0067 / SpiceyPy 8.3.0):
 //   Kernels: pck00011.tpc, naif0012.tls (NAIF generic kernels)
-//   Epoch: JD TT 2451545.0 (J2000.0); ET = unitim((jd_tt-2451545)*86400,"TDT","TDB")
-//   Lunar frame: IAU_MOON (analytical text-PCK Mean-Earth; same model as siderust)
-//   Surface: IAU mean sphere R = 1737.4 km; lon east-positive, planetocentric lat
-//   Target: body-fixed point offset +50 km east, +10 km north, +5 km up from site
-//   Procedure: pxform("IAU_MOON","J2000",et) rotates body-fixed → J2000/ICRS;
-//              Alt/Az/range from independent ENU projection of the body-fixed LOS
-//   Tolerances: 1e-9 deg / 1e-9 km — composition of CSPICE orientation (already
-//              checked to 1e-10 direction cosine) with exact sphere ENU geometry.
+//   Epoch: JD TT 2451545.0 (J2000.0)
+//          ET = unitim((jd_tt − 2451545)·86400, "TDT", "TDB")
+//   Lunar frame: IAU_MOON analytical text-PCK Mean-Earth (same model as siderust)
+//   Surface / site geometry: independent sphere maths (R = 1737.4 km,
+//          lon east-positive, planetocentric lat) — **not** CSPICE latrec
+//   Target offset: independent ENU (+50 km E, +10 km N, +5 km Up)
+//   Orientation matrix: CSPICE pxform("IAU_MOON","J2000", et)
+//          (v_j2000 = M · v_body; stored rows are M)
+//   Expected Alt/Az/range: independent NumPy ENU projection of the
+//          body-fixed LOS — **not** CSPICE azlcpo / sincpt
+//
+// Path A (body-fixed) checks surface + ENU + Alt/Az against that independent
+// geometry. Path B multiplies the same body-fixed target by the CSPICE matrix
+// and re-observes through siderust's TT→TDB + IAU_MOON provider, so the
+// orientation stage is CSPICE-referenced while ENU remains the same analytic
+// check. This is a composite validation, not a claim that CSPICE computed
+// every pipeline stage.
+//
+// Tolerances: body-fixed 1e-9 deg / 1e-9 km (exact sphere ENU); ICRS path
+// 5e-8 deg / 1e-6 km after TT→TDB + matrix round-trip (orientation held to
+// 1e-10 direction cosine elsewhere).
 //
 // Mars case below is body-fixed only: siderust's linear IAU_MARS model differs
 // from pck00011 periodic terms by ~0.02 in direction cosine at J2000, so an
@@ -1085,8 +1100,7 @@ fn requested_length_unit_must_represent_finite_geometry() {
 fn lunar_e2e_altaz_matches_offline_cspice_iau_moon_reference() {
     // Site: lon=20°E, lat=−3.5°, h=0 on IAU sphere.
     let site = SurfaceSite::<Moon>::new(20.0 * DEG, (-3.5) * DEG, 0.0 * M).unwrap();
-    // CSPICE-derived body-fixed target [km], then converted to metres:
-    // obs + 50*east + 10*north + 5*up on R=1737.4 km sphere.
+    // Independent body-fixed target [km]: obs + 50*east + 10*north + 5*up.
     let target = Position::<Selenocentric, MoonIauMeanEarth, Kilometer>::new(
         1617.7391512763131,
         642.0177864954426,
@@ -1095,25 +1109,30 @@ fn lunar_e2e_altaz_matches_offline_cspice_iau_moon_reference() {
     let jd = JulianDate::new(2_451_545.0);
     let ctx = ctx();
 
-    // Path A: observe in the body-fixed frame (orientation cancelled).
+    // Path A: body-fixed observation vs independent ENU reference.
     let obs_fixed = position_to_horizontal(&target, &site, &jd, &ctx).unwrap();
     assert_near(
         obs_fixed.alt().value(),
         5.60040918481664,
         1e-9,
-        "CSPICE alt",
+        "independent ENU alt",
     );
-    assert_near(obs_fixed.az().value(), 78.69006752597979, 1e-9, "CSPICE az");
+    assert_near(
+        obs_fixed.az().value(),
+        78.69006752597979,
+        1e-9,
+        "independent ENU az",
+    );
     assert_near(
         obs_fixed.range().to::<Kilometer>().value(),
         51.23475382979799,
         1e-9,
-        "CSPICE slant range",
+        "independent ENU slant range",
     );
 
-    // Path B: same target expressed in ICRS using the CSPICE pxform matrix
-    // (columns = body axes in J2000). Exercises TT→TDB, IAU_MOON orientation,
-    // observer position, LOS, ENU, Alt/Az, and slant range together.
+    // Path B: rotate the same body-fixed target with the CSPICE pxform matrix
+    // (v_j2000 = M · v_body) and re-observe through siderust. ENU reference
+    // angles are unchanged; only the orientation mediation is CSPICE-tied.
     // M = pxform("IAU_MOON","J2000", et) at JD TT 2451545.0:
     let m = [
         [
@@ -1177,4 +1196,143 @@ fn mars_e2e_body_fixed_cardinal_and_spice_longitude_interop() {
     assert_near(obs.alt().value(), 0.0, 1e-8, "Mars east alt");
     assert_near(obs.az().value(), 90.0, 1e-8, "Mars east az");
     assert_near(obs.range().value(), 1_000.0, 1e-6, "Mars east range");
+}
+
+// =============================================================================
+// Zenith / nadir azimuth singularity
+// =============================================================================
+//
+// Exact vertical LOS → az = 0 by convention. The singularity uses a
+// scale-relative floor of 32 ε on the ENU horizontal projection so tiny
+// floating-point residuals do not invent an azimuth, while legitimate
+// near-zenith offsets (horiz ≫ 32 ε) keep a well-defined azimuth.
+//
+// Limitation (accepted by design): after noisy inertial round-trips a
+// geometrically vertical direction may acquire a horizontal residual of
+// order the validated orientation agreement (~1e-10). That residual is
+// outside what local ENU arithmetic can certify as singular; callers with
+// a coarser accuracy budget should gate on |alt|≈90° themselves.
+
+#[test]
+fn zenith_and_nadir_azimuth_is_conventionally_zero() {
+    let jd = siderust::J2000;
+    let ctx = ctx();
+    for (lon, lat) in [
+        (0.0, 0.0),
+        (20.0, -3.5),
+        (-120.0, 45.0),
+        (30.0, 90.0),
+        (10.0, -89.9),
+    ] {
+        let site = SurfaceSite::<Moon>::new(lon * DEG, lat * DEG, 0.0 * M).unwrap();
+        let enu = site.enu_basis().unwrap();
+        let [x, y, z] = site.body_fixed_cartesian().unwrap();
+
+        for (sign, label, alt_expected) in [(1.0, "zenith", 90.0), (-1.0, "nadir", -90.0)] {
+            let target = Position::<Selenocentric, MoonIauMeanEarth, Meter>::new(
+                Quantity::<Meter>::new(x.value() + sign * enu.up[0] * 1_000.0),
+                Quantity::<Meter>::new(y.value() + sign * enu.up[1] * 1_000.0),
+                Quantity::<Meter>::new(z.value() + sign * enu.up[2] * 1_000.0),
+            );
+            let obs = position_to_horizontal(&target, &site, &jd, &ctx).unwrap();
+            assert_near(
+                obs.alt().value(),
+                alt_expected,
+                1e-8,
+                &format!("{label} alt lon={lon} lat={lat}"),
+            );
+            assert_eq!(
+                obs.az().value(),
+                0.0,
+                "{label} az must be 0 at lon={lon} lat={lat}, got {}",
+                obs.az()
+            );
+
+            let fixed = Direction::<MoonIauMeanEarth>::new_unchecked(
+                sign * enu.up[0],
+                sign * enu.up[1],
+                sign * enu.up[2],
+            );
+            let dir_obs = site.observe_direction(&fixed, &jd, &ctx).unwrap();
+            assert_near(
+                dir_obs.alt().value(),
+                alt_expected,
+                1e-8,
+                &format!("{label} direction alt"),
+            );
+            assert_eq!(
+                dir_obs.az().value(),
+                0.0,
+                "{label} direction az must be 0, got {}",
+                dir_obs.az()
+            );
+            // Finite observation and direction observation share the convention.
+            assert_eq!(obs.az().value(), dir_obs.az().value());
+        }
+    }
+}
+
+#[test]
+fn mars_ellipsoid_zenith_nadir_azimuth_is_zero() {
+    let site = SurfaceSite::<Mars>::new(137.4 * DEG, (-4.6) * DEG, 100.0 * M).unwrap();
+    let enu = site.enu_basis().unwrap();
+    let [x, y, z] = site.body_fixed_cartesian().unwrap();
+    let jd = siderust::J2000;
+    let ctx = ctx();
+    for (sign, alt_expected) in [(1.0, 90.0), (-1.0, -90.0)] {
+        let target = Position::<Marscentric, MarsFixed, Meter>::new(
+            Quantity::<Meter>::new(x.value() + sign * enu.up[0] * 2_000.0),
+            Quantity::<Meter>::new(y.value() + sign * enu.up[1] * 2_000.0),
+            Quantity::<Meter>::new(z.value() + sign * enu.up[2] * 2_000.0),
+        );
+        let obs = position_to_horizontal(&target, &site, &jd, &ctx).unwrap();
+        assert_near(obs.alt().value(), alt_expected, 1e-8, "Mars vertical alt");
+        assert_eq!(obs.az().value(), 0.0);
+    }
+}
+
+#[test]
+fn near_zenith_perturbation_preserves_azimuth() {
+    // Offset 1e-6 rad (~0.2″) from zenith along local east — far above the
+    // 32 ε singularity floor (~7e-15), so azimuth must remain east.
+    let site = SurfaceSite::<Moon>::new(15.0 * DEG, 25.0 * DEG, 0.0 * M).unwrap();
+    let enu = site.enu_basis().unwrap();
+    let [x, y, z] = site.body_fixed_cartesian().unwrap();
+    let eps_ang = 1e-6;
+    let los = [
+        enu.up[0] + eps_ang * enu.east[0],
+        enu.up[1] + eps_ang * enu.east[1],
+        enu.up[2] + eps_ang * enu.east[2],
+    ];
+    let n = (los[0] * los[0] + los[1] * los[1] + los[2] * los[2]).sqrt();
+    let target = Position::<Selenocentric, MoonIauMeanEarth, Meter>::new(
+        Quantity::<Meter>::new(x.value() + los[0] / n * 1_000.0),
+        Quantity::<Meter>::new(y.value() + los[1] / n * 1_000.0),
+        Quantity::<Meter>::new(z.value() + los[2] / n * 1_000.0),
+    );
+    let jd = siderust::J2000;
+    let ctx = ctx();
+    let obs = position_to_horizontal(&target, &site, &jd, &ctx).unwrap();
+    assert!(obs.alt().value() > 89.999, "alt={}", obs.alt());
+    assert_near(obs.az().value(), 90.0, 1e-3, "near-zenith east az");
+
+    let fixed = Direction::<MoonIauMeanEarth>::new_unchecked(los[0] / n, los[1] / n, los[2] / n);
+    let dir_obs = site.observe_direction(&fixed, &jd, &ctx).unwrap();
+    assert_near(dir_obs.az().value(), 90.0, 1e-3, "near-zenith direction az");
+    // Finite path subtracts two absolute body-fixed positions; direction path
+    // projects a unit vector. Allow a modest micro-degree disagreement.
+    assert_near(
+        obs.az().value(),
+        dir_obs.az().value(),
+        1e-4,
+        "finite/direction az parity",
+    );
+
+    // Round-trip where azimuth is defined: horizontal → ICRS → horizontal.
+    let back: Direction<ICRS> =
+        horizontal_to_direction(&dir_obs.direction, &site, &jd, &ctx).unwrap();
+    let again = direction_to_horizontal(&back, &site, &jd, &ctx).unwrap();
+    let sph = again.to_spherical();
+    assert_near(sph.az().value(), 90.0, 1e-3, "round-trip near-zenith az");
+    assert!(sph.alt().value() > 89.999);
 }

@@ -127,15 +127,17 @@ impl<B: BodySurfaceModel> SurfaceObserverParams<B> {
 impl<B: BodySurfaceModel> Default for SurfaceObserverParams<B> {
     /// Origin site (`lon = lat = height = 0`) on `B`'s default surface.
     ///
-    /// Required by affn's `ReferenceCenter::Params: Default` bound. Prefer
-    /// [`Self::try_origin`] or [`Self::from_site`] in application code.
+    /// Retained because `affn::ReferenceCenter::Params: Default` is a hard
+    /// bound: removing this impl is not possible without an affn change.
+    /// Application code should prefer [`Self::try_origin`] or
+    /// [`Self::from_site`]. All built-in rocky-body models satisfy the
+    /// origin-site contract (see unit tests on [`BodySurfaceModel`]).
     ///
     /// # Panics
     ///
-    /// Panics only if `B` violates the [`BodySurfaceModel`] contract that
-    /// [`BodySurfaceModel::default_surface`] admits a valid origin site.
-    /// All shipped rocky-body implementations satisfy this; a panic indicates
-    /// a defective custom model, not recoverable geometry.
+    /// Panics only if a **custom** [`BodySurfaceModel`] returns a
+    /// `default_surface` that rejects the origin site. That is a contract
+    /// violation by the implementor, not recoverable observer geometry.
     fn default() -> Self {
         Self::try_origin().unwrap_or_else(|err| {
             panic!(
