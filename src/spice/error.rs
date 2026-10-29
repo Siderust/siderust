@@ -11,6 +11,9 @@ use crate::formats::spice::SpiceError;
 /// Errors produced by the high-level [`crate::spice::SpiceContext`].
 #[derive(Debug, Error)]
 pub enum SpiceContextError {
+    /// Invalid surface-site geometry.
+    #[error("SPICE lunar site: {0}")]
+    Surface(#[from] crate::coordinates::surface::SurfaceError),
     /// A low-level kernel parse or query error.
     #[error("SPICE kernel error: {0}")]
     Kernel(#[from] SpiceError),

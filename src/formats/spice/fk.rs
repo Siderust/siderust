@@ -10,8 +10,8 @@
 //!
 //! ## Technical scope
 //!
-//! Only text FK kernels are supported. V1 implements enough parsing for frame
-//! lookup and constant-matrix TK frames.
+//! Text FK kernels support metadata lookup and fixed MATRIX/ANGLES TK
+//! frames. Dynamic frame specifications are not evaluated.
 //!
 //! ## References
 //!
@@ -20,6 +20,8 @@
 
 use super::text::{TextKernel, TextValue};
 use super::SpiceError;
+#[cfg(not(feature = "std"))]
+use crate::qtty::{Real, Scalar};
 use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;
@@ -33,7 +35,7 @@ pub enum FrameClass {
     Pck = 2,
     /// Spacecraft/instrument frame whose orientation is driven by CK data.
     Ck = 3,
-    /// Text-kernel frame class code 4.
+    /// Fixed text-kernel frame class code 4 (legacy variant name).
     TwoVector = 4,
     /// Dynamic frame evaluated from a runtime definition.
     Dynamic = 5,
@@ -42,7 +44,7 @@ pub enum FrameClass {
 /// TK-frame specification.
 #[derive(Debug, Clone)]
 pub enum TkSpec {
-    /// Constant 3×3 rotation matrix, row-major.
+    /// Constant 3×3 rotation matrix, row-major, from defined to relative frame.
     Matrix([[f64; 3]; 3]),
 }
 
@@ -128,7 +130,7 @@ impl FrameKernel {
                         let values = kernel.get_f64_array(&matrix_key).ok_or_else(|| {
                             SpiceError::FormatParse(format!("FK missing or invalid {matrix_key}"))
                         })?;
-                        if values.len() != 9 {
+                        if values.len() != 9 || values.iter().any(|v| !v.is_finite()) {
                             return Err(SpiceError::FormatParse(format!(
                                 "{matrix_key} must contain 9 values"
                             )));
@@ -149,6 +151,56 @@ impl FrameKernel {
                             relative,
                         ))
                     }
+                    Some("ANGLES") => {
+                        let key = |suffix: &str| format!("TKFRAME_{id}_{suffix}");
+                        let angles = kernel
+                            .get_f64_array(&key("ANGLES"))
+                            .ok_or_else(|| SpiceError::FormatParse("missing FK ANGLES".into()))?;
+                        let axes = kernel
+                            .get_f64_array(&key("AXES"))
+                            .ok_or_else(|| SpiceError::FormatParse("missing FK AXES".into()))?;
+                        let units = text_value(
+                            kernel.get(&key("UNITS")).ok_or_else(|| {
+                                SpiceError::FormatParse("missing FK UNITS".into())
+                            })?,
+                            &key("UNITS"),
+                        )?;
+                        let factor = match units {
+                            "RADIANS" => 1.0,
+                            "DEGREES" => core::f64::consts::PI / 180.0,
+                            "ARCSECONDS" => core::f64::consts::PI / 648000.0,
+                            _ => {
+                                return Err(SpiceError::FormatParse(format!(
+                                    "unsupported FK angle units {units}"
+                                )))
+                            }
+                        };
+                        if angles.len() != 3 || axes.len() != 3 {
+                            return Err(SpiceError::FormatParse(
+                                "FK ANGLES/AXES require three entries".into(),
+                            ));
+                        }
+                        let mut matrix = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]];
+                        for (angle, axis) in angles.iter().zip(axes.iter()) {
+                            if !angle.is_finite() || ![1.0, 2.0, 3.0].contains(axis) {
+                                return Err(SpiceError::FormatParse(
+                                    "invalid FK angle or axis".into(),
+                                ));
+                            }
+                            matrix = super::bpc::mul(
+                                matrix,
+                                super::bpc::axis_rotation(*axis as i32, angle * factor),
+                            );
+                        }
+                        let relative = text_value(
+                            kernel.get(&key("RELATIVE")).ok_or_else(|| {
+                                SpiceError::FormatParse("missing FK RELATIVE".into())
+                            })?,
+                            &key("RELATIVE"),
+                        )?
+                        .to_ascii_uppercase();
+                        Some((TkSpec::Matrix(matrix), relative))
+                    }
                     Some(other) => {
                         return Err(SpiceError::FormatParse(format!(
                             "unsupported TKFRAME spec '{other}' for frame {id}"
@@ -160,6 +212,26 @@ impl FrameKernel {
                 None
             };
 
+            if let Some((TkSpec::Matrix(m), _)) = &tk_spec {
+                for i in 0..3 {
+                    for j in 0..3 {
+                        let dot: f64 = (0..3).map(|k| m[i][k] * m[j][k]).sum();
+                        if (dot - if i == j { 1.0 } else { 0.0 }).abs() > 1e-10 {
+                            return Err(SpiceError::FormatParse(
+                                "FK matrix is not orthonormal".into(),
+                            ));
+                        }
+                    }
+                }
+                let det = m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1])
+                    - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0])
+                    + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
+                if (det - 1.0).abs() > 1e-10 {
+                    return Err(SpiceError::FormatParse(
+                        "FK matrix must be right-handed".into(),
+                    ));
+                }
+            }
             frames.push(FrameSpec {
                 id,
                 name,
@@ -203,7 +275,14 @@ fn int_value(value: &TextValue, key: &str) -> Result<i32, SpiceError> {
         TextValue::Integer(number) => i32::try_from(*number).map_err(|_| {
             SpiceError::FormatParse(format!("{key} integer {number} does not fit in i32"))
         }),
-        TextValue::Float(number) => Ok(*number as i32),
+        TextValue::Float(number)
+            if number.is_finite()
+                && number.fract() == 0.0
+                && *number >= i32::MIN as f64
+                && *number <= i32::MAX as f64 =>
+        {
+            Ok(*number as i32)
+        }
         other => Err(SpiceError::FormatParse(format!(
             "{key} must be numeric, got {other:?}"
         ))),

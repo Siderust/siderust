@@ -382,7 +382,7 @@ fn parse_scalar(token: &str) -> TextValue {
     if let Ok(value) = token.parse::<i64>() {
         return TextValue::Integer(value);
     }
-    if let Ok(value) = token.parse::<f64>() {
+    if let Ok(value) = token.replace(['D', 'd'], "E").parse::<f64>() {
         return TextValue::Float(value);
     }
     TextValue::Text(token.to_string())

@@ -1,0 +1,16 @@
+{
+  "generator": "SpiceyPy 8.3.0",
+  "toolkit": "CSPICE_N0067",
+  "abcorr": "NONE",
+  "excerpt_et": [
+    819720000.0,
+    822484800.0
+  ],
+  "source_sha256": {
+    "de440s.bsp": "c1c7feeab882263fc493a9d5a5b2ddd71b54826cdf65d8d17a76126b260a49f2",
+    "moon_pa_de440_200625.bpc": "60cd55aa401ea2ea97360636f567554bfe4e37bb829f901b4460a455dfaf783f",
+    "moon_de440_220930.tf": "73eb6b216c06a27c3419c4cfeaded7ffce46a714e3d4f9f5142dda51c0710f76",
+    "pck00011.tpc": "3dff7b1dbeceaa01f25467767d3fa25816051c85d162d1edf04acb310ee28bb1",
+    "naif0012.tls": "678e32bdb5a744117a467cd9601cd6b373f0e9bc9bbde1371d5eee39600a039b"
+  }
+}

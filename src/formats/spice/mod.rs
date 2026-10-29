@@ -64,3 +64,6 @@ pub use sclk::SclkKernel;
 pub use segment::{segment_for_summary, ChebSegment, SpkSegment};
 pub use spk_kernel::{SpkKernelError, SpkKernelSet};
 pub use text::TextKernel;
+
+pub mod bpc;
+pub use bpc::BinaryPck;

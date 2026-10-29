@@ -87,11 +87,8 @@ impl SpiceContext {
             let kernel = CkKernel::from_bytes(bytes)?;
             self.kernel_set.add_ck(alias, kernel);
         } else if locator.starts_with("DAF/PCK") || locator.starts_with("DAF/BPC") {
-            return Err(SpiceContextError::UnsupportedKernelQuery {
-                message: format!(
-                    "Binary PCK kernel '{alias}' loaded but BPC rotation evaluation is not implemented in V1; load a PCK text kernel instead"
-                ),
-            });
+            let kernel = crate::formats::spice::BinaryPck::from_bytes(bytes)?;
+            self.kernel_set.add_bpc(alias, kernel);
         } else if locator.starts_with("DAF/DSK") || locator.starts_with("DAF/EK") {
             return Err(SpiceContextError::UnsupportedKernelQuery {
                 message: format!(
@@ -160,12 +157,23 @@ impl SpiceContext {
     }
 
     /// Rotation matrix (3×3, row-major) from frame `from_id` to frame `to_id`.
+    ///
+    /// Acts on column position vectors at finite TDB seconds past J2000.
+    /// Supports fixed FK MATRIX/ANGLES chains and Type 2 binary PCK with
+    /// last-loaded, last-segment priority. Missing binary coverage is an error;
+    /// it never substitutes a text-PCK orientation for a loaded binary class.
     pub fn rotation_naif(
         &self,
         from_id: i32,
         to_id: i32,
         epoch_tdb_s: f64,
     ) -> Result<[[f64; 3]; 3], SpiceContextError> {
+        if !epoch_tdb_s.is_finite() {
+            return Err(SpiceError::Corrupted {
+                message: "rotation epoch must be finite TDB seconds".into(),
+            }
+            .into());
+        }
         if from_id == to_id {
             return Ok(identity_3x3());
         }
@@ -237,6 +245,21 @@ impl SpiceContext {
         frame_id: i32,
         epoch_tdb_s: f64,
     ) -> Result<[[f64; 3]; 3], SpiceContextError> {
+        self.frame_to_j2000_depth(frame_id, epoch_tdb_s, 0)
+    }
+
+    fn frame_to_j2000_depth(
+        &self,
+        frame_id: i32,
+        epoch_tdb_s: f64,
+        depth: usize,
+    ) -> Result<[[f64; 3]; 3], SpiceContextError> {
+        if depth > 64 {
+            return Err(SpiceError::Corrupted {
+                message: "frame graph cycle or depth exceeds 64".into(),
+            }
+            .into());
+        }
         if frame_id == 1 {
             return Ok(identity_3x3());
         }
@@ -251,7 +274,8 @@ impl SpiceContext {
                 .frame_registry
                 .frame_by_name(relative_name)
                 .map_err(spice_error_to_context)?;
-            let relative_to_j2000 = self.frame_to_j2000(relative.id, epoch_tdb_s)?;
+            let relative_to_j2000 =
+                self.frame_to_j2000_depth(relative.id, epoch_tdb_s, depth + 1)?;
             return Ok(mat3_mul(relative_to_j2000, *matrix));
         }
 
@@ -259,7 +283,22 @@ impl SpiceContext {
             FrameClass::Inertial => Err(SpiceContextError::UnsupportedKernelQuery {
                 message: format!("rotation from inertial frame {frame_id} to J2000 is not implemented"),
             }),
-            FrameClass::Pck => self.iau_body_rotation(spec.class_id, epoch_tdb_s),
+            FrameClass::Pck => {
+                let mut binary_coverage: Option<(f64, f64)> = None;
+                for (_, bpc) in self.kernel_set.binary_pcks().rev() {
+                    if let Some((start, end)) = bpc.coverage(spec.class_id) {
+                        binary_coverage = Some(binary_coverage.map_or((start, end), |(a,b)| (a.min(start), b.max(end))));
+                    }
+                    if let Some((base, base_to_fixed)) = bpc.rotation(spec.class_id, epoch_tdb_s)? {
+                        let base_to_j2000 = self.frame_to_j2000_depth(base, epoch_tdb_s, depth + 1)?;
+                        return Ok(mat3_mul(base_to_j2000, mat3_transpose(base_to_fixed)));
+                    }
+                }
+                if let Some((start, end)) = binary_coverage {
+                    return Err(SpiceError::OutOfCoverage { target: spec.class_id, center: 1, epoch_tdb_seconds: epoch_tdb_s, start_tdb_seconds: start, end_tdb_seconds: end }.into());
+                }
+                self.iau_body_rotation(spec.class_id, epoch_tdb_s)
+            },
             FrameClass::Ck => Err(SpiceContextError::UnsupportedKernelQuery {
                 message: format!("CK frame {frame_id} rotation requires CK/SCLK composition outside rotation_naif V1"),
             }),

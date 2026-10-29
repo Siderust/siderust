@@ -101,6 +101,14 @@ pub struct DafRaw {
     /// All raw summaries parsed from the kernel.
     pub raw_summaries: Vec<RawSummary>,
     bytes: Vec<u8>,
+    little_endian: bool,
+}
+
+fn record_integer(value: f64, max: usize) -> Result<usize, SpiceError> {
+    if !value.is_finite() || value < 0.0 || value.fract() != 0.0 || value > max as f64 {
+        return Err(SpiceError::FormatParse("invalid DAF record integer".into()));
+    }
+    Ok(value as usize)
 }
 
 impl Daf {
@@ -137,6 +145,11 @@ impl Daf {
             )));
         };
 
+        if (&data[88..96] == b"LTL-IEEE" && !le) || (&data[88..96] == b"BIG-IEEE" && le) {
+            return Err(SpiceError::FormatParse(
+                "DAF byte order disagrees with binary format marker".into(),
+            ));
+        }
         let read_i32 = if le { read_i32_le } else { read_i32_be };
         let read_f64 = if le { read_f64_le } else { read_f64_be };
 
@@ -154,7 +167,13 @@ impl Daf {
         let mut summaries = Vec::new();
         let mut rec = fward;
 
+        let mut visited = alloc::collections::BTreeSet::new();
         while rec > 0 {
+            if rec > data.len() / 1024 || !visited.insert(rec) {
+                return Err(SpiceError::FormatParse(
+                    "DAF summary chain invalid, cyclic, or past EOF".into(),
+                ));
+            }
             let rec_offset = (rec - 1) * 1024;
             if rec_offset + 1024 > data.len() {
                 return Err(SpiceError::FormatParse(format!(
@@ -163,10 +182,15 @@ impl Daf {
                 )));
             }
 
-            let next = read_f64(data, rec_offset) as i64 as usize;
+            let next = record_integer(read_f64(data, rec_offset), data.len() / 1024)?;
             let _prev = read_f64(data, rec_offset + 8);
-            let nsum = read_f64(data, rec_offset + 16) as usize;
+            let nsum = record_integer(read_f64(data, rec_offset + 16), 125)?;
 
+            if nsum > (128 - 3) / ss {
+                return Err(SpiceError::FormatParse(
+                    "DAF summary count exceeds record".into(),
+                ));
+            }
             for i in 0..nsum {
                 let off = rec_offset + 24 + i * ss * 8;
                 if off + ss * 8 > data.len() {
@@ -209,8 +233,11 @@ impl Daf {
     #[inline]
     pub fn read_f64_at_word(&self, data: &[u8], word: usize) -> f64 {
         let offset = (word - 1) * 8;
-        // DE440/DE441 kernels from NAIF are little-endian on modern systems.
-        read_f64_le(data, offset)
+        if data.len() >= 96 && &data[88..96] == b"BIG-IEEE" {
+            read_f64_be(data, offset)
+        } else {
+            read_f64_le(data, offset)
+        }
     }
 }
 
@@ -248,6 +275,11 @@ impl DafRaw {
             )));
         };
 
+        if (&data[88..96] == b"LTL-IEEE" && !le) || (&data[88..96] == b"BIG-IEEE" && le) {
+            return Err(SpiceError::FormatParse(
+                "DAF byte order disagrees with binary format marker".into(),
+            ));
+        }
         let read_i32 = if le { read_i32_le } else { read_i32_be };
         let read_f64 = if le { read_f64_le } else { read_f64_be };
         let fward = read_i32(&data, 76) as usize;
@@ -255,7 +287,13 @@ impl DafRaw {
 
         let mut raw_summaries = Vec::new();
         let mut rec = fward;
+        let mut visited = alloc::collections::BTreeSet::new();
         while rec > 0 {
+            if rec > data.len() / 1024 || !visited.insert(rec) {
+                return Err(SpiceError::FormatParse(
+                    "DAF summary chain invalid, cyclic, or past EOF".into(),
+                ));
+            }
             let rec_offset = (rec - 1) * 1024;
             if rec_offset + 1024 > data.len() {
                 return Err(SpiceError::FormatParse(format!(
@@ -264,8 +302,13 @@ impl DafRaw {
                 )));
             }
 
-            let next = read_f64(&data, rec_offset) as i64 as usize;
-            let nsum = read_f64(&data, rec_offset + 16) as usize;
+            let next = record_integer(read_f64(&data, rec_offset), data.len() / 1024)?;
+            let nsum = record_integer(read_f64(&data, rec_offset + 16), 125)?;
+            if nsum > (128 - 3) / ss {
+                return Err(SpiceError::FormatParse(
+                    "DAF summary count exceeds record".into(),
+                ));
+            }
             for i in 0..nsum {
                 let off = rec_offset + 24 + i * ss * 8;
                 if off + ss * 8 > data.len() {
@@ -295,14 +338,19 @@ impl DafRaw {
             locator,
             raw_summaries,
             bytes: data,
+            little_endian: le,
         })
     }
 
-    /// Read an `f64` at a 1-based word index (little-endian).
+    /// Read an `f64` at a validated 1-based word index in the file byte order.
     #[inline]
     pub fn read_f64_at_word(&self, word: usize) -> f64 {
         let offset = (word - 1) * 8;
-        read_f64_le(&self.bytes, offset)
+        if self.little_endian {
+            read_f64_le(&self.bytes, offset)
+        } else {
+            read_f64_be(&self.bytes, offset)
+        }
     }
 
     /// Borrow the raw kernel bytes.
