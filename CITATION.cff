@@ -9,7 +9,7 @@ authors:
 repository-code: "https://github.com/Siderust/siderust"
 url: "https://github.com/Siderust/siderust"
 license: "AGPL-3.0-only"
-version: "0.16.0"
+version: "0.17.0"
 keywords:
   - astronomy
   - astrodynamics
