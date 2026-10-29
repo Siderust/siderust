@@ -389,6 +389,14 @@ pub fn segment_for_summary(
     daf: &Daf,
     summary: &Summary,
 ) -> Result<SpkSegment, SpiceError> {
+    if summary.start_word == 0
+        || summary.end_word < summary.start_word
+        || summary.end_word > file_data.len() / 8
+    {
+        return Err(SpiceError::Corrupted {
+            message: "SPK descriptor addresses outside file".into(),
+        });
+    }
     match summary.data_type {
         2 => Ok(SpkSegment::Type2(read_chebyshev(
             file_data, daf, summary, 3,
@@ -418,8 +426,19 @@ fn read_chebyshev(
             message: format!("segment trailer at end_word={end} is too small"),
         });
     }
-    let n_records = daf.read_f64_at_word(file_data, end) as usize;
-    let rsize = daf.read_f64_at_word(file_data, end - 1) as usize;
+    let count_value = daf.read_f64_at_word(file_data, end);
+    let size_value = daf.read_f64_at_word(file_data, end - 1);
+    if !count_value.is_finite()
+        || count_value.fract() != 0.0
+        || !size_value.is_finite()
+        || size_value.fract() != 0.0
+    {
+        return Err(SpiceError::Corrupted {
+            message: "SPK record count/size must be finite integers".into(),
+        });
+    }
+    let n_records = count_value as usize;
+    let rsize = size_value as usize;
     let intlen = daf.read_f64_at_word(file_data, end - 2);
     let init = daf.read_f64_at_word(file_data, end - 3);
 
@@ -457,15 +476,13 @@ fn read_chebyshev(
             message: format!("segment record count overflow: n_records={n_records} rsize={rsize}"),
         })?;
     let data_start_word = summary.start_word;
-    if data_start_word + total - 1 > summary.end_word {
-        return Err(SpiceError::Parse {
-            message: format!(
-                "segment data window [{}..{}] does not fit in summary [{}..{}]",
-                data_start_word,
-                data_start_word + total - 1,
-                summary.start_word,
-                summary.end_word
-            ),
+    let expected = summary
+        .end_word
+        .checked_sub(data_start_word)
+        .and_then(|n| n.checked_sub(3));
+    if expected != Some(total) {
+        return Err(SpiceError::Corrupted {
+            message: "SPK record directory does not match descriptor extent".into(),
         });
     }
 
@@ -474,6 +491,11 @@ fn read_chebyshev(
         records.push(daf.read_f64_at_word(file_data, data_start_word + i));
     }
 
+    if records.iter().any(|v| !v.is_finite()) {
+        return Err(SpiceError::Corrupted {
+            message: "non-finite SPK coefficient or record metadata".into(),
+        });
+    }
     Ok(ChebSegment {
         init,
         intlen,

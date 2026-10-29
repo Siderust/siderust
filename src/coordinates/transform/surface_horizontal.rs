@@ -75,6 +75,38 @@ pub struct HorizontalObservation<B: BodySurfaceModel, U: LengthUnit = Meter> {
 }
 
 impl<B: BodySurfaceModel, U: LengthUnit> HorizontalObservation<B, U> {
+    // Runtime frame callers must validate their frame/site association first.
+    #[cfg(feature = "spice")]
+    pub(crate) fn from_fixed_relative(
+        site: &SurfaceSite<B>,
+        relative: [Quantity<U>; 3],
+    ) -> Result<Self, SurfaceError> {
+        let v = relative.map(|q| q.value());
+        if v.iter().any(|x| !x.is_finite()) {
+            return Err(SurfaceError::NonFiniteInput {
+                field: "relative position",
+            });
+        }
+        if !norm(v).is_finite() {
+            return Err(SurfaceError::NonFiniteInput { field: "range" });
+        }
+        if norm(v) <= 0.0 {
+            return Err(SurfaceError::DegenerateGeometry {
+                reason: "coincident target and site",
+            });
+        }
+        let basis = site.enu_basis()?;
+        let horizontal = [dot(v, basis.north), dot(v, basis.east), dot(v, basis.up)];
+        if horizontal.iter().any(|v| !v.is_finite()) {
+            return Err(SurfaceError::NonFiniteInput {
+                field: "horizontal position",
+            });
+        }
+        Ok(Self {
+            position: Position::from_array(site.to_params(), horizontal.map(Quantity::new)),
+        })
+    }
+
     /// The validated observer-tagged Cartesian position.
     pub fn position(&self) -> &Position<SurfaceObserver<B>, Horizontal, U> {
         &self.position

@@ -6,6 +6,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Binary PCK Type 2 lunar orientation, IEEE little/big-endian DAF indexing,
+  FK `ANGLES` rotations, frame-chain composition and explicit coverage errors.
+- `spice::LunarObserver` / `LunarTarget`: geometric Sun/Earth Alt/Az and range
+  from an explicitly selected binary-PCK lunar frame and immutable SPK kernel
+  set, with radial or existing `SurfaceSite<Moon>` geometry, typed TDB epochs
+  and kernel provenance. Existing analytical lunar frames retain their meaning.
+- DE440 CSPICE regressions with small kernel excerpts, external-kernel checks,
+  a reproducible reference generator, and `24_spice_lunar` example. See
+  [SPICE lunar geometry](doc/spice_lunar.md) for conventions and residuals.
+
+### Fixed
+
+- SPICE context SPK chaining across kernels now applies per-target segment
+  priority and accumulates offsets at the common centre, retaining lunar
+  parallax without subtracting large barycentric Earth/Moon positions.
+- Reject cyclic/oversized DAF summary chains, inconsistent byte-order markers,
+  invalid FK rotations and non-finite query epochs. Parse NAIF text-kernel
+  Fortran `D` exponents, as used in `pck00011.tpc`.
+
 ## [0.16.0] - 2026-10-27
 
 ### Added

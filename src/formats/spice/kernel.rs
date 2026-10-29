@@ -103,11 +103,24 @@ impl SpkKernel {
         let daf = Daf::parse(&bytes)?;
         let mut segments = Vec::with_capacity(daf.summaries.len());
         for summary in &daf.summaries {
+            if !summary.start_et.is_finite()
+                || !summary.end_et.is_finite()
+                || summary.start_et > summary.end_et
+            {
+                return Err(SpiceError::Corrupted {
+                    message: "invalid SPK descriptor coverage".into(),
+                });
+            }
             let (segment, start, end) = match segment_for_summary(&bytes, &daf, summary) {
                 Ok(seg) => {
                     let start = seg.start_tdb_seconds();
                     let end = seg.end_tdb_seconds();
-                    (Some(seg), start, end)
+                    if summary.start_et < start || summary.end_et > end {
+                        return Err(SpiceError::Corrupted {
+                            message: "SPK descriptor coverage exceeds record coverage".into(),
+                        });
+                    }
+                    (Some(seg), summary.start_et, summary.end_et)
                 }
                 Err(SpiceError::UnsupportedDataType { .. }) => {
                     // Index the segment but mark it as unevaluable.

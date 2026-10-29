@@ -216,3 +216,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 [[bench]]
 name = "sgp4"
 harness = false
+
+[[example]]
+name = "24_spice_lunar"
+required-features = ["spice"]

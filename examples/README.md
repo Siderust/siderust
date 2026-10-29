@@ -128,3 +128,10 @@ cargo run --features runtime-data --example 12_runtime_ephemeris
 cargo run --example 18_lisa_pod --features pod
 cargo run --example 20_mars_saturn_orientation
 ```
+
+## DE440 lunar geometry with binary orientation
+
+`cargo run --features spice --example 24_spice_lunar -- /path/to/kernels`
+loads a DE440 SPK/BPC/FK configuration and prints geometric Sun/Earth Alt/Az
+and slant range for an explicitly radial lunar site. See
+[the full kernel, frame, time and validation guide](../doc/spice_lunar.md).

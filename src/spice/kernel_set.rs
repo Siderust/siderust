@@ -26,6 +26,7 @@ use crate::formats::spice::{
 /// ```
 #[derive(Default)]
 pub struct KernelSet {
+    bpc: Vec<(String, Arc<crate::formats::spice::BinaryPck>)>,
     spk: Vec<(String, Arc<SpkKernel>)>,
     ck: Vec<(String, Arc<CkKernel>)>,
     lsk: Option<(String, Arc<LeapSecondKernel>)>,
@@ -44,6 +45,32 @@ impl KernelSet {
     /// Add an SPK kernel.
     pub fn add_spk(&mut self, alias: impl Into<String>, kernel: SpkKernel) {
         self.spk.push((alias.into(), Arc::new(kernel)));
+    }
+
+    /// Add a binary PCK kernel, with last-loaded priority.
+    pub fn add_bpc(&mut self, alias: impl Into<String>, kernel: crate::formats::spice::BinaryPck) {
+        self.bpc.push((alias.into(), Arc::new(kernel)));
+    }
+
+    /// Binary PCKs in load order, including provenance aliases.
+    pub fn binary_pcks(
+        &self,
+    ) -> impl DoubleEndedIterator<Item = (&str, &crate::formats::spice::BinaryPck)> {
+        self.bpc
+            .iter()
+            .map(|(alias, kernel)| (alias.as_str(), kernel.as_ref()))
+    }
+
+    /// Kernel aliases in load order within each kernel type (SPK, BPC, FK, text PCK, LSK).
+    pub fn provenance(&self) -> Vec<&str> {
+        self.spk
+            .iter()
+            .map(|(s, _)| s.as_str())
+            .chain(self.bpc.iter().map(|(s, _)| s.as_str()))
+            .chain(self.fk.iter().map(|(s, _)| s.as_str()))
+            .chain(self.pck_text.iter().map(|(s, _)| s.as_str()))
+            .chain(self.lsk.iter().map(|(s, _)| s.as_str()))
+            .collect()
     }
 
     /// Add a CK kernel.
@@ -123,14 +150,107 @@ impl KernelSet {
         center: i32,
         epoch_tdb_s: f64,
     ) -> Result<[f64; 6], SpiceError> {
-        for (_, kernel) in self.spk.iter().rev() {
-            match kernel.state(target, center, epoch_tdb_s) {
-                Ok(state) => return Ok(state),
-                Err(SpiceError::NoChain { .. } | SpiceError::OutOfCoverage { .. }) => continue,
-                Err(other) => return Err(other),
+        if !epoch_tdb_s.is_finite() {
+            return Err(SpiceError::Corrupted {
+                message: "SPK epoch must be finite TDB seconds".into(),
+            });
+        }
+        if target == center {
+            return Ok([0.0; 6]);
+        }
+        // Select one edge per target, respecting file and segment priority.
+        // Resolve to the first common ancestor before accumulating offsets:
+        // Earth/Moon therefore subtract their EMB offsets, not AU-scale states.
+        let select = |body| {
+            self.spk
+                .iter()
+                .rev()
+                .flat_map(|(_, k)| k.segments().iter().rev())
+                .find(|s| {
+                    s.target == body
+                        && epoch_tdb_s >= s.start_tdb_seconds
+                        && epoch_tdb_s <= s.end_tdb_seconds
+                })
+        };
+        let mut target_nodes = alloc::collections::BTreeMap::new();
+        let mut target_edges = Vec::new();
+        let mut node = target;
+        loop {
+            if target_nodes.insert(node, target_edges.len()).is_some() {
+                return Err(SpiceError::Corrupted {
+                    message: "SPK centre cycle".into(),
+                });
+            }
+            if node == center {
+                break;
+            }
+            let Some(edge) = select(node) else {
+                break;
+            };
+            target_edges.push(edge);
+            node = edge.center;
+        }
+        let target_leaf = node;
+        let mut center_edges = Vec::new();
+        let mut visited = alloc::collections::BTreeSet::new();
+        node = center;
+        while !target_nodes.contains_key(&node) {
+            if !visited.insert(node) {
+                return Err(SpiceError::Corrupted {
+                    message: "SPK centre cycle".into(),
+                });
+            }
+            let Some(edge) = select(node) else {
+                if let Some(s) = self
+                    .spk
+                    .iter()
+                    .rev()
+                    .flat_map(|(_, k)| k.segments().iter().rev())
+                    .find(|s| {
+                        (s.target == node || s.target == target_leaf)
+                            && (epoch_tdb_s < s.start_tdb_seconds
+                                || epoch_tdb_s > s.end_tdb_seconds)
+                    })
+                {
+                    return Err(SpiceError::OutOfCoverage {
+                        target,
+                        center,
+                        epoch_tdb_seconds: epoch_tdb_s,
+                        start_tdb_seconds: s.start_tdb_seconds,
+                        end_tdb_seconds: s.end_tdb_seconds,
+                    });
+                }
+                return Err(SpiceError::NoChain { target, center });
+            };
+            center_edges.push(edge);
+            node = edge.center;
+        }
+        let mut state = [0.0; 6];
+        for (edge, sign) in target_edges[..target_nodes[&node]]
+            .iter()
+            .map(|e| (*e, 1.0))
+            .chain(center_edges.iter().map(|e| (*e, -1.0)))
+        {
+            if edge.frame_id != 1 {
+                return Err(SpiceError::UnsupportedKernelQuery {
+                    message: alloc::format!(
+                        "SPK frame {} requires state rotation; only J2000 supported",
+                        edge.frame_id
+                    ),
+                });
+            }
+            let segment = edge
+                .segment
+                .as_ref()
+                .ok_or(SpiceError::UnsupportedDataType {
+                    data_type: edge.data_type,
+                })?;
+            let offset = segment.evaluate(epoch_tdb_s)?;
+            for i in 0..6 {
+                state[i] += sign * offset[i];
             }
         }
-        Err(SpiceError::NoChain { target, center })
+        Ok(state)
     }
 }
 

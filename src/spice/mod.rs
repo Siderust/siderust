@@ -11,9 +11,11 @@
 //!
 //! ## Technical scope
 //!
-//! V1 layers `formats::spice` parsers into a loadable kernel set with NAIF-like
-//! priority rules. It supports SPK state lookups plus selected FK, PCK text,
-//! LSK, SCLK, CK, and IK metadata use cases.
+//! Layers `formats::spice` parsers into a loadable kernel set with segment
+//! priority rules. Supports SPK states, Type 2 binary PCK orientation and
+//! fixed FK frame composition. [`LunarObserver`] combines these for explicit
+//! geometric lunar surface observations. Text PCK, LSK, SCLK, CK and IK
+//! metadata also remain available; this is not a full SPICE implementation.
 //!
 //! ## References
 //!
@@ -32,3 +34,6 @@ pub use context::SpiceContext;
 pub use error::SpiceContextError;
 pub use frame_registry::FrameRegistry;
 pub use kernel_set::KernelSet;
+
+mod lunar;
+pub use lunar::{LunarObservation, LunarObserver, LunarTarget};
