@@ -200,6 +200,11 @@ pub enum PlanetPoint {
 /// Errors from major-planet ephemeris APIs.
 #[derive(Debug)]
 pub enum PlanetEphemerisError {
+    /// A body outside the major-planet selector is unavailable (e.g. Pluto).
+    UnsupportedBody {
+        /// NAIF ID of the requested physical body center.
+        target_id: i32,
+    },
     /// The requested point is not provided by this ephemeris backend.
     UnsupportedPoint {
         /// Planet requested by the caller.
@@ -219,6 +224,7 @@ impl core::fmt::Display for PlanetEphemerisError {
                 "ephemeris backend does not provide {:?} {:?}; supply data for the requested physical center",
                 planet, point
             ),
+            Self::UnsupportedBody { target_id } => write!(f, "ephemeris backend does not provide body center {target_id}"),
             Self::Ephemeris(err) => err.fmt(f),
         }
     }
@@ -228,7 +234,7 @@ impl core::error::Error for PlanetEphemerisError {
     fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
         match self {
             Self::Ephemeris(err) => Some(err),
-            Self::UnsupportedPoint { .. } => None,
+            Self::UnsupportedPoint { .. } | Self::UnsupportedBody { .. } => None,
         }
     }
 }
@@ -269,15 +275,24 @@ pub trait Ephemeris {
         })
     }
 
-    /// Pluto barycentric position from this backend (canonical ecliptic, AU).
+    /// Fallible Pluto-center barycentric position (canonical ecliptic, AU).
     ///
-    /// The default panics because Pluto is an optional capability. A backend
-    /// must opt in explicitly; center transformations never substitute the
-    /// built-in catalogue orbit when another backend is selected.
-    fn pluto_barycentric(
+    /// The default returns an unsupported-body error; no catalogue substitution
+    /// occurs. Implement this capability to support plutocentric translations.
+    fn try_pluto_barycentric(
         _jd: JulianDate,
+    ) -> Result<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, PlanetEphemerisError>
+    {
+        Err(PlanetEphemerisError::UnsupportedBody { target_id: 999 })
+    }
+
+    /// Pluto-center barycentric position (canonical ecliptic, AU).
+    ///
+    /// Panics when unavailable. Use [`Self::try_pluto_barycentric`] to handle errors.
+    fn pluto_barycentric(
+        jd: JulianDate,
     ) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> {
-        panic!("selected ephemeris does not provide Pluto")
+        Self::try_pluto_barycentric(jd).expect("Pluto barycentric position unavailable")
     }
 
     /// Fallible Sun barycentric position in ecliptic coordinates (AU).

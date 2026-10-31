@@ -235,16 +235,16 @@ fn records_for(point: SunEarthLagrangePoint) -> &'static [f64] {
     }
 }
 
-pub(crate) fn fallback_or_solve<Eph: crate::ephemeris::Ephemeris>(
+pub(crate) fn try_fallback_or_solve<Eph: crate::ephemeris::Ephemeris>(
     point: SunEarthLagrangePoint,
     jd: JulianDate,
-) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> {
-    try_sun_earth_lagrange_barycentric(point, jd).unwrap_or_else(|_| {
-        solver::solve_sun_earth_lagrange::<Eph>(point, jd)
-            .expect("Sun-Earth Lagrange solver failed")
+) -> Result<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, solver::SolverError> {
+    match try_sun_earth_lagrange_barycentric(point, jd) {
+        Ok(position) => Ok(position),
+        Err(_) => Ok(solver::solve_sun_earth_lagrange::<Eph>(point, jd)?
             .position
-            .to_unit::<AstronomicalUnit>()
-    })
+            .to_unit::<AstronomicalUnit>()),
+    }
 }
 
 #[cfg(test)]

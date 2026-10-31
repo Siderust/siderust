@@ -39,14 +39,15 @@ macro_rules! impl_planet_center_shift {
             (): FrameRotationProvider<EclipticMeanJ2000, F>,
         {
             #[inline]
-            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+            fn try_shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
                 jd: JulianDate,
                 ctx: &AstroContext<Eph, Eop>,
-            ) -> AuShift {
+            ) -> Result<AuShift, CenterShiftError> {
                 let position =
-                    Eph::try_planet_barycentric(crate::ephemeris::MajorPlanet::$planet, jd)
-                        .expect("selected ephemeris cannot supply the requested planet center");
-                rotate_shift_from_ecliptic::<_, F, Eph, Eop, Nut>(position, jd, ctx)
+                    Eph::try_planet_barycentric(crate::ephemeris::MajorPlanet::$planet, jd)?;
+                Ok(rotate_shift_from_ecliptic::<_, F, Eph, Eop, Nut>(
+                    position, jd, ctx,
+                ))
             }
         }
 
@@ -76,12 +77,14 @@ where
     (): FrameRotationProvider<EclipticMeanJ2000, F>,
 {
     #[inline]
-    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+    fn try_shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop>,
-    ) -> AuShift {
-        let bary_pos = Eph::pluto_barycentric(jd);
-        rotate_shift_from_ecliptic::<_, F, Eph, Eop, Nut>(bary_pos, jd, ctx)
+    ) -> Result<AuShift, CenterShiftError> {
+        let bary_pos = Eph::try_pluto_barycentric(jd)?;
+        Ok(rotate_shift_from_ecliptic::<_, F, Eph, Eop, Nut>(
+            bary_pos, jd, ctx,
+        ))
     }
 }
 
@@ -102,12 +105,12 @@ where
     (): FrameRotationProvider<EclipticMeanJ2000, F>,
 {
     #[inline]
-    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+    fn try_shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop>,
-    ) -> AuShift {
-        let moon_geo_au = Eph::moon_geocentric(jd).to_unit::<crate::qtty::AstronomicalUnit>();
-        let earth_bary = Eph::earth_barycentric(jd);
+    ) -> Result<AuShift, CenterShiftError> {
+        let moon_geo_au = Eph::try_moon_geocentric(jd)?.to_unit::<crate::qtty::AstronomicalUnit>();
+        let earth_bary = Eph::try_earth_barycentric(jd)?;
         // Combine geocentric Moon (now in AU) with Earth's barycentric offset
         // using AU quantity arithmetic, no raw f64 or magic constants needed.
         let seleno_bary =
@@ -117,7 +120,11 @@ where
                 moon_geo_au.z() + earth_bary.z(),
             );
 
-        rotate_shift_from_ecliptic::<_, F, Eph, Eop, Nut>(seleno_bary, jd, ctx)
+        Ok(rotate_shift_from_ecliptic::<_, F, Eph, Eop, Nut>(
+            seleno_bary,
+            jd,
+            ctx,
+        ))
     }
 }
 
@@ -131,11 +138,11 @@ where
     (): FrameRotationProvider<EclipticMeanJ2000, F>,
 {
     #[inline]
-    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+    fn try_shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop>,
-    ) -> AuShift {
-        let moon_geo_au = Eph::moon_geocentric(jd).to_unit::<crate::qtty::AstronomicalUnit>();
+    ) -> Result<AuShift, CenterShiftError> {
+        let moon_geo_au = Eph::try_moon_geocentric(jd)?.to_unit::<crate::qtty::AstronomicalUnit>();
         // The Geo→Seleno shift is the negated Moon geocentric position:
         // to move from Earth-centred to Moon-centred, subtract moon's location.
         let geo_to_seleno =
@@ -145,7 +152,11 @@ where
                 -moon_geo_au.z(),
             );
 
-        rotate_shift_from_ecliptic::<_, F, Eph, Eop, Nut>(geo_to_seleno, jd, ctx)
+        Ok(rotate_shift_from_ecliptic::<_, F, Eph, Eop, Nut>(
+            geo_to_seleno,
+            jd,
+            ctx,
+        ))
     }
 }
 
@@ -158,10 +169,10 @@ where
     (): FrameRotationProvider<EclipticMeanJ2000, F>,
 {
     #[inline]
-    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+    fn try_shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop>,
-    ) -> AuShift {
-        inverse_shift::<Selenocentric, Geocentric, F, Eph, Eop, Nut>(jd, ctx)
+    ) -> Result<AuShift, CenterShiftError> {
+        try_inverse_shift::<Selenocentric, Geocentric, F, Eph, Eop, Nut>(jd, ctx)
     }
 }

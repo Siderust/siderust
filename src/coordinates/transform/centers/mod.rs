@@ -45,7 +45,7 @@ use crate::coordinates::cartesian::Position;
 use crate::coordinates::centers::*;
 use crate::coordinates::frames::ReferenceFrame;
 use crate::coordinates::transform::context::{AstroContext, TransformContext};
-use crate::coordinates::transform::providers::{center_shift_as, CenterShiftProvider};
+use crate::coordinates::transform::providers::{CenterShiftError, CenterShiftProvider};
 use crate::ephemeris::Ephemeris;
 use crate::qtty::LengthUnit;
 use crate::time::JulianDate;
@@ -125,6 +125,8 @@ pub trait TransformCenter<C2: ReferenceCenter, F: ReferenceFrame, U: LengthUnit>
     /// Transform to the target center with a custom transform context.
     ///
     /// Use this to override the ephemeris, EOP, or compile-time nutation model.
+    /// Standard-center transformations panic on missing capabilities or data.
+    /// Use [`try_to_center_with`] for fallible standard-center translations.
     fn to_center_with<Ctx>(
         &self,
         params: C2::Params,
@@ -146,6 +148,52 @@ pub trait TransformCenter<C2: ReferenceCenter, F: ReferenceFrame, U: LengthUnit>
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop>,
     ) -> Position<C2, F, U>;
+}
+
+/// Translate a position between centers with `Params = ()`, using the selected
+/// context and returning missing-capability or evaluation errors without fallback.
+///
+/// Frame and units are preserved. This uses the same provider path as
+/// [`TransformCenter::to_center_with`], whose infallible form panics on error.
+///
+/// ```rust
+/// use siderust::coordinates::{
+///     cartesian::Position, centers::{Barycentric, Marscentric},
+///     frames::EclipticMeanJ2000,
+///     transform::{try_to_center_with, AstroContext, CenterShiftError},
+/// };
+/// use siderust::qtty::AstronomicalUnit;
+/// # fn main() -> Result<(), CenterShiftError> {
+/// let context: AstroContext = AstroContext::default();
+/// let input = Position::<Barycentric, EclipticMeanJ2000, AstronomicalUnit>::new(1., 0., 0.);
+/// let mars: Position<Marscentric, EclipticMeanJ2000, AstronomicalUnit> =
+///     try_to_center_with(&input, siderust::J2000, &context)?;
+/// # Ok(())
+/// # }
+/// ```
+pub fn try_to_center_with<C1, C2, F, U, Ctx>(
+    position: &Position<C1, F, U>,
+    jd: JulianDate,
+    ctx: &Ctx,
+) -> Result<Position<C2, F, U>, CenterShiftError>
+where
+    C1: ReferenceCenter<Params = ()>,
+    C2: ReferenceCenter<Params = ()>,
+    F: ReferenceFrame,
+    U: LengthUnit,
+    Ctx: TransformContext,
+    Ctx::Eph: Ephemeris,
+    (): CenterShiftProvider<C1, C2, F>,
+{
+    let shift = <() as CenterShiftProvider<C1, C2, F>>::try_shift::<Ctx::Eph, Ctx::Eop, Ctx::Nut>(
+        jd,
+        ctx.astro_context(),
+    )?;
+    Ok(Position::new(
+        position.x() + shift[0].to::<U>(),
+        position.y() + shift[1].to::<U>(),
+        position.z() + shift[2].to::<U>(),
+    ))
 }
 
 // =============================================================================
@@ -173,12 +221,8 @@ where
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop>,
     ) -> Position<C2, F, U> {
-        let shift = center_shift_as::<C1, C2, F, Nut, Eph, Eop>(jd, ctx);
-        Position::new(
-            self.x() + shift[0].to::<U>(),
-            self.y() + shift[1].to::<U>(),
-            self.z() + shift[2].to::<U>(),
-        )
+        try_to_center_with(self, jd, &ctx.with_model::<Nut>())
+            .expect("center translation unavailable")
     }
 }
 

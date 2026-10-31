@@ -11,7 +11,7 @@
 //! # Data source
 //!
 //! The Sun and Earth barycentric positions come from the
-//! [`Ephemeris`] trait (VSOP87 by default, DE441 optionally).
+//! selected [`Ephemeris`] trait implementation (VSOP87 by default).
 //! Both return `Position<Barycentric, EclipticMeanJ2000, AU>`.
 
 use super::*;
@@ -30,11 +30,15 @@ where
     (): FrameRotationProvider<EclipticMeanJ2000, F>,
 {
     #[inline]
-    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+    fn try_shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop>,
-    ) -> AuShift {
-        rotate_shift_from_ecliptic::<_, F, Eph, Eop, Nut>(Eph::sun_barycentric(jd), jd, ctx)
+    ) -> Result<AuShift, CenterShiftError> {
+        Ok(rotate_shift_from_ecliptic::<_, F, Eph, Eop, Nut>(
+            Eph::try_sun_barycentric(jd)?,
+            jd,
+            ctx,
+        ))
     }
 }
 
@@ -44,11 +48,11 @@ where
     (): FrameRotationProvider<EclipticMeanJ2000, F>,
 {
     #[inline]
-    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+    fn try_shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop>,
-    ) -> AuShift {
-        inverse_shift::<Barycentric, Heliocentric, F, Eph, Eop, Nut>(jd, ctx)
+    ) -> Result<AuShift, CenterShiftError> {
+        try_inverse_shift::<Barycentric, Heliocentric, F, Eph, Eop, Nut>(jd, ctx)
     }
 }
 
@@ -66,11 +70,15 @@ where
     (): FrameRotationProvider<EclipticMeanJ2000, F>,
 {
     #[inline]
-    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+    fn try_shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop>,
-    ) -> AuShift {
-        rotate_shift_from_ecliptic::<_, F, Eph, Eop, Nut>(Eph::earth_barycentric(jd), jd, ctx)
+    ) -> Result<AuShift, CenterShiftError> {
+        Ok(rotate_shift_from_ecliptic::<_, F, Eph, Eop, Nut>(
+            Eph::try_earth_barycentric(jd)?,
+            jd,
+            ctx,
+        ))
     }
 }
 
@@ -80,11 +88,11 @@ where
     (): FrameRotationProvider<EclipticMeanJ2000, F>,
 {
     #[inline]
-    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+    fn try_shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop>,
-    ) -> AuShift {
-        inverse_shift::<Barycentric, Geocentric, F, Eph, Eop, Nut>(jd, ctx)
+    ) -> Result<AuShift, CenterShiftError> {
+        try_inverse_shift::<Barycentric, Geocentric, F, Eph, Eop, Nut>(jd, ctx)
     }
 }
 
@@ -98,11 +106,11 @@ where
     (): FrameRotationProvider<EclipticMeanJ2000, F>,
 {
     #[inline]
-    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+    fn try_shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop>,
-    ) -> AuShift {
-        compose_shift::<Heliocentric, Barycentric, Geocentric, F, Eph, Eop, Nut>(jd, ctx)
+    ) -> Result<AuShift, CenterShiftError> {
+        try_compose_shift::<Heliocentric, Barycentric, Geocentric, F, Eph, Eop, Nut>(jd, ctx)
     }
 }
 
@@ -112,10 +120,10 @@ where
     (): FrameRotationProvider<EclipticMeanJ2000, F>,
 {
     #[inline]
-    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+    fn try_shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop>,
-    ) -> AuShift {
-        inverse_shift::<Geocentric, Heliocentric, F, Eph, Eop, Nut>(jd, ctx)
+    ) -> Result<AuShift, CenterShiftError> {
+        try_inverse_shift::<Geocentric, Heliocentric, F, Eph, Eop, Nut>(jd, ctx)
     }
 }

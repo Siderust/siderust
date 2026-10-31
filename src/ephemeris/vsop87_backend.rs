@@ -47,17 +47,20 @@ impl Ephemeris for Vsop87Ephemeris {
         })
     }
 
-    fn pluto_barycentric(
+    fn try_pluto_barycentric(
         jd: JulianDate,
-    ) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> {
+    ) -> Result<
+        Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>,
+        super::PlanetEphemerisError,
+    > {
         // Preserve the default backend's existing coarse catalogue model.
         let helio = crate::bodies::solar_system::PLUTO.orbit.kepler_position(jd);
-        let sun = <Self as Ephemeris>::sun_barycentric(jd);
-        Position::new(
+        let sun = <Self as Ephemeris>::try_sun_barycentric(jd)?;
+        Ok(Position::new(
             helio.x() + sun.x(),
             helio.y() + sun.y(),
             helio.z() + sun.z(),
-        )
+        ))
     }
 
     #[inline]
