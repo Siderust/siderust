@@ -41,7 +41,7 @@ This crate is meant to be built from a workspace checkout where the Rust sources
 
 - `siderust` (Rust implementation) at `..`
 - `affn`, `qtty`, `tempoch` in the sibling workspace crates
-- `tempoch-ffi` 0.11.1 for the shared C time ABI
+- `tempoch-ffi` 0.11.2 for the shared C time ABI
 
 `tempoch-ffi` exposes JD/MJD carriers as raw `double`s, so `siderust-ffi`
 reuses that scalar ABI directly instead of duplicating wrapper structs.
