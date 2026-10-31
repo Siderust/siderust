@@ -135,7 +135,7 @@
 //! `no_std` + `alloc` builds:
 //!
 //! ```toml
-//! siderust = { version = "0.12", default-features = false }
+//! siderust = { version = "0.18", default-features = false }
 //! ```
 //!
 //! Filesystem, OS I/O, and `Utc::now` require `std`. Features such as
