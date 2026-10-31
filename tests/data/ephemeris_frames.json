@@ -4,7 +4,18 @@
     "elp": "https://ftp.imcce.fr/pub/ephem/moon/elp82b/elp82b.ps",
     "erfa": "2.0.1.5",
     "cspice": "CSPICE_N0067",
-    "kernel": "de440s.bsp"
+    "kernel": "de440s.bsp",
+    "canonical_axes": "ERFA ecm06(2451545.0,0.0); column vectors; IAU 2006 J2000 ecliptic/equinox",
+    "fk5_orientation": "ERFA fk5hip r5h at J2000; fixed orientation only, no catalogue spin",
+    "erfa_sources": [
+      "https://github.com/liberfa/erfa/blob/v2.0.1/src/ecm06.c",
+      "https://github.com/liberfa/erfa/blob/v2.0.1/src/fk5hip.c"
+    ],
+    "vsop_tie": "https://ftp.imcce.fr/pub/ephem/planets/vsop87/vsop87.doc (REFERENCE SYSTEM)",
+    "vsop_convention": "TDB JD; C*H*V applied to original native states; position AU, velocity AU/TDB-day; per-axis tolerance 1e-10",
+    "vsop_endpoints": "Direct scalar summation of the original VSOP87A/E .mer/.ear/.mar/.nep coefficients from the IMCCE vsop87 directory at nominal span endpoints, followed by independent ERFA rotation. Per-axis scalar/SIMD tolerance 1e-9 AU or AU/day.",
+    "elp_convention": "ELP82B notice section 9 Table H, PREC=0, TDB JD; section 8 Laskar output and ELP-specific FK5 tie, then H and C. Position km; per-axis tolerance 1e-4 km.",
+    "jpl_convention": "CSPICE spkez(target,ET,J2000,NONE,center), then ERFA ecm06. TT JD converted using NAIF DELTET (K=.001657, EB=.01671, M0=6.239996, M1=1.99096871e-7). Position km; velocity km/day; tolerances 1e-6 km and 1e-7 km/day. All targets/centers match the Rust API; no system barycenter substitution."
   },
   "vsop": [
     {
@@ -661,11 +672,6 @@
         476746.1754199072,
         952104.5162600736,
         -15453.62326524348
-      ],
-      "velocity": [
-        -1099.46981667828,
-        566.5908196954285,
-        26.151267629710283
       ]
     },
     {
@@ -691,11 +697,6 @@
         -28170398.436136644,
         144372263.52385512,
         32167.853048525303
-      ],
-      "velocity": [
-        -2569348.8703942387,
-        -502311.89516848355,
-        -268.1895839141271
       ]
     },
     {
@@ -706,11 +707,6 @@
         -21395.26101179031,
         -369862.61372958444,
         2899.8790900558542
-      ],
-      "velocity": [
-        91613.09414401672,
-        -742.5849592054338,
-        8349.499483058957
       ]
     },
     {
@@ -721,11 +717,6 @@
         -1067706.7884715488,
         -418275.3122067261,
         30861.854894092725
-      ],
-      "velocity": [
-        804.6062494615342,
-        -1108.058864290794,
-        -14.113773209645036
       ]
     },
     {
@@ -751,11 +742,6 @@
         -26499038.435425226,
         144697295.92130423,
         -583.7647521891427
-      ],
-      "velocity": [
-        -2574224.0545442696,
-        -472547.1674438431,
-        15.888263117951663
       ]
     },
     {
@@ -766,11 +752,6 @@
         -291608.37193201977,
         -274979.7568954156,
         36271.17949796656
-      ],
-      "velocity": [
-        55601.11386367332,
-        -63157.01421710878,
-        -994.1749859308762
       ]
     },
     {
@@ -781,11 +762,6 @@
         -159341.28613510664,
         -757202.0058900075,
         13580.40297513985
-      ],
-      "velocity": [
-        891.0063754250089,
-        411.92017007001425,
-        -19.382449251975707
       ]
     },
     {
@@ -811,11 +787,6 @@
         118309815.28742386,
         89818488.38740072,
         -6503.748856397117
-      ],
-      "velocity": [
-        -1597021.4312563392,
-        2040402.92192233,
-        -48.654016476795135
       ]
     },
     {
@@ -826,11 +797,6 @@
         -81375.25468653243,
         357437.44546099345,
         22390.23330203291
-      ],
-      "velocity": [
-        -90297.00178240577,
-        -17793.118349518383,
-        -5704.121451541216
       ]
     },
     {
@@ -841,11 +807,6 @@
         1257596.4359238513,
         154941.0767752159,
         -37938.5807842696
-      ],
-      "velocity": [
-        -204.50813909927888,
-        1232.8772420831144,
-        -3.001824032854795
       ]
     },
     {
@@ -871,11 +832,6 @@
         -24837812.779363737,
         144995270.31913653,
         -32491.281060924528
-      ],
-      "velocity": [
-        -2578235.814264765,
-        -443369.57791006163,
-        256.4131560575374
       ]
     },
     {
@@ -886,11 +842,6 @@
         -354984.4102882601,
         108431.71546872202,
         3088.0236961191845
-      ],
-      "velocity": [
-        -25758.859279577384,
-        -87207.15069215812,
-        -8012.427019904141
       ]
     }
   ]

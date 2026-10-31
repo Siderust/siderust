@@ -6,25 +6,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.18.0]
+
+Release preparation; no release date has been assigned.
+
+### Added
+
+- `CenterShiftProvider::try_shift`, `CenterShiftError` and
+  `transform::try_to_center_with` for standard-center positions. Missing
+  planetary capabilities and evaluation errors propagate through direct,
+  reverse and composed shifts without substituting another model.
+- `Ephemeris::try_pluto_barycentric` and checked legacy runtime segment
+  construction; unsupported Pluto returns an explicit body-center error.
+
 ### Fixed
 
-- Normalize public VSOP87A/E positions and velocities and post-Laskar ELP82B
-  positions to the canonical IAU 2006 J2000 ecliptic using their separate
-  published FK5 ties. ELP now evaluates its documented TDB time argument.
-- Validate ICRF-only SPK frame IDs for byte and parsed-segment loaders;
-  add fallible parsed constructors and share the J2000 bias matrix.
-- Planetary center shifts use the selected ephemeris's optional
-  `try_planet_barycentric` capability instead of silently using VSOP87E;
-  Pluto likewise requires the backend's explicit `pluto_barycentric` capability.
+- Normalize public VSOP87A/E positions and velocities, and post-Laskar ELP82B
+  positions, to the canonical IAU 2006 J2000 ecliptic using their separate
+  published FK5 ties. ELP evaluates its documented TDB time argument.
+- Planetary center translations consult the selected backend, including Pluto.
+  Supported default-model calculations retain their existing model choices.
+- ICRF-only SPK loaders reject mixed frames and unsupported types consistently
+  for raw and parsed input. A selected higher-priority segment with invalid
+  coefficients or an unavailable center chain no longer exposes stale data.
+- Public J2000 frame-bias extensions share the transform pipeline's IAU 2006 matrix.
 
 ### Changed
 
-- **Breaking:** `MoonIauMeanEarth` and `MoonPrincipalAxes` are distinct frames.
-  Analytical `IAU_MOON` rotations use `MoonIauMeanEarth`; migrate code that
-  relied on the old alias. Principal axes require a data-backed orientation.
-- Analytical ephemeris numerical outputs change while signatures remain
-  source-compatible. See [frame conventions and validation](doc/ephemeris_frames.md).
+- Analytical ephemeris numbers change while coordinate signatures remain
+  backend-independent. FFI layouts remain unchanged; the ABI version reports 1800.
+- Consolidate the physical conventions in [Frames and centers](doc/frames_and_centers.md).
+  Permanent Cargo reference tests/fixtures remain; development-only reports,
+  comparison utilities and datasets are removed.
 
+### Breaking changes and migration
+
+- `MoonIauMeanEarth` and `MoonPrincipalAxes` are distinct types. Migrate
+  analytical `IAU_MOON` coordinates/transforms to `MoonIauMeanEarth`. Actual
+  principal-axes realizations require data-backed SPICE orientation.
+- Custom `CenterShiftProvider` implementations must implement `try_shift`
+  returning `Result`. The existing `shift` and infallible coordinate transforms
+  delegate to that implementation and panic on errors; use `try_to_center_with`
+  or `try_shift` when missing capabilities or coverage must be handled.
+- Custom Pluto backends implement `try_pluto_barycentric`; overriding only the
+  infallible wrapper no longer supplies a center transformation. Planetary
+  capability failures never implicitly select VSOP87 or catalogue data.
+- ICRF-only SPK loaders now reject any unsupported frame/type, including unrelated
+  segments; use frame-aware SPICE operations for kernels outside that contract.
+  Runtime DE fixed-body chains reject alternate centers instead of ignoring them.
 
 ## [0.17.0] - 2026-10-29
 

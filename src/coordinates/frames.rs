@@ -21,7 +21,7 @@
 //!   Its ICRS mapping is SOFA `ecm06(2451545.0, 0.0)`: J2000 bias followed
 //!   by obliquity 84381.406 arcseconds. This differs from native analytical
 //!   dynamical ecliptics and from SPICE `ECLIPJ2000`. Ephemeris outputs are
-//!   normalized at their source; see `doc/ephemeris_frames.md`.
+//!   normalized at their source; see `doc/frames_and_centers.md`.
 //! - [`EclipticOfDate`]: Mean ecliptic coordinate system of date.
 //! - [`EclipticMeanOfDate`]: Alias for [`EclipticOfDate`] (naming parity).
 //! - [`EclipticTrueOfDate`]: True ecliptic coordinate system of date.

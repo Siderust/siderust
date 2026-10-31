@@ -19,7 +19,7 @@
 //!
 //! - [`AstroContext<Eph, Eop>`] — the primary runtime provider container.
 //!   - `Eph` selects the ephemeris backend (default: [`DefaultEphemeris`],
-//!     VSOP87/ELP2000; DE440/DE441 selectable via Cargo features).
+//!     VSOP87/ELP2000). Runtime-loaded DE data use [`DynAstroContext`].
 //!   - `Eop` selects the EOP source (default: [`DefaultEop`] = [`IersEop`],
 //!     backed by `tempoch`'s runtime-loaded IERS `finals2000A.all` bundle; substitute
 //!     [`NullEop`](crate::astro::eop::NullEop) for zero overhead).

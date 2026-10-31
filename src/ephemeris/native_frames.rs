@@ -5,7 +5,7 @@
 //!
 //! The two native realizations have separate published FK5 ties. These are
 //! fixed axes: the FK5 catalogue spin is not a rotation of these frames.
-//! See `doc/ephemeris_frames.md` for provenance and precision limitations.
+//! See `doc/frames_and_centers.md` for provenance and precision limitations.
 
 use crate::coordinates::cartesian::{Position, Velocity};
 use crate::coordinates::frames::EclipticMeanJ2000;
@@ -88,7 +88,7 @@ mod tests {
 
     #[test]
     fn independent_erfa_basis_vectors_and_handedness() {
-        // scripts/validate_ephemeris_frames.py, ERFA ecm06 @ fk5hip @ IMCCE.
+        // Independent ERFA 2.0.1: ecm06(J2000) @ fk5hip r5h @ IMCCE.
         let cases = [
             (
                 vsop_to_canonical(),
