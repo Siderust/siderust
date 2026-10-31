@@ -74,7 +74,7 @@ pub mod centers;
 pub mod context;
 pub mod ecliptic_of_date;
 pub mod ext;
-mod frames;
+pub(crate) mod frames;
 pub mod horizontal;
 pub mod providers;
 pub mod surface_horizontal;
@@ -82,7 +82,8 @@ mod to_cartesian;
 mod to_spherical;
 
 pub use centers::{
-    to_topocentric_with, to_topocentric_with_ctx, IntoTransformArgs, TransformCenter,
+    to_topocentric_with, to_topocentric_with_ctx, try_to_center_with, IntoTransformArgs,
+    TransformCenter,
 };
 pub use context::{AstroContext, ModelContext, TransformContext};
 pub use ecliptic_of_date::{FromEclipticTrueOfDate, ToEclipticTrueOfDate};
@@ -94,7 +95,7 @@ pub use horizontal::{
 };
 pub use providers::{
     center_shift, center_shift_as, center_shift_with, frame_rotation, frame_rotation_as,
-    frame_rotation_with, CenterShiftProvider, FrameRotationProvider,
+    frame_rotation_with, CenterShiftError, CenterShiftProvider, FrameRotationProvider,
 };
 pub use surface_horizontal::{
     direction_to_horizontal, horizontal_observation_to_direction,

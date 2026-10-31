@@ -8,6 +8,8 @@ If you are looking for benchmarking/profiling write-ups, see `benches/reports/RE
 
 ## Documents
 
+- [Frames and centers](frames_and_centers.md): authoritative physical frame conventions, backend normalization and center-shift contracts.
+
 - `doc/architecture_decisions.md`: key architectural decisions (what/why/impact).
 - `doc/promises.md`: compatibility/behavior promises (what we guarantee).
 - `doc/datasets.md`: how embedded datasets and optional JPL backends work.

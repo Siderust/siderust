@@ -408,7 +408,7 @@ fn all_body_fixed_roundtrips() {
     test_roundtrip!(planetary::MercuryFixed);
     test_roundtrip!(planetary::VenusFixed);
     test_roundtrip!(planetary::MarsFixed);
-    test_roundtrip!(planetary::MoonPrincipalAxes);
+    test_roundtrip!(planetary::MoonIauMeanEarth);
     test_roundtrip!(planetary::JupiterSystemIII);
     test_roundtrip!(planetary::SaturnFixed);
     test_roundtrip!(planetary::UranusFixed);
@@ -653,7 +653,7 @@ fn can_construct_marsfixed_position() {
 
 #[test]
 fn can_construct_moon_principal_axes_position() {
-    let pos = cartesian::position::MoonPrincipalAxes::<AstronomicalUnit>::new(
+    let pos = cartesian::position::MoonIauMeanEarth::<AstronomicalUnit>::new(
         0.001 * AU,
         0.002 * AU,
         0.0005 * AU,

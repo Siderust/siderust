@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Single source of truth for **fixed J2000 rotations**.
+//! Single source of truth for **fixed IAU 2006 J2000 rotations**.
 //!
 //! ## Scientific scope
 //!
 //! The J2000.0 epoch defines two interrelated fixed rotations that appear
 //! throughout astrometric software:
 //!
-//! 1. **Frame bias** (`rb`): a ~80 µas rotation from the ICRS to the J2000.0
+//! 1. **Frame bias** (`rb`): a ~23 mas rotation from the ICRS to the J2000.0
 //!    mean equator/equinox. It arises because the ICRS pole and equinox do not
 //!    coincide exactly with the classical J2000.0 definitions.
 //! 2. **Mean obliquity** (ε₀ = 84 381.406″): the tilt between Earth's mean

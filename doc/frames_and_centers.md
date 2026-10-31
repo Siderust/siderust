@@ -38,10 +38,39 @@ All center-shift transformations route through the **Barycentric** hub:
 Planetocentric → Barycentric → target center
 ```
 
-For planets (Mercury–Pluto), barycentric positions are computed via Keplerian
-orbit propagation (from `solar_system.rs`) plus Sun's barycentric offset.
-For the Moon (Selenocentric), the position comes from the ephemeris
-`moon_geocentric()` combined with Earth's barycentric position.
+Mercury–Neptune translations request the selected `Ephemeris` backend's
+`try_planet_barycentric` capability. The default VSOP87 backend supplies
+normalized VSOP87E positions. Pluto requests `try_pluto_barycentric`; the
+default backend retains its coarse catalogue Keplerian orbit plus its Sun.
+Other backends must opt in explicitly. Unsupported capabilities never select
+VSOP87 or catalogue data implicitly. Selenocentric translations use the same
+backend's `try_moon_geocentric` plus `try_earth_barycentric`.
+
+`CenterShiftProvider::try_shift` returns `CenterShiftError`, preserving the
+planetary-capability, ephemeris-evaluation or optional Lagrange-solver cause.
+Reverse and composed shifts propagate the same errors using one provider path.
+For positions with `Params = ()`, use the fallible coordinate entry point:
+
+```rust
+use siderust::coordinates::{cartesian::Position, centers::{Barycentric, Marscentric},
+    frames::EclipticMeanJ2000, transform::{AstroContext, try_to_center_with}};
+use siderust::qtty::AstronomicalUnit;
+let context: AstroContext = AstroContext::default();
+let input = Position::<Barycentric, EclipticMeanJ2000, AstronomicalUnit>::new(1., 0., 0.);
+let result: Result<Position<Marscentric, EclipticMeanJ2000, AstronomicalUnit>, _> =
+    try_to_center_with(&input, siderust::J2000, &context);
+```
+
+`shift`, `center_shift*`, `TransformCenter::to_center*` and combined `to*`
+entry points remain infallible conveniences and panic when a required shift
+is unavailable. Use `try_shift` or `try_to_center_with` when capability/coverage
+must be checked. Custom `CenterShiftProvider` implementations implement
+`try_shift` in 0.18; the default `shift` delegates to it. Custom Pluto backends
+implement `try_pluto_barycentric`, not only the infallible wrapper.
+`PlanetState<Body>` retains its heliocentric capability contract; implementors
+may compose that state with their own Sun to supply a planetary-center shift.
+`DynEphemeris`/`RuntimeEphemeris` retain their object-safe Sun/Earth/Moon API;
+this does not add a runtime planetary-center transformation engine.
 
 ---
 
@@ -115,16 +144,17 @@ Earth-fixed frames.
 ### 3.1 ICRS / ICRF
 
 ```rust
-pub struct ICRS;  // Spherical  (α, δ)
-pub struct ICRF;  // Cartesian unit vector
+pub struct ICRS;
+pub struct ICRF;
 ```
 
 The **International Celestial Reference System** is the primary inertial frame.
 Axes are fixed by extragalactic radio sources (quasars).  It is realised by
 the ICRF catalogue.
 
-**Note:** `ICRS` and `ICRF` differ only in coordinate style (spherical vs.
-Cartesian direction); they share the same axes.
+ICRS is the system; ICRF is its observational realization. Both markers
+support spherical and Cartesian coordinates. Siderust treats their axes as
+identical to the accuracy of the source realization.
 
 ### 3.2 GCRS, Geocentric Celestial Reference System
 
@@ -132,11 +162,10 @@ Cartesian direction); they share the same axes.
 pub struct GCRS;
 ```
 
-**Approximation in siderust:** `GCRS` currently uses `frames::ICRS` axes
-under the hood.  The true GCRS is rotated from ICRS by < 1 mas (the
-frame-bias matrix **B**), which is below the accuracy floor of most
-calculations.  If sub-mas accuracy is required, apply the frame-bias
-explicitly.
+For directions, Siderust treats GCRS axes as aligned with ICRS. This identity
+is an orientation approximation, not a complete relativistic BCRS/GCRS
+coordinate transformation. The IAU J2000 frame bias belongs between ICRS/GCRS
+axes and the dynamical J2000 mean equator; do not apply it between GCRS and ICRS.
 
 ### 3.3 EquatorialMeanJ2000 / EME2000
 
@@ -145,12 +174,12 @@ pub struct EquatorialMeanJ2000;
 pub struct EME2000;
 ```
 
-Mean equatorial frame referred to the standard epoch J2000.0
-(JD 2 451 545.0 TT).  Axes are defined by the mean ecliptic and equinox of
-J2000, using the IAU 1976/1980 precession-nutation constants.
-
-This is the **working frame** for most internal transforms in siderust
-because precession-only rotations are cheap and widely tabulated.
+IAU 2006 mean equator and equinox at J2000.0 (JD 2451545.0 TT).
+The ICRS-to-frame mapping is SOFA/ERFA `bp06(2451545.0, 0.0)`'s fixed bias
+matrix `rb` (about 23 mas). The public frame-bias extensions and transform
+providers share this matrix. It is distinct from the empirical orientation of
+the FK5 star catalogue returned by `fk5hip`; catalogue spin is not applied to
+fixed J2000 axes.
 
 `EME2000` is provided as an explicit CCSDS-facing synonym of the same axes.
 Its transform to/from `EquatorialMeanJ2000` is the identity, but keeping the
@@ -211,9 +240,96 @@ Galactic centre position angle (l₀ = 32.93192°), per Murray (1989).
 
 | Type | Description |
 |---|---|
-| `EclipticMeanJ2000` | Mean ecliptic and equinox of J2000 |
+| `EclipticMeanJ2000` | IAU 2006 mean ecliptic/equinox at J2000 (`ecm06`) |
 | `EclipticMeanOfDate` | Mean ecliptic and equinox of observation epoch |
 | `EclipticTrueOfDate` | True ecliptic (adds nutation in obliquity and longitude) |
+
+#### Canonical ecliptic and ephemeris boundaries
+
+`EclipticMeanJ2000` has one backend-independent meaning: the IAU 2006 mean
+ecliptic and equinox at J2000. For column vectors its ICRS mapping is
+`C = Rx(-84381.406 arcsec) * rb`, exactly the convention of SOFA/ERFA
+`ecm06(2451545.0, 0.0)`. It differs from SPICE `ECLIPJ2000` and from the
+native dynamical ecliptics of the analytical theories.
+
+| Source | Native axes | Normalization before public coordinate construction |
+|---|---|---|
+| VSOP87A/E | Inertial dynamical ecliptic/equinox J2000 | IMCCE published native→FK5 matrix `V`, fixed J2000 FK5→ICRS tie `H`, then `C` |
+| ELP2000-82B | Moving inertial mean ecliptic and departure point | Existing Laskar rotation to its fixed native J2000 triad, ELP-specific native→FK5 matrix `L`, then `H` and `C` |
+| Modern ICRF-realized DE kernels (e.g. DE440/441) | ICRF, labeled NAIF `J2000` (ID 1) | Existing `C`, after physical target/center-chain arithmetic |
+
+`V` comes from IMCCE `vsop87.doc`, REFERENCE SYSTEM. `L` comes independently
+from the ELP82B notice §8 p.12: obliquity 84381.40883 arcsec and equinox arc
+-0.09845 arcsec. These native realizations are not assumed identical. The
+Laskar step is retained exactly; it is not replaced by ordinary equinox-of-date
+precession or repeated during normalization.
+
+`H` is the fixed J2000 orientation from SOFA/ERFA `fk5hip` (orientation
+components -19.9, -9.1, +22.9 mas), using Hipparcos as an optical realization
+of ICRS. This conventional empirical tie does not remove catalogue zonal errors
+or recover an exact DE200-to-DE440 alignment. The native published ties and
+analytical trajectories retain their scientific uncertainties. All rotations
+here are static: positions and VSOP velocities use the same `R`; there is no
+catalogue-spin or `Rdot * position` term. The published IMCCE matrices have
+12-decimal precision (orthogonality errors below 1e-12).
+
+Public `vsop87a/e`, velocity and combined-state accessors normalize at their
+source. `Vsop87Ephemeris` delegates to them without another correction.
+`Moon::get_geo_position` converts TT input to TDB, evaluates ELP and its Laskar
+rotation, then normalizes once. The legacy `Moon::vsop87a` accessor evaluates
+the VSOP Earth–Moon barycenter coefficients, not the geocentric lunar state.
+
+A shared `Position<Center, Frame, Unit>` describes physical coordinates, not
+a calculation method. Different theories can estimate different trajectories
+in the same axes; frame agreement is not ephemeris-accuracy agreement. Model
+comparisons must match the physical target **and** reference center: e.g.
+Mars `499` is not automatically system barycenter `4`. If a kernel lacks the
+planet-center offset, omit the accuracy comparison rather than substitute the
+system barycenter. No transformation is fitted to modern-DE residuals.
+Keplerian/conic inputs are defined in the supplied frame; do not apply a model
+correction to user-supplied canonical elements. Coarse built-in orbital elements
+and the abbreviated Pluto series do not provide a precision realization tie.
+
+#### ICRF-only SPK loader policy
+
+`RuntimeEphemeris`, `SpkKernelSet` and the legacy body-chain parser require
+producer-documented ICRF realization, frame ID 1 and Type 2/3 **for every segment**.
+They reject an entire mixed/incompatible kernel, even for unrelated targets,
+before returning or mutating a usable kernel set. Strict rejection prevents a
+skipped higher-priority incompatible segment from exposing stale data.
+`try_from_indexed_segments` applies the same policy to parsed input and checks
+finite, ordered coverage. `RuntimeEphemeris` additionally requires its fixed
+fundamental chains: Sun/SSB, EMB/SSB, Moon/EMB and optional Earth/EMB; alternate
+chains for those targets are rejected. `SpkKernelSet` resolves general supported
+target/center chains. General frame-aware SPICE context operations are separate.
+
+Later segments/kernels win **within declared coverage**. Once selected, an
+invalid record or unavailable center chain is an error, not permission to use
+an older overlapping segment. An older segment may be used where a newer one
+has no coverage. Legacy `parse_bsp` cannot represent a stack and rejects
+multiple segments for a fundamental target; use the indexed/stacked loaders. Checked constructors return actionable errors; retained
+infallible parsed constructors panic on rejected metadata. Metadata-free legacy
+`BspSegments` explicitly assumes ICRF, and its checked constructor validates types.
+
+ID 1 alone cannot distinguish historical FK5/DE200 data from modern ICRF
+realizations. The caller must establish provenance from the kernel producer;
+these ICRF APIs do not convert arbitrary historical J2000 realizations. Modern
+DE states receive no extra classical FK5 bias. Unit conversions retain the
+existing coefficient AU convention and use 149597870.700 km/AU and 86400 s/day.
+
+Authoritative references:
+[VSOP87 conventions](https://ftp.imcce.fr/pub/ephem/planets/vsop87/vsop87.doc),
+[Bretagnon & Francou 1988](https://articles.adsabs.harvard.edu/pdf/1988A%26A...202..309B),
+[ELP82B notice §§8–9](https://ftp.imcce.fr/pub/ephem/moon/elp82b/elp82b.ps),
+[ERFA ecm06](https://github.com/liberfa/erfa/blob/v2.0.1/src/ecm06.c),
+[ERFA fk5hip](https://github.com/liberfa/erfa/blob/v2.0.1/src/fk5hip.c),
+[NAIF ICRF/J2000 conventions](https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/frames.html#ICRF%20vs%20J2000),
+and [SPK precedence](https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/spk.html#Data%20Precedence).
+Permanent independent reference values, units, time conventions and tolerances
+are recorded in `tests/data/ephemeris_frames.json` and exercised through Cargo
+by `tests/ephemeris_frame_consistency.rs`. The ignored same-kernel DE440s test
+requires `SIDERUST_BSP_PATH=/path/to/de440s.bsp`; normal reference tests need
+no external kernel, Python or astronomy package.
 
 ---
 
@@ -279,7 +395,7 @@ provider for periodic lunar orientation.
 | Body | Surface default | Fixed frame | Notes |
 |---|---|---|---|
 | Earth | WGS84 ellipsoid | `ECEF` | Coexists with `Topocentric` / GAST APIs; pgr lon east-positive |
-| Moon | IAU sphere 1737.4 km | `MoonIauMeanEarth` (`MoonPrincipalAxes` compatibility alias) | NAIF IAU_MOON analytical Mean-Earth, **not** JPL DE PA / binary-PCK ME; pgr lon east-positive |
+| Moon | IAU sphere 1737.4 km | `MoonIauMeanEarth` (distinct from `MoonPrincipalAxes`) | NAIF IAU_MOON analytical Mean-Earth, **not** JPL DE PA / binary-PCK ME; pgr lon east-positive |
 | Mars | IAU ellipsoid 3396.19 km | `MarsFixed` | Default latitude planetographic; **SPICE pgr lon west-positive** — convert explicitly |
 | Mercury, Venus, Pluto | IAU mean spheres | `*Fixed` | Mercury/Pluto pgr lon west-positive; Venus east-positive |
 | Gas giants | *(no `BodySurfaceModel`)* | — | Implement the trait only with a documented reference surface |
@@ -320,17 +436,17 @@ where α₀ and δ₀ define the body's north pole direction in ICRS, and W is
 the prime meridian angle (degrees). This order matters: `affn`'s ZXZ constructor
 applies its first Z rotation first, then X, then the second Z. For the Moon,
 α₀, δ₀ and W additionally include the 13 periodic arguments of the NAIF
-IAU_MOON text-PCK and W includes a quadratic term. The `MoonPrincipalAxes`
-name is retained for API compatibility but does **not** denote a JPL DE
-principal-axes realization. Use the `MoonIauMeanEarth` alias to convey the
-implemented analytical ME orientation; DE-specific `MOON_PA` and `MOON_ME`
-require separate SPICE binary PCK frames.
+IAU_MOON text-PCK and W includes a quadratic term. `MoonIauMeanEarth` is the
+analytical marker. It is distinct from `MoonPrincipalAxes`, which has no
+analytical provider. Migrate old analytical uses of the principal-axes name to
+`MoonIauMeanEarth`; actual principal-axes data must not be relabeled. DE-specific
+`MOON_PA` and `MOON_ME` require suitable binary PCK and frame kernels. See
+[NAIF lunar frame definitions](https://naif.jpl.nasa.gov/pub/naif/generic_kernels/fk/satellites/moon_de440_250416.tf).
 
-The **frame marker types** (zero-sized structs) are defined in `affn::frames`
-behind `feature = "astro"` so that `affn`'s derive macros can generate
-inherent `Direction`/`Position` constructors and getters (`lat()`, `lon()`,
-`radius()`).  They are re-exported from `siderust::coordinates::frames`
-and `siderust::coordinates::frames::planetary` for convenience.
+Most frame markers are zero-sized structs from `affn::frames` behind its
+`astro` feature, re-exported through `siderust::coordinates::frames` and
+`planetary`. The analytical `MoonIauMeanEarth` marker is defined in Siderust;
+geometry remains in `affn`, astronomical rotations in Siderust.
 
 The **IAU rotation parameters** remain in `siderust::coordinates::frames::planetary`.
 The corresponding `FrameRotationProvider` implementations are organized under
@@ -341,12 +457,20 @@ The corresponding `FrameRotationProvider` implementations are organized under
 | Mercury body-fixed | `MercuryFixed` | Mercury | (lat, lon, radius) |
 | Venus body-fixed | `VenusFixed` | Venus | (lat, lon, radius) |
 | Mars body-fixed | `MarsFixed` | Mars | (lat, lon, radius) |
-| Moon analytical ME | `MoonIauMeanEarth` / `MoonPrincipalAxes` | Moon | (lat, lon, radius) |
+| Moon analytical ME | `MoonIauMeanEarth` | Moon | (lat, lon, radius) |
+| Moon principal axes | `MoonPrincipalAxes` (no analytical provider) | Moon | (lat, lon, radius) |
+
 | Jupiter System III | `JupiterSystemIII` | Jupiter | (lat, lon, radius) |
 | Saturn body-fixed | `SaturnFixed` | Saturn | (lat, lon, radius) |
 | Uranus body-fixed | `UranusFixed` | Uranus | (lat, lon, radius) |
 | Neptune body-fixed | `NeptuneFixed` | Neptune | (lat, lon, radius) |
 | Pluto body-fixed | `PlutoFixed` | Pluto | (lat, lon, radius) |
+
+The coordinate Serde representation remains component data plus any center
+parameters; `affn` does not embed a frame-name discriminator. The caller must
+retain frame provenance and deserialize into the intended typed frame. Old
+unlabeled data do not prove analytical/PA equivalence and must not be relabeled
+without establishing their original convention.
 
 ### IAU Rotation Parameters
 
@@ -369,15 +493,15 @@ The same chain is also exposed through public `FrameRotationProvider`
 implementations for `GCRS`, `CIRS`, `TIRS`, `ITRF`, and `ECEF`.
 
 ```
-ITRS  ──W⁻¹──▶  TIRS  ──ERA──▶  CIRS  ──Q──▶  GCRS/ICRS  ──P──▶  EquatorialMeanJ2000
+ITRS  ──W⁻¹──▶  TIRS  ──ERA──▶  CIRS  ──Q──▶  GCRS/ICRS  ──rb──▶  EquatorialMeanJ2000
 ```
 
 | Step | Matrix | Source |
 |---|---|---|
 | **W** | Polar motion (xₚ, yₚ, s′) | EOP → `polar_motion_matrix_from_eop` |
 | **ERA** | Earth Rotation Angle | UT1 → `earth_rotation_angle` |
-| **Q** | CIO/CIP (X, Y, s) | nutation IAU 2000B ± EOP dX,dY |
-| **P** | Precession ICRS → MeanJ2000 | `FrameRotationProvider<ICRS, EquatorialMeanJ2000>` |
+| **Q** | CIO/CIP (X, Y, s) | selected nutation model + EOP dX,dY (IAU 2006A default) |
+| **rb** | Fixed IAU 2006 ICRS → MeanJ2000 bias | `FrameRotationProvider<ICRS, EquatorialMeanJ2000>` |
 
 Public provider coverage now includes:
 - `GCRS ↔ CIRS`
@@ -394,7 +518,7 @@ is a **Terrestrial Time (TT)** Julian Date.
 
 ## 7. Frame-Rotation Hub
 
-All frame rotations route through the **ICRS** hub frame:
+ICRS is the orientation hub; direct frame-pair implementations may bypass it:
 
 ```
 F1 → ICRS → F2
@@ -402,11 +526,11 @@ F1 → ICRS → F2
 
 The following constant rotation matrices are pre-computed:
 
-| Rotation | Matrix constant | Reference |
+| Rotation | Implementation | Reference |
 |---|---|---|
-| FK4 B1950 → ICRS | `FK4_TO_ICRS` | Standish (1982) + frame bias |
+| FK4 B1950 → ICRS | `FK4_TO_FK5` composed with the shared inverse bias | Standish (1982) + frame bias |
 | Galactic → ICRS | `GALACTIC_TO_ICRS` | Murray (1989), NGP coordinates |
-| ICRS → EquatorialMeanJ2000 | `FRAME_BIAS_ICRS_TO_J2000` | IAU 2006 frame bias |
+| ICRS → EquatorialMeanJ2000 | `bias::frame_bias_icrs_to_j2000()` | IAU 2006 frame bias |
 
 Time-dependent rotations:
 
@@ -416,8 +540,9 @@ Time-dependent rotations:
 | CIRS ↔ TIRS | Earth Rotation Angle |
 | TIRS ↔ ITRF | Polar motion matrix **W** |
 | TEME ↔ TOD | Rz(equation of equinoxes) |
-| EquatorialMean ↔ EquatorialTrueOfDate | IAU 2006 precession + IAU 2000B nutation |
-| Body-fixed ↔ ICRS | IAU 2015 rotation parameters |
+| EquatorialMeanJ2000 ↔ EquatorialMeanOfDate | IAU 2006 precession with fixed bias removed |
+| EquatorialMeanOfDate ↔ EquatorialTrueOfDate | selected nutation model (IAU 2006A default) |
+| Body-fixed ↔ ICRS | body-specific IAU rotation model (Moon: periodic IAU 2009) |
 
 Provider implementations are grouped by responsibility:
 
@@ -471,13 +596,13 @@ Named getters (`lat()`, `lon()`, `altitude()`) are generated automatically by th
 | Shorthand | Full name | Axes fixed by | Typical use |
 |---|---|---|---|
 | ICRS | Int'l Celestial Ref. System | Quasar positions | Star catalogues |
-| GCRS | Geocentric CRS | ≈ ICRS (< 1 mas offset) | Aberration, parallax |
-| MeanJ2000 | Equatorial Mean J2000 | IAU 1976 precession | Internal working frame |
+| GCRS | Geocentric CRS | treated as ICRS-aligned for directions | Aberration, parallax |
+| MeanJ2000 | Equatorial Mean J2000 | IAU 2006 `bp06` J2000 bias | Internal working frame |
 | EME2000 | Earth Mean Equator/Equinox J2000 | Same axes as MeanJ2000 | CCSDS / flight-dynamics exchange |
 | FK4 B1950 | FK4 Equatorial B1950 | FK4 catalogue | Legacy catalogues |
 | TEME | True Equator Mean Equinox | SGP4 convention | TLE/satellite orbits |
 | Galactic | Galactic (IAU 1958) | Galactic plane + NGP | Milky Way structure |
-| EclMeanJ2000 | Ecliptic Mean J2000 | Ecliptic plane of J2000 | Planetary ephemerides |
+| EclMeanJ2000 | Ecliptic Mean J2000 | IAU 2006 `ecm06` at J2000 | Planetary ephemerides |
 | CIRS | Celestial Intermediate RS | CIP + CIO | Intermediate Earth-orientation diagnostics |
 | TIRS | Terrestrial Intermediate RS | CIP + ERA | Intermediate Earth-orientation diagnostics |
 | ECEF | Earth-Centred Earth-Fixed | Provider-aligned with ITRF; WGS84 geodetic tag | WGS84 site input / Earth-fixed vectors |
@@ -510,4 +635,4 @@ major rocky bodies are in scope as of v0.16 via `coordinates::surface`.
 
 ---
 
-*Last updated for v0.16 generic body-surface horizontal transforms.*
+*Updated for the v0.18.0 frame and fallible center-shift contracts.*

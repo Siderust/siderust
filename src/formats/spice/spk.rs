@@ -249,15 +249,66 @@ pub fn read_type2_segment(
     read_segment(file_data, daf, summary)
 }
 
-/// Parse every supported J2000 Type 2/3 segment in a BSP file.
+/// Validate the strict ICRF-only loader contract before discarding any segment.
+pub(crate) fn validate_icrf_segment(
+    frame_id: i32,
+    data_type: i32,
+    target_id: i32,
+) -> Result<(), SpiceError> {
+    if frame_id != 1 {
+        return Err(SpiceError::FormatParse(format!(
+            "SPK target {target_id}: frame {frame_id} is unsupported; ICRF loader requires NAIF J2000 frame ID 1"
+        )));
+    }
+    if data_type != 2 && data_type != 3 {
+        return Err(SpiceError::FormatParse(format!(
+            "SPK target {target_id}: Type {data_type} is unsupported; ICRF loader requires Type 2/3 for every segment"
+        )));
+    }
+    Ok(())
+}
+
+/// Validate the fixed fundamental chains used by the DE convenience backend.
+pub(crate) fn validate_de_body_center(target_id: i32, center_id: i32) -> Result<(), SpiceError> {
+    let required = match target_id {
+        SUN_TARGET | EMB_TARGET => Some(0),
+        MOON_TARGET | EARTH_TARGET => Some(3),
+        _ => None,
+    };
+    if let Some(center) = required {
+        if center_id != center {
+            return Err(SpiceError::FormatParse(format!("runtime DE body chain requires target {target_id} relative to {center}, got center {center_id}")));
+        }
+    }
+    Ok(())
+}
+
+/// Validate pre-parsed ICRF segment metadata using the byte-loader policy.
+pub(crate) fn validate_indexed_segment(segment: &IndexedSegmentData) -> Result<(), SpiceError> {
+    validate_icrf_segment(segment.frame_id, segment.data.data_type, segment.target_id)?;
+    if !segment.start_et.is_finite()
+        || !segment.end_et.is_finite()
+        || segment.start_et > segment.end_et
+    {
+        return Err(SpiceError::FormatParse(format!(
+            "SPK target {}: invalid segment coverage [{}, {}]",
+            segment.target_id, segment.start_et, segment.end_et
+        )));
+    }
+    Ok(())
+}
+
+/// Parse an ICRF-realized J2000 Type 2/3 BSP file.
+///
+/// Strict policy: reject the entire file if any segment uses a different frame
+/// or type, even for unrelated targets. Never skip a higher-priority segment.
+/// Frame ID 1 does not establish ICRF provenance; consult the producer.
 pub fn parse_indexed_segments(file_data: &[u8]) -> Result<Vec<IndexedSegmentData>, SpiceError> {
     let daf = Daf::parse(file_data)?;
     let mut segments = Vec::new();
 
     for summary in &daf.summaries {
-        if summary.frame_id != 1 || (summary.data_type != 2 && summary.data_type != 3) {
-            continue;
-        }
+        validate_icrf_segment(summary.frame_id, summary.data_type, summary.target_id)?;
         segments.push(IndexedSegmentData {
             target_id: summary.target_id,
             center_id: summary.center_id,
@@ -276,10 +327,31 @@ pub fn parse_indexed_segments(file_data: &[u8]) -> Result<Vec<IndexedSegmentData
     Ok(segments)
 }
 
-/// Parse a BSP file and extract the required Sun, EMB, Moon, and optional Earth segments.
+/// Parse a strict ICRF Type 2/3 BSP with one segment per fundamental DE target.
+///
+/// Alternate fundamental-body centers and duplicate target segments are rejected:
+/// this legacy result cannot represent a prioritized stack. Use the indexed parser
+/// with `RuntimeEphemeris` or `SpkKernelSet` for multiple segments/coverage windows.
 pub fn parse_bsp(file_data: &[u8]) -> Result<BspSegments, SpiceError> {
     let daf = Daf::parse(file_data)?;
 
+    // Strict policy also applies to unrelated summaries: skipping an unsupported
+    // later segment could silently expose an older segment for the same target.
+    for (index, summary) in daf.summaries.iter().enumerate() {
+        validate_icrf_segment(summary.frame_id, summary.data_type, summary.target_id)?;
+        validate_de_body_center(summary.target_id, summary.center_id)?;
+        if matches!(
+            summary.target_id,
+            SUN_TARGET | EMB_TARGET | MOON_TARGET | EARTH_TARGET
+        ) && daf.summaries[..index]
+            .iter()
+            .any(|previous| previous.target_id == summary.target_id)
+        {
+            return Err(SpiceError::FormatParse(format!(
+                "legacy parse_bsp cannot represent multiple segments for target {}; use RuntimeEphemeris::from_bytes or SpkKernelSet", summary.target_id
+            )));
+        }
+    }
     let find_summary = |target: i32, center: i32| {
         daf.summaries
             .iter()
@@ -301,6 +373,7 @@ pub fn parse_bsp(file_data: &[u8]) -> Result<BspSegments, SpiceError> {
             )));
         }
 
+        validate_icrf_segment(summary.frame_id, summary.data_type, summary.target_id)?;
         read_segment(file_data, &daf, summary)
     };
 
@@ -309,6 +382,7 @@ pub fn parse_bsp(file_data: &[u8]) -> Result<BspSegments, SpiceError> {
     let moon = find_segment(MOON_TARGET, MOON_CENTER, "Moon")?;
     let earth = match find_summary(EARTH_TARGET, EARTH_CENTER) {
         Some(summary) if summary.data_type == 2 || summary.data_type == 3 => {
+            validate_icrf_segment(summary.frame_id, summary.data_type, summary.target_id)?;
             Some(read_segment(file_data, &daf, summary)?)
         }
         Some(summary) => {

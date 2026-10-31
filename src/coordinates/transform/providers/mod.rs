@@ -46,7 +46,7 @@ use crate::coordinates::centers::{
 #[cfg(feature = "lagrange-centers")]
 use crate::coordinates::centers::{SunEarthL1, SunEarthL2, SunEarthL3, SunEarthL4, SunEarthL5};
 use crate::coordinates::frames::planetary::{
-    JupiterSystemIII, MarsFixed, MercuryFixed, MoonPrincipalAxes, NeptuneFixed, PlutoFixed,
+    JupiterSystemIII, MarsFixed, MercuryFixed, MoonIauMeanEarth, NeptuneFixed, PlutoFixed,
     SaturnFixed, UranusFixed, VenusFixed,
 };
 use crate::coordinates::frames::{
@@ -100,11 +100,71 @@ pub trait FrameRotationProvider<F1, F2> {
 /// array in [`AstronomicalUnit`](crate::qtty::AstronomicalUnit), matching the
 /// canonical unit of the ephemeris providers.
 pub trait CenterShiftProvider<C1, C2, F> {
-    /// Computes the translation vector from center `C1` to center `C2`.
+    /// Computes a translation, preserving unavailable-capability and evaluation errors.
+    fn try_shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop>,
+    ) -> Result<[crate::qtty::Quantity<crate::qtty::AstronomicalUnit>; 3], CenterShiftError>;
+
+    /// Computes a translation, panicking if the selected backend cannot supply it.
+    /// Use [`Self::try_shift`] to handle missing data or evaluation errors.
     fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop>,
-    ) -> [crate::qtty::Quantity<crate::qtty::AstronomicalUnit>; 3];
+    ) -> [crate::qtty::Quantity<crate::qtty::AstronomicalUnit>; 3] {
+        Self::try_shift::<Eph, Eop, Nut>(jd, ctx).expect("center translation unavailable")
+    }
+}
+
+/// Failure to obtain a center translation from the selected ephemeris.
+#[derive(Debug)]
+pub enum CenterShiftError {
+    /// A fundamental body state could not be evaluated.
+    Ephemeris(crate::ephemeris::EphemerisError),
+    /// A planetary capability is unavailable or failed to evaluate.
+    Planet(crate::ephemeris::PlanetEphemerisError),
+    /// The optional Lagrange solver failed.
+    #[cfg(feature = "lagrange-centers")]
+    Lagrange(crate::ephemeris::lagrange::solver::SolverError),
+}
+
+impl core::fmt::Display for CenterShiftError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Self::Ephemeris(err) => err.fmt(f),
+            Self::Planet(err) => err.fmt(f),
+            #[cfg(feature = "lagrange-centers")]
+            Self::Lagrange(err) => err.fmt(f),
+        }
+    }
+}
+
+impl core::error::Error for CenterShiftError {
+    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
+        match self {
+            Self::Ephemeris(err) => Some(err),
+            Self::Planet(err) => Some(err),
+            #[cfg(feature = "lagrange-centers")]
+            Self::Lagrange(err) => Some(err),
+        }
+    }
+}
+
+impl From<crate::ephemeris::EphemerisError> for CenterShiftError {
+    fn from(err: crate::ephemeris::EphemerisError) -> Self {
+        Self::Ephemeris(err)
+    }
+}
+impl From<crate::ephemeris::PlanetEphemerisError> for CenterShiftError {
+    fn from(err: crate::ephemeris::PlanetEphemerisError) -> Self {
+        Self::Planet(err)
+    }
+}
+#[cfg(feature = "lagrange-centers")]
+impl From<crate::ephemeris::lagrange::solver::SolverError> for CenterShiftError {
+    fn from(err: crate::ephemeris::lagrange::solver::SolverError) -> Self {
+        Self::Lagrange(err)
+    }
 }
 
 /// Identity rotation: same frame to same frame.
@@ -128,16 +188,16 @@ where
     F: affn::ReferenceFrame,
 {
     #[inline]
-    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+    fn try_shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         _jd: JulianDate,
         _ctx: &AstroContext<Eph, Eop>,
-    ) -> [crate::qtty::Quantity<crate::qtty::AstronomicalUnit>; 3] {
+    ) -> Result<AuShift, CenterShiftError> {
         use crate::qtty::AstronomicalUnit;
-        [
+        Ok([
             crate::qtty::Quantity::<AstronomicalUnit>::new(0.0),
             crate::qtty::Quantity::<AstronomicalUnit>::new(0.0),
             crate::qtty::Quantity::<AstronomicalUnit>::new(0.0),
-        ]
+        ])
     }
 }
 
@@ -187,29 +247,31 @@ fn add_shifts(lhs: AuShift, rhs: AuShift) -> AuShift {
 
 /// Returns `shift(C1→C2)` by negating `shift(C2→C1)`.
 #[inline]
-fn inverse_shift<C1, C2, F, Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+fn try_inverse_shift<C1, C2, F, Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
     jd: JulianDate,
     ctx: &AstroContext<Eph, Eop>,
-) -> AuShift
+) -> Result<AuShift, CenterShiftError>
 where
     (): CenterShiftProvider<C2, C1, F>,
 {
-    negate_shift(<() as CenterShiftProvider<C2, C1, F>>::shift::<Eph, Eop, Nut>(jd, ctx))
+    Ok(negate_shift(
+        <() as CenterShiftProvider<C2, C1, F>>::try_shift::<Eph, Eop, Nut>(jd, ctx)?,
+    ))
 }
 
 /// Composes two center shifts: `C1 → CM → C2`.
 #[inline]
-fn compose_shift<C1, CM, C2, F, Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+fn try_compose_shift<C1, CM, C2, F, Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
     jd: JulianDate,
     ctx: &AstroContext<Eph, Eop>,
-) -> AuShift
+) -> Result<AuShift, CenterShiftError>
 where
     (): CenterShiftProvider<C1, CM, F>,
     (): CenterShiftProvider<CM, C2, F>,
 {
-    let left = <() as CenterShiftProvider<C1, CM, F>>::shift::<Eph, Eop, Nut>(jd, ctx);
-    let right = <() as CenterShiftProvider<CM, C2, F>>::shift::<Eph, Eop, Nut>(jd, ctx);
-    add_shifts(left, right)
+    let left = <() as CenterShiftProvider<C1, CM, F>>::try_shift::<Eph, Eop, Nut>(jd, ctx)?;
+    let right = <() as CenterShiftProvider<CM, C2, F>>::try_shift::<Eph, Eop, Nut>(jd, ctx)?;
+    Ok(add_shifts(left, right))
 }
 
 /// Direct GCRS → CIRS rotation from the IAU 2000/2006 CIO-based chain.
@@ -327,11 +389,11 @@ macro_rules! impl_reverse_center_shifts {
             (): FrameRotationProvider<EclipticMeanJ2000, F>,
         {
             #[inline]
-            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+            fn try_shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
                 jd: JulianDate,
                 ctx: &AstroContext<Eph, Eop>,
-            ) -> AuShift {
-                inverse_shift::<Barycentric, $center, F, Eph, Eop, Nut>(jd, ctx)
+            ) -> Result<AuShift, CenterShiftError> {
+                try_inverse_shift::<Barycentric, $center, F, Eph, Eop, Nut>(jd, ctx)
             }
         }
 
@@ -341,11 +403,11 @@ macro_rules! impl_reverse_center_shifts {
             (): FrameRotationProvider<EclipticMeanJ2000, F>,
         {
             #[inline]
-            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+            fn try_shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
                 jd: JulianDate,
                 ctx: &AstroContext<Eph, Eop>,
-            ) -> AuShift {
-                compose_shift::<Heliocentric, Barycentric, $center, F, Eph, Eop, Nut>(jd, ctx)
+            ) -> Result<AuShift, CenterShiftError> {
+                try_compose_shift::<Heliocentric, Barycentric, $center, F, Eph, Eop, Nut>(jd, ctx)
             }
         }
 
@@ -355,11 +417,11 @@ macro_rules! impl_reverse_center_shifts {
             (): FrameRotationProvider<EclipticMeanJ2000, F>,
         {
             #[inline]
-            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+            fn try_shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
                 jd: JulianDate,
                 ctx: &AstroContext<Eph, Eop>,
-            ) -> AuShift {
-                inverse_shift::<$center, Heliocentric, F, Eph, Eop, Nut>(jd, ctx)
+            ) -> Result<AuShift, CenterShiftError> {
+                try_inverse_shift::<$center, Heliocentric, F, Eph, Eop, Nut>(jd, ctx)
             }
         }
 
@@ -369,11 +431,11 @@ macro_rules! impl_reverse_center_shifts {
             (): FrameRotationProvider<EclipticMeanJ2000, F>,
         {
             #[inline]
-            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+            fn try_shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
                 jd: JulianDate,
                 ctx: &AstroContext<Eph, Eop>,
-            ) -> AuShift {
-                compose_shift::<Geocentric, Barycentric, $center, F, Eph, Eop, Nut>(jd, ctx)
+            ) -> Result<AuShift, CenterShiftError> {
+                try_compose_shift::<Geocentric, Barycentric, $center, F, Eph, Eop, Nut>(jd, ctx)
             }
         }
 
@@ -383,11 +445,11 @@ macro_rules! impl_reverse_center_shifts {
             (): FrameRotationProvider<EclipticMeanJ2000, F>,
         {
             #[inline]
-            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+            fn try_shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
                 jd: JulianDate,
                 ctx: &AstroContext<Eph, Eop>,
-            ) -> AuShift {
-                inverse_shift::<$center, Geocentric, F, Eph, Eop, Nut>(jd, ctx)
+            ) -> Result<AuShift, CenterShiftError> {
+                try_inverse_shift::<$center, Geocentric, F, Eph, Eop, Nut>(jd, ctx)
             }
         }
     };
@@ -403,11 +465,11 @@ macro_rules! impl_reverse_center_shifts_without_geocentric {
             (): FrameRotationProvider<EclipticMeanJ2000, F>,
         {
             #[inline]
-            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+            fn try_shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
                 jd: JulianDate,
                 ctx: &AstroContext<Eph, Eop>,
-            ) -> AuShift {
-                inverse_shift::<Barycentric, $center, F, Eph, Eop, Nut>(jd, ctx)
+            ) -> Result<AuShift, CenterShiftError> {
+                try_inverse_shift::<Barycentric, $center, F, Eph, Eop, Nut>(jd, ctx)
             }
         }
 
@@ -417,11 +479,11 @@ macro_rules! impl_reverse_center_shifts_without_geocentric {
             (): FrameRotationProvider<EclipticMeanJ2000, F>,
         {
             #[inline]
-            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+            fn try_shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
                 jd: JulianDate,
                 ctx: &AstroContext<Eph, Eop>,
-            ) -> AuShift {
-                compose_shift::<Heliocentric, Barycentric, $center, F, Eph, Eop, Nut>(jd, ctx)
+            ) -> Result<AuShift, CenterShiftError> {
+                try_compose_shift::<Heliocentric, Barycentric, $center, F, Eph, Eop, Nut>(jd, ctx)
             }
         }
 
@@ -431,11 +493,11 @@ macro_rules! impl_reverse_center_shifts_without_geocentric {
             (): FrameRotationProvider<EclipticMeanJ2000, F>,
         {
             #[inline]
-            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+            fn try_shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
                 jd: JulianDate,
                 ctx: &AstroContext<Eph, Eop>,
-            ) -> AuShift {
-                inverse_shift::<$center, Heliocentric, F, Eph, Eop, Nut>(jd, ctx)
+            ) -> Result<AuShift, CenterShiftError> {
+                try_inverse_shift::<$center, Heliocentric, F, Eph, Eop, Nut>(jd, ctx)
             }
         }
     };

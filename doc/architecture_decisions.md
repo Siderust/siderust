@@ -73,7 +73,7 @@ Convenience paths exist for common scenarios, but context-aware `_with_ctx` vari
 
 ## Pluggable Ephemeris Backends
 
-Ephemeris computation is abstracted behind an `Ephemeris` trait. An analytical backend based on VSOP87 and ELP2000 is always available, ensuring a lightweight baseline. More precise JPL DE4xx backends, such as DE440 or DE441, are available behind feature flags.
+Ephemeris computation is abstracted behind an `Ephemeris` trait. An analytical backend based on VSOP87 and ELP2000 is always available, ensuring a lightweight baseline. JPL DE4xx data, such as DE440 or DE441, are loaded from BSP files through `RuntimeEphemeris` and the object-safe `DynEphemeris` contract.
 
 This design reflects the diversity of use cases. Many applications do not require the mass and precision of DE4xx datasets, and including them by default would unnecessarily increase build size and complexity. Feature gating allows users to opt into heavier datasets only when needed.
 

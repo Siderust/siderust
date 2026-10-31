@@ -3,32 +3,10 @@
 
 //! IAU 2006 frame-bias rotation between GCRS/ICRS and EME2000.
 //!
-//! The three **constant** angles that define the rotation from the
-//! GCRS (≡ ICRS for directions) to the mean equator and equinox of
-//! J2000.0 (EME2000) are tabulated in IERS Conventions (2010),
-//! §5.4.4, Table 5.2b:
-//!
-//! ```text
-//! ξ₀  = −0.0166170″   (offset of CIP at J2000 from mean pole, x)
-//! η₀  = −0.0068192″   (offset of CIP at J2000 from mean pole, y)
-//! dα₀ = −0.0146″      (offset of ICRS RA origin from mean equinox)
-//! ```
-//!
-//! Using the parametrisation of Eq. (5.32):
-//!
-//! ```text
-//! B = R1(−η₀) · R2(ξ₀) · R3(dα₀)
-//! ```
-//!
-//! where R1, R2, R3 are **passive** elementary rotations.  In `affn`,
-//! `Rotation3::r{x,y,z}` are *active*, so `Rᵢ(θ) = Rotation3::r{x,y,z}(−θ)`,
-//! yielding:
-//!
-//! ```text
-//! B = Rotation3::rx(η₀) · Rotation3::ry(−ξ₀) · Rotation3::rz(−dα₀)
-//! ```
-//!
-//! The resulting matrix agrees with SOFA `iauBp06` `rb` at J2000.0 to ≲ 1×10⁻¹⁵.
+//! Delegates to the same SOFA `iauBp06` J2000 matrix used by all coordinate
+//! transform providers. This is the IAU 2006 dynamical mean equator/equinox,
+//! not the empirical FK5 catalogue orientation returned by `iauFk5hip`.
+//! The fixed bias is about 23 milliarcseconds.
 //!
 //! # Extension traits
 //!
@@ -59,24 +37,9 @@
 
 use affn::frames::{EME2000, GCRS, ICRS};
 use affn::ops::Rotation3;
-use qtty::angular::Radians;
-
-// =============================================================================
-// Private constants and helper
-// =============================================================================
-
-const FRAME_BIAS_DALPHA0_ARCSEC: f64 = -0.0146;
-const FRAME_BIAS_XI0_ARCSEC: f64 = -0.0166170;
-const FRAME_BIAS_ETA0_ARCSEC: f64 = -0.0068192;
-
-const ARCSEC_TO_RAD: f64 = core::f64::consts::PI / 648_000.0;
-
 #[inline]
 fn frame_bias_gcrs_to_eme2000() -> Rotation3 {
-    let xi0 = Radians::new(FRAME_BIAS_XI0_ARCSEC * ARCSEC_TO_RAD);
-    let eta0 = Radians::new(FRAME_BIAS_ETA0_ARCSEC * ARCSEC_TO_RAD);
-    let da0 = Radians::new(FRAME_BIAS_DALPHA0_ARCSEC * ARCSEC_TO_RAD);
-    Rotation3::rx(eta0) * Rotation3::ry(-xi0) * Rotation3::rz(-da0)
+    crate::coordinates::transform::frames::bias::frame_bias_icrs_to_j2000()
 }
 
 // =============================================================================

@@ -94,7 +94,7 @@ fn iau_moon_mean_earth_to_icrs(jd: JulianDate) -> Rotation3 {
     )
 }
 
-impl FrameRotationProvider<MoonPrincipalAxes, ICRS> for () {
+impl FrameRotationProvider<MoonIauMeanEarth, ICRS> for () {
     #[inline]
     fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
@@ -104,13 +104,13 @@ impl FrameRotationProvider<MoonPrincipalAxes, ICRS> for () {
     }
 }
 
-impl FrameRotationProvider<ICRS, MoonPrincipalAxes> for () {
+impl FrameRotationProvider<ICRS, MoonIauMeanEarth> for () {
     #[inline]
     fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop>,
     ) -> Rotation3 {
-        inverse_rotation::<ICRS, MoonPrincipalAxes, Eph, Eop, Nut>(jd, ctx)
+        inverse_rotation::<ICRS, MoonIauMeanEarth, Eph, Eop, Nut>(jd, ctx)
     }
 }
 
@@ -123,7 +123,7 @@ impl_body_fixed_rotation!(PlutoFixed, crate::bodies::solar_system::Pluto);
 impl_via_icrs_bidirectional!(EclipticMeanJ2000, MercuryFixed);
 impl_via_icrs_bidirectional!(EclipticMeanJ2000, VenusFixed);
 impl_via_icrs_bidirectional!(EclipticMeanJ2000, MarsFixed);
-impl_via_icrs_bidirectional!(EclipticMeanJ2000, MoonPrincipalAxes);
+impl_via_icrs_bidirectional!(EclipticMeanJ2000, MoonIauMeanEarth);
 impl_via_icrs_bidirectional!(EclipticMeanJ2000, JupiterSystemIII);
 impl_via_icrs_bidirectional!(EclipticMeanJ2000, SaturnFixed);
 impl_via_icrs_bidirectional!(EclipticMeanJ2000, UranusFixed);
@@ -133,7 +133,7 @@ impl_via_icrs_bidirectional!(EclipticMeanJ2000, PlutoFixed);
 impl_via_icrs_bidirectional!(EME2000, MercuryFixed);
 impl_via_icrs_bidirectional!(EME2000, VenusFixed);
 impl_via_icrs_bidirectional!(EME2000, MarsFixed);
-impl_via_icrs_bidirectional!(EME2000, MoonPrincipalAxes);
+impl_via_icrs_bidirectional!(EME2000, MoonIauMeanEarth);
 impl_via_icrs_bidirectional!(EME2000, JupiterSystemIII);
 impl_via_icrs_bidirectional!(EME2000, SaturnFixed);
 impl_via_icrs_bidirectional!(EME2000, UranusFixed);
@@ -144,7 +144,7 @@ impl_via_icrs_bidirectional!(EME2000, PlutoFixed);
 impl_via_icrs_bidirectional!(EquatorialMeanJ2000, MercuryFixed);
 impl_via_icrs_bidirectional!(EquatorialMeanJ2000, VenusFixed);
 impl_via_icrs_bidirectional!(EquatorialMeanJ2000, MarsFixed);
-impl_via_icrs_bidirectional!(EquatorialMeanJ2000, MoonPrincipalAxes);
+impl_via_icrs_bidirectional!(EquatorialMeanJ2000, MoonIauMeanEarth);
 impl_via_icrs_bidirectional!(EquatorialMeanJ2000, JupiterSystemIII);
 impl_via_icrs_bidirectional!(EquatorialMeanJ2000, SaturnFixed);
 impl_via_icrs_bidirectional!(EquatorialMeanJ2000, UranusFixed);

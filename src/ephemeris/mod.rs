@@ -17,7 +17,7 @@
 //!   A blanket impl bridges: every `Ephemeris` implementor automatically
 //!   implements `DynEphemeris`.
 //! - **Body-centric user API preserved**: `Earth::vsop87e(jd)` etc. remain
-//!   unchanged. The traits are used internally by the coordinate transform
+//!   source-compatible, with normalized frame semantics. The traits are used internally by the coordinate transform
 //!   pipeline and `AstroContext`.
 //! - **Data-free**: This module stores no coefficient tables. All scientific
 //!   data originates from [`siderust_archive`]; see [`provenance`] for
@@ -28,7 +28,7 @@
 //! | Backend              | Source                     |
 //! |----------------------|----------------------------|
 //! | [`Vsop87Ephemeris`]  | VSOP87 + ELP2000-82B       |
-//! | [`RuntimeEphemeris`] | Any BSP file (runtime)     |
+//! | [`RuntimeEphemeris`] | ICRF J2000 BSP (runtime)     |
 //!
 //! ## Provenance
 //!
@@ -60,6 +60,7 @@ pub mod pluto;
 pub mod tabulated;
 pub(crate) mod vsop87;
 
+mod native_frames;
 mod planetary;
 mod runtime_backend;
 mod vsop87_backend;
@@ -196,10 +197,15 @@ pub enum PlanetPoint {
     SystemBarycenter,
 }
 
-/// Errors from embedded major-planet APIs.
+/// Errors from major-planet ephemeris APIs.
 #[derive(Debug)]
 pub enum PlanetEphemerisError {
-    /// The requested point is not present in the embedded DE dataset.
+    /// A body outside the major-planet selector is unavailable (e.g. Pluto).
+    UnsupportedBody {
+        /// NAIF ID of the requested physical body center.
+        target_id: i32,
+    },
+    /// The requested point is not provided by this ephemeris backend.
     UnsupportedPoint {
         /// Planet requested by the caller.
         planet: MajorPlanet,
@@ -215,9 +221,10 @@ impl core::fmt::Display for PlanetEphemerisError {
         match self {
             Self::UnsupportedPoint { planet, point } => write!(
                 f,
-                "embedded JPL data does not provide {:?} {:?}; load an SPK kernel set for planet-center offsets",
+                "ephemeris backend does not provide {:?} {:?}; supply data for the requested physical center",
                 planet, point
             ),
+            Self::UnsupportedBody { target_id } => write!(f, "ephemeris backend does not provide body center {target_id}"),
             Self::Ephemeris(err) => err.fmt(f),
         }
     }
@@ -227,7 +234,7 @@ impl core::error::Error for PlanetEphemerisError {
     fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
         match self {
             Self::Ephemeris(err) => Some(err),
-            Self::UnsupportedPoint { .. } => None,
+            Self::UnsupportedPoint { .. } | Self::UnsupportedBody { .. } => None,
         }
     }
 }
@@ -245,11 +252,49 @@ impl From<EphemerisError> for PlanetEphemerisError {
 /// are zero-sized marker types, the coefficient data lives in static arrays
 /// generated at compile time.
 ///
-/// The five methods cover every ephemeris call site in the coordinate transform
-/// pipeline, aberration, and observer-state modules.
+/// All returned coordinates use the IAU 2006 J2000 ecliptic convention
+/// (SOFA `ecm06` at J2000). Backends normalize their native axes before
+/// constructing these types. Model accuracy does not change frame semantics.
+/// Optional planetary-center support must use the same backend.
 ///
 /// See also [`DynEphemeris`] for the runtime/dynamic-dispatch counterpart.
 pub trait Ephemeris {
+    /// Planet-center barycentric position from this backend (canonical ecliptic, AU).
+    ///
+    /// Center transformations call this method. The default rejects unsupported
+    /// planets instead of substituting another ephemeris. Implementors may use
+    /// their [`PlanetState`] heliocentric state plus their own Sun position.
+    fn try_planet_barycentric(
+        planet: MajorPlanet,
+        _jd: JulianDate,
+    ) -> Result<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, PlanetEphemerisError>
+    {
+        Err(PlanetEphemerisError::UnsupportedPoint {
+            planet,
+            point: PlanetPoint::Center,
+        })
+    }
+
+    /// Fallible Pluto-center barycentric position (canonical ecliptic, AU).
+    ///
+    /// The default returns an unsupported-body error; no catalogue substitution
+    /// occurs. Implement this capability to support plutocentric translations.
+    fn try_pluto_barycentric(
+        _jd: JulianDate,
+    ) -> Result<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, PlanetEphemerisError>
+    {
+        Err(PlanetEphemerisError::UnsupportedBody { target_id: 999 })
+    }
+
+    /// Pluto-center barycentric position (canonical ecliptic, AU).
+    ///
+    /// Panics when unavailable. Use [`Self::try_pluto_barycentric`] to handle errors.
+    fn pluto_barycentric(
+        jd: JulianDate,
+    ) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> {
+        Self::try_pluto_barycentric(jd).expect("Pluto barycentric position unavailable")
+    }
+
     /// Fallible Sun barycentric position in ecliptic coordinates (AU).
     #[inline]
     fn try_sun_barycentric(

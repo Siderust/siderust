@@ -131,6 +131,8 @@ impl KernelSegment {
 /// Later paths take precedence when more than one loaded segment covers the
 /// same target. Each state request resolves a target-center chain back to the
 /// solar-system barycenter before subtracting the requested observer.
+/// Every input segment must be Type 2/3 in producer-documented ICRF axes
+/// labeled J2000 (ID 1); incompatible segments are rejected, never skipped.
 #[derive(Default)]
 pub struct SpkKernelSet {
     segments: Vec<KernelSegment>,
@@ -157,7 +159,8 @@ impl SpkKernelSet {
         Ok(set)
     }
 
-    /// Add all supported segments from an in-memory BSP/SPK.
+    /// Add an entire strict ICRF Type 2/3 BSP/SPK atomically.
+    /// Any incompatible segment rejects the file without modifying this set.
     pub fn push_bytes(&mut self, bytes: &[u8]) -> Result<(), SpiceError> {
         self.segments.extend(
             spk::parse_indexed_segments(bytes)?
@@ -191,33 +194,7 @@ impl SpkKernelSet {
         point: PlanetPoint,
         jd: JulianDate,
     ) -> Result<IcrfKm, SpkKernelError> {
-        if let PlanetPoint::SystemBarycenter = point {
-            match self.try_major_planet_barycenter_geocentric_fast(planet, jd) {
-                Ok(state) => return Ok(state),
-                Err(SpkKernelError::MissingSegment { .. }) => {}
-                Err(err) => return Err(err),
-            }
-        }
         self.try_geometric_state(planet.naif_id(point), EARTH_ID, jd)
-    }
-
-    fn try_major_planet_barycenter_geocentric_fast(
-        &self,
-        planet: MajorPlanet,
-        jd: JulianDate,
-    ) -> Result<IcrfKm, SpkKernelError> {
-        let et = jd_tt_to_spice_et_seconds(jd);
-        let target =
-            self.try_edge_position_et(planet.naif_id(PlanetPoint::SystemBarycenter), SSB_ID, et)?;
-        let emb = self.try_edge_position_et(EMB_ID, SSB_ID, et)?;
-        let earth = match self.try_edge_position_et(EARTH_ID, EMB_ID, et) {
-            Ok(earth_off) => emb + earth_off,
-            Err(_) => {
-                let moon_off = self.try_edge_position_et(MOON_ID, EMB_ID, et)?;
-                emb - moon_off.scale(1.0 / EARTH_MOON_RATIO)
-            }
-        };
-        Ok(target - earth)
     }
 
     fn try_position_from_ssb(
@@ -245,24 +222,18 @@ impl SpkKernelSet {
                 out_of_range.get_or_insert(segment.out_of_range(jd));
                 continue;
             }
-            match segment.try_position(jd) {
-                Ok(offset) => match self.try_position_from_ssb(segment.center_id, jd, visited) {
-                    Ok(center) => {
-                        visited.pop();
-                        return Ok(center + offset);
-                    }
-                    Err(err) => {
-                        out_of_range.get_or_insert(err);
-                    }
-                },
-                Err(err @ EphemerisError::OutOfRange { .. }) => {
-                    out_of_range.get_or_insert(SpkKernelError::Ephemeris(err));
-                }
-                Err(err) => {
-                    visited.pop();
-                    return Err(SpkKernelError::Ephemeris(err));
-                }
-            }
+            // This is the highest-priority segment covering this target.
+            // A missing center chain or bad coefficient coverage is an error,
+            // not permission to expose an older target segment.
+            let result = segment
+                .try_position(jd)
+                .map_err(SpkKernelError::Ephemeris)
+                .and_then(|offset| {
+                    self.try_position_from_ssb(segment.center_id, jd, visited)
+                        .map(|center| center + offset)
+                });
+            visited.pop();
+            return result;
         }
 
         if target_id == EARTH_ID {
@@ -306,31 +277,46 @@ impl SpkKernelSet {
             .segments
             .iter()
             .rev()
-            .filter(|segment| segment.target_id == target_id && segment.center_id == center_id)
+            .filter(|segment| segment.target_id == target_id)
         {
             if !segment.covers_et(et) {
                 out_of_range.get_or_insert(segment.out_of_range_et(et));
                 continue;
             }
-            match segment.try_position_et(et) {
-                Ok(position) => return Ok(position),
-                Err(err @ EphemerisError::OutOfRange { .. }) => {
-                    out_of_range.get_or_insert(SpkKernelError::Ephemeris(err));
-                }
-                Err(err) => return Err(SpkKernelError::Ephemeris(err)),
+            if segment.center_id != center_id {
+                return Err(SpkKernelError::MissingSegment { target_id });
             }
+            return segment
+                .try_position_et(et)
+                .map_err(SpkKernelError::Ephemeris);
         }
         Err(out_of_range.unwrap_or(SpkKernelError::MissingSegment { target_id }))
     }
 
     /// Build a kernel set from pre-parsed segments (tests and tooling).
+    ///
+    /// Panics on rejected frame/type/coverage metadata. Use
+    /// [`Self::try_from_indexed_segments`] for fallible validation.
     pub fn from_indexed_segments(segments: Vec<IndexedSegmentData>) -> Self {
-        Self {
+        Self::try_from_indexed_segments(segments).expect("unsupported SPK frame metadata")
+    }
+
+    /// Validate frame IDs before building an ICRF kernel set.
+    ///
+    /// The caller must independently establish that the kernel realizes ICRF;
+    /// NAIF frame ID 1 alone cannot distinguish historical FK5 realizations.
+    pub fn try_from_indexed_segments(
+        segments: Vec<IndexedSegmentData>,
+    ) -> Result<Self, SpiceError> {
+        for segment in &segments {
+            spk::validate_indexed_segment(segment)?;
+        }
+        Ok(Self {
             segments: segments
                 .into_iter()
                 .map(KernelSegment::from_indexed)
                 .collect(),
-        }
+        })
     }
 }
 

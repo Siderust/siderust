@@ -40,6 +40,9 @@ use crate::coordinates::{
     centers::Heliocentric,
     frames::EclipticMeanJ2000,
 };
+use crate::ephemeris::native_frames::{
+    vsop_position as normalized_position, vsop_velocity as normalized_velocity,
+};
 use crate::qtty::*;
 use crate::time::JulianDate;
 type AuPerDay = crate::qtty::Per<AstronomicalUnit, Day>;
@@ -52,7 +55,7 @@ macro_rules! impl_vsop87a {
         z: [$($z:ident),+ $(,)?]
     ) => {
         impl $Planet {
-            /// Computes the VSOP87A heliocentric ecliptic Cartesian position (mean J2000.0 equinox).
+            /// Computes the VSOP87A heliocentric ecliptic Cartesian position (canonical IAU 2006 J2000 ecliptic).
             pub fn vsop87a(jd: JulianDate) -> Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit> {
                 let (x, y, z) = position(
                     jd,
@@ -60,14 +63,14 @@ macro_rules! impl_vsop87a {
                     &[$( &$y ),+],
                     &[$( &$z ),+]
                 );
-                Position::new(
+                normalized_position(
                     AstronomicalUnits::new(x),
                     AstronomicalUnits::new(y),
                     AstronomicalUnits::new(z),
                 )
             }
 
-            /// Computes the VSOP87A heliocentric ecliptic Cartesian velocity (mean J2000.0 equinox, AU/day).
+            /// Computes the VSOP87A heliocentric ecliptic Cartesian velocity (canonical IAU 2006 J2000 ecliptic, AU/day).
             pub fn vsop87a_vel(jd: JulianDate) -> Velocity<EclipticMeanJ2000, AuPerDay> {
                 let (vx, vy, vz) = velocity(
                     jd,
@@ -75,7 +78,7 @@ macro_rules! impl_vsop87a {
                     &[$( &$y ),+],
                     &[$( &$z ),+]
                 );
-                Velocity::new(
+                normalized_velocity(
                     crate::qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vx),
                     crate::qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vy),
                     crate::qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vz)
@@ -92,12 +95,12 @@ macro_rules! impl_vsop87a {
                     &[$( &$z ),+]
                 );
                 (
-                    Position::new(
+                    normalized_position(
                         AstronomicalUnits::new(x),
                         AstronomicalUnits::new(y),
                         AstronomicalUnits::new(z),
                     ),
-                    Velocity::new(
+                    normalized_velocity(
                         crate::qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vx),
                         crate::qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vy),
                         crate::qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vz))
@@ -173,7 +176,6 @@ impl_vsop87a!(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::coordinates::cartesian::Position;
     use crate::macros::assert_cartesian_eq;
     use crate::qtty::AU;
 
@@ -185,7 +187,7 @@ mod tests {
         let coord = Mercury::vsop87a(crate::J2000);
         assert_cartesian_eq!(
             coord,
-            Position::new(-0.1300934115 * AU, -0.4472876716 * AU, -0.0245983802 * AU),
+            normalized_position(-0.1300934115 * AU, -0.4472876716 * AU, -0.0245983802 * AU),
             PRECISION
         );
     }
@@ -196,7 +198,7 @@ mod tests {
         let coord = Venus::vsop87a(crate::J2000);
         assert_cartesian_eq!(
             coord,
-            Position::new(-0.7183022797 * AU, -0.0326546017 * AU, 0.0410142975 * AU),
+            normalized_position(-0.7183022797 * AU, -0.0326546017 * AU, 0.0410142975 * AU),
             PRECISION
         );
     }
@@ -207,7 +209,7 @@ mod tests {
         let coord = Earth::vsop87a(crate::J2000);
         assert_cartesian_eq!(
             coord,
-            Position::new(-0.1771354586 * AU, 0.9672416237 * AU, -0.0000039000 * AU),
+            normalized_position(-0.1771354586 * AU, 0.9672416237 * AU, -0.0000039000 * AU),
             PRECISION
         );
     }
@@ -218,7 +220,7 @@ mod tests {
         let coord = Mars::vsop87a(crate::J2000);
         assert_cartesian_eq!(
             coord,
-            Position::new(1.3907159264 * AU, -0.0134157043 * AU, -0.0344677967 * AU),
+            normalized_position(1.3907159264 * AU, -0.0134157043 * AU, -0.0344677967 * AU),
             PRECISION
         );
     }
@@ -229,7 +231,7 @@ mod tests {
         let coord = Jupiter::vsop87a(crate::J2000);
         assert_cartesian_eq!(
             coord,
-            Position::new(4.0011740268 * AU, 2.9385810077 * AU, -0.1017837501 * AU),
+            normalized_position(4.0011740268 * AU, 2.9385810077 * AU, -0.1017837501 * AU),
             PRECISION
         );
     }
@@ -240,7 +242,7 @@ mod tests {
         let coord = Saturn::vsop87a(crate::J2000);
         assert_cartesian_eq!(
             coord,
-            Position::new(6.4064068573 * AU, 6.5699929449 * AU, -0.3690768029 * AU),
+            normalized_position(6.4064068573 * AU, 6.5699929449 * AU, -0.3690768029 * AU),
             PRECISION
         );
     }
@@ -251,7 +253,7 @@ mod tests {
         let coord = Uranus::vsop87a(crate::J2000);
         assert_cartesian_eq!(
             coord,
-            Position::new(14.4318934159 * AU, -13.7343162527 * AU, -0.2381421963 * AU),
+            normalized_position(14.4318934159 * AU, -13.7343162527 * AU, -0.2381421963 * AU),
             PRECISION
         );
     }
@@ -262,7 +264,7 @@ mod tests {
         let coord = Neptune::vsop87a(crate::J2000);
         assert_cartesian_eq!(
             coord,
-            Position::new(16.8121116576 * AU, -24.9916630908 * AU, 0.1272190171 * AU),
+            normalized_position(16.8121116576 * AU, -24.9916630908 * AU, 0.1272190171 * AU),
             PRECISION
         );
     }
