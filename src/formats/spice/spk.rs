@@ -268,6 +268,21 @@ pub(crate) fn validate_icrf_segment(
     Ok(())
 }
 
+/// Validate the fixed fundamental chains used by the DE convenience backend.
+pub(crate) fn validate_de_body_center(target_id: i32, center_id: i32) -> Result<(), SpiceError> {
+    let required = match target_id {
+        SUN_TARGET | EMB_TARGET => Some(0),
+        MOON_TARGET | EARTH_TARGET => Some(3),
+        _ => None,
+    };
+    if let Some(center) = required {
+        if center_id != center {
+            return Err(SpiceError::FormatParse(format!("runtime DE body chain requires target {target_id} relative to {center}, got center {center_id}")));
+        }
+    }
+    Ok(())
+}
+
 /// Validate pre-parsed ICRF segment metadata using the byte-loader policy.
 pub(crate) fn validate_indexed_segment(segment: &IndexedSegmentData) -> Result<(), SpiceError> {
     validate_icrf_segment(segment.frame_id, segment.data.data_type, segment.target_id)?;
@@ -312,14 +327,30 @@ pub fn parse_indexed_segments(file_data: &[u8]) -> Result<Vec<IndexedSegmentData
     Ok(segments)
 }
 
-/// Parse a BSP file and extract the required Sun, EMB, Moon, and optional Earth segments.
+/// Parse a strict ICRF Type 2/3 BSP with one segment per fundamental DE target.
+///
+/// Alternate fundamental-body centers and duplicate target segments are rejected:
+/// this legacy result cannot represent a prioritized stack. Use the indexed parser
+/// with `RuntimeEphemeris` or `SpkKernelSet` for multiple segments/coverage windows.
 pub fn parse_bsp(file_data: &[u8]) -> Result<BspSegments, SpiceError> {
     let daf = Daf::parse(file_data)?;
 
     // Strict policy also applies to unrelated summaries: skipping an unsupported
     // later segment could silently expose an older segment for the same target.
-    for summary in &daf.summaries {
+    for (index, summary) in daf.summaries.iter().enumerate() {
         validate_icrf_segment(summary.frame_id, summary.data_type, summary.target_id)?;
+        validate_de_body_center(summary.target_id, summary.center_id)?;
+        if matches!(
+            summary.target_id,
+            SUN_TARGET | EMB_TARGET | MOON_TARGET | EARTH_TARGET
+        ) && daf.summaries[..index]
+            .iter()
+            .any(|previous| previous.target_id == summary.target_id)
+        {
+            return Err(SpiceError::FormatParse(format!(
+                "legacy parse_bsp cannot represent multiple segments for target {}; use RuntimeEphemeris::from_bytes or SpkKernelSet", summary.target_id
+            )));
+        }
     }
     let find_summary = |target: i32, center: i32| {
         daf.summaries

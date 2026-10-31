@@ -308,3 +308,26 @@ fn selected_target_chain_never_falls_back_to_an_older_center() {
         Err(SpkKernelError::MissingSegment { target_id: 777 })
     ));
 }
+
+#[test]
+fn legacy_single_segment_parser_rejects_unrepresentable_priority() {
+    let duplicate = bsp_with_summaries(&[(10, 1, 2), (10, 1, 2)]);
+    assert!(spk::parse_bsp(&duplicate)
+        .unwrap_err()
+        .to_string()
+        .contains("cannot represent multiple segments for target 10"));
+    // A later Moon/399 segment must not be ignored in favor of Moon/EMB.
+    let mut alternate = bsp_with_summaries(&[(10, 1, 2), (301, 1, 2), (301, 1, 2)]);
+    let first_center = 1048 + 40 + 20;
+    let later_center = 1048 + 80 + 20;
+    alternate[first_center..first_center + 4].copy_from_slice(&3i32.to_le_bytes());
+    alternate[later_center..later_center + 4].copy_from_slice(&399i32.to_le_bytes());
+    assert!(spk::parse_bsp(&alternate)
+        .unwrap_err()
+        .to_string()
+        .contains("got center 399"));
+    assert!(RuntimeEphemeris::from_bytes(&alternate)
+        .unwrap_err()
+        .to_string()
+        .contains("got center 399"));
+}

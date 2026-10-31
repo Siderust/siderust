@@ -95,23 +95,17 @@ impl RuntimeEphemeris {
 
     /// Validate parsed frame metadata before interpreting coefficients as ICRF.
     ///
-    /// All segments must use NAIF J2000 frame ID 1. The caller must verify
+    /// Every segment must use NAIF J2000 frame ID 1, Type 2/3 and finite ordered
+    /// coverage. Fundamental targets must use the documented fixed DE chains.
+    /// The caller must verify
     /// ICRF realization from the kernel producer's documentation (e.g. DE440/441).
     pub fn try_from_indexed_segments(
         indexed: Vec<spk::IndexedSegmentData>,
     ) -> Result<Self, ArchiveError> {
         for segment in &indexed {
             spk::validate_indexed_segment(segment).map_err(spice_error_to_archive)?;
-            let required_center = match segment.target_id {
-                spk::SUN_TARGET | spk::EMB_TARGET => Some(0),
-                spk::MOON_TARGET | spk::EARTH_TARGET => Some(3),
-                _ => None,
-            };
-            if let Some(center) = required_center {
-                if segment.center_id != center {
-                    return Err(ArchiveError::Integrity(format!("runtime DE body chain requires target {} relative to {center}, got center {}", segment.target_id, segment.center_id)));
-                }
-            }
+            spk::validate_de_body_center(segment.target_id, segment.center_id)
+                .map_err(spice_error_to_archive)?;
         }
         let inner = RuntimeEphemerisInner {
             sun: DynSegmentStack::for_indexed_pair(&indexed, spk::SUN_TARGET, spk::SUN_CENTER),
@@ -137,7 +131,8 @@ impl RuntimeEphemeris {
 
     /// Construct from legacy single-segment [`spk::BspSegments`] (tests and tooling).
     ///
-    /// This metadata-free input explicitly assumes ICRF axes. Prefer
+    /// Panics on an unsupported segment type; use [`Self::try_from_segments`]
+    /// to handle validation errors. This metadata-free input assumes ICRF axes. Prefer
     /// [`Self::try_from_indexed_segments`] when frame metadata is available.
     pub fn from_segments(segments: spk::BspSegments) -> Self {
         Self::try_from_segments(segments).expect("unsupported runtime ephemeris segment metadata")

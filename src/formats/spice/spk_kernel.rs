@@ -131,6 +131,8 @@ impl KernelSegment {
 /// Later paths take precedence when more than one loaded segment covers the
 /// same target. Each state request resolves a target-center chain back to the
 /// solar-system barycenter before subtracting the requested observer.
+/// Every input segment must be Type 2/3 in producer-documented ICRF axes
+/// labeled J2000 (ID 1); incompatible segments are rejected, never skipped.
 #[derive(Default)]
 pub struct SpkKernelSet {
     segments: Vec<KernelSegment>,
@@ -157,7 +159,8 @@ impl SpkKernelSet {
         Ok(set)
     }
 
-    /// Add all supported segments from an in-memory BSP/SPK.
+    /// Add an entire strict ICRF Type 2/3 BSP/SPK atomically.
+    /// Any incompatible segment rejects the file without modifying this set.
     pub fn push_bytes(&mut self, bytes: &[u8]) -> Result<(), SpiceError> {
         self.segments.extend(
             spk::parse_indexed_segments(bytes)?
@@ -291,6 +294,9 @@ impl SpkKernelSet {
     }
 
     /// Build a kernel set from pre-parsed segments (tests and tooling).
+    ///
+    /// Panics on rejected frame/type/coverage metadata. Use
+    /// [`Self::try_from_indexed_segments`] for fallible validation.
     pub fn from_indexed_segments(segments: Vec<IndexedSegmentData>) -> Self {
         Self::try_from_indexed_segments(segments).expect("unsupported SPK frame metadata")
     }

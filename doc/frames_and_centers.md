@@ -306,7 +306,8 @@ target/center chains. General frame-aware SPICE context operations are separate.
 Later segments/kernels win **within declared coverage**. Once selected, an
 invalid record or unavailable center chain is an error, not permission to use
 an older overlapping segment. An older segment may be used where a newer one
-has no coverage. Checked constructors return actionable errors; retained
+has no coverage. Legacy `parse_bsp` cannot represent a stack and rejects
+multiple segments for a fundamental target; use the indexed/stacked loaders. Checked constructors return actionable errors; retained
 infallible parsed constructors panic on rejected metadata. Metadata-free legacy
 `BspSegments` explicitly assumes ICRF, and its checked constructor validates types.
 
