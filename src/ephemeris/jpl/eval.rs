@@ -504,13 +504,10 @@ impl DynSegmentStack {
                 out_of_range.get_or_insert(Self::out_of_range_et(segment, et_seconds));
                 continue;
             }
-            match segment.descriptor.try_locate_et(et_seconds) {
-                Ok(_) => return Ok(&segment.descriptor),
-                Err(err @ EphemerisError::OutOfRange { .. }) => {
-                    out_of_range.get_or_insert(err);
-                }
-                Err(err) => return Err(err),
-            }
+            // Declared coverage establishes priority. Invalid coefficient
+            // coverage must not make an older overlapping segment visible.
+            segment.descriptor.try_locate_et(et_seconds)?;
+            return Ok(&segment.descriptor);
         }
         Err(out_of_range.unwrap_or(EphemerisError::InvalidSegment {
             init_seconds: f64::NAN,

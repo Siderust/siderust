@@ -101,7 +101,17 @@ impl RuntimeEphemeris {
         indexed: Vec<spk::IndexedSegmentData>,
     ) -> Result<Self, ArchiveError> {
         for segment in &indexed {
-            spk::validate_j2000_frame(segment.frame_id).map_err(spice_error_to_archive)?;
+            spk::validate_indexed_segment(segment).map_err(spice_error_to_archive)?;
+            let required_center = match segment.target_id {
+                spk::SUN_TARGET | spk::EMB_TARGET => Some(0),
+                spk::MOON_TARGET | spk::EARTH_TARGET => Some(3),
+                _ => None,
+            };
+            if let Some(center) = required_center {
+                if segment.center_id != center {
+                    return Err(ArchiveError::Integrity(format!("runtime DE body chain requires target {} relative to {center}, got center {}", segment.target_id, segment.center_id)));
+                }
+            }
         }
         let inner = RuntimeEphemerisInner {
             sun: DynSegmentStack::for_indexed_pair(&indexed, spk::SUN_TARGET, spk::SUN_CENTER),
@@ -130,6 +140,24 @@ impl RuntimeEphemeris {
     /// This metadata-free input explicitly assumes ICRF axes. Prefer
     /// [`Self::try_from_indexed_segments`] when frame metadata is available.
     pub fn from_segments(segments: spk::BspSegments) -> Self {
+        Self::try_from_segments(segments).expect("unsupported runtime ephemeris segment metadata")
+    }
+
+    /// Validate legacy metadata-free segments, explicitly assuming ICRF axes.
+    /// Prefer [`Self::try_from_indexed_segments`] when frame/coverage metadata exists.
+    pub fn try_from_segments(segments: spk::BspSegments) -> Result<Self, ArchiveError> {
+        for (target, segment) in [
+            (spk::SUN_TARGET, &segments.sun),
+            (spk::EMB_TARGET, &segments.emb),
+            (spk::MOON_TARGET, &segments.moon),
+        ] {
+            spk::validate_icrf_segment(1, segment.data_type, target)
+                .map_err(spice_error_to_archive)?;
+        }
+        if let Some(earth) = &segments.earth {
+            spk::validate_icrf_segment(1, earth.data_type, spk::EARTH_TARGET)
+                .map_err(spice_error_to_archive)?;
+        }
         let inner = RuntimeEphemerisInner {
             sun: DynSegmentStack::from_spk_segment(&segments.sun),
             emb: DynSegmentStack::from_spk_segment(&segments.emb),
@@ -139,9 +167,9 @@ impl RuntimeEphemeris {
                 .as_ref()
                 .map(DynSegmentStack::from_spk_segment),
         };
-        Self {
+        Ok(Self {
             inner: Arc::new(inner),
-        }
+        })
     }
 
     /// Load from a BSP file resolved by [`siderust_archive::jpl::DatasetManager`].

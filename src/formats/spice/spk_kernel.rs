@@ -191,33 +191,7 @@ impl SpkKernelSet {
         point: PlanetPoint,
         jd: JulianDate,
     ) -> Result<IcrfKm, SpkKernelError> {
-        if let PlanetPoint::SystemBarycenter = point {
-            match self.try_major_planet_barycenter_geocentric_fast(planet, jd) {
-                Ok(state) => return Ok(state),
-                Err(SpkKernelError::MissingSegment { .. }) => {}
-                Err(err) => return Err(err),
-            }
-        }
         self.try_geometric_state(planet.naif_id(point), EARTH_ID, jd)
-    }
-
-    fn try_major_planet_barycenter_geocentric_fast(
-        &self,
-        planet: MajorPlanet,
-        jd: JulianDate,
-    ) -> Result<IcrfKm, SpkKernelError> {
-        let et = jd_tt_to_spice_et_seconds(jd);
-        let target =
-            self.try_edge_position_et(planet.naif_id(PlanetPoint::SystemBarycenter), SSB_ID, et)?;
-        let emb = self.try_edge_position_et(EMB_ID, SSB_ID, et)?;
-        let earth = match self.try_edge_position_et(EARTH_ID, EMB_ID, et) {
-            Ok(earth_off) => emb + earth_off,
-            Err(_) => {
-                let moon_off = self.try_edge_position_et(MOON_ID, EMB_ID, et)?;
-                emb - moon_off.scale(1.0 / EARTH_MOON_RATIO)
-            }
-        };
-        Ok(target - earth)
     }
 
     fn try_position_from_ssb(
@@ -245,24 +219,18 @@ impl SpkKernelSet {
                 out_of_range.get_or_insert(segment.out_of_range(jd));
                 continue;
             }
-            match segment.try_position(jd) {
-                Ok(offset) => match self.try_position_from_ssb(segment.center_id, jd, visited) {
-                    Ok(center) => {
-                        visited.pop();
-                        return Ok(center + offset);
-                    }
-                    Err(err) => {
-                        out_of_range.get_or_insert(err);
-                    }
-                },
-                Err(err @ EphemerisError::OutOfRange { .. }) => {
-                    out_of_range.get_or_insert(SpkKernelError::Ephemeris(err));
-                }
-                Err(err) => {
-                    visited.pop();
-                    return Err(SpkKernelError::Ephemeris(err));
-                }
-            }
+            // This is the highest-priority segment covering this target.
+            // A missing center chain or bad coefficient coverage is an error,
+            // not permission to expose an older target segment.
+            let result = segment
+                .try_position(jd)
+                .map_err(SpkKernelError::Ephemeris)
+                .and_then(|offset| {
+                    self.try_position_from_ssb(segment.center_id, jd, visited)
+                        .map(|center| center + offset)
+                });
+            visited.pop();
+            return result;
         }
 
         if target_id == EARTH_ID {
@@ -306,19 +274,18 @@ impl SpkKernelSet {
             .segments
             .iter()
             .rev()
-            .filter(|segment| segment.target_id == target_id && segment.center_id == center_id)
+            .filter(|segment| segment.target_id == target_id)
         {
             if !segment.covers_et(et) {
                 out_of_range.get_or_insert(segment.out_of_range_et(et));
                 continue;
             }
-            match segment.try_position_et(et) {
-                Ok(position) => return Ok(position),
-                Err(err @ EphemerisError::OutOfRange { .. }) => {
-                    out_of_range.get_or_insert(SpkKernelError::Ephemeris(err));
-                }
-                Err(err) => return Err(SpkKernelError::Ephemeris(err)),
+            if segment.center_id != center_id {
+                return Err(SpkKernelError::MissingSegment { target_id });
             }
+            return segment
+                .try_position_et(et)
+                .map_err(SpkKernelError::Ephemeris);
         }
         Err(out_of_range.unwrap_or(SpkKernelError::MissingSegment { target_id }))
     }
@@ -336,7 +303,7 @@ impl SpkKernelSet {
         segments: Vec<IndexedSegmentData>,
     ) -> Result<Self, SpiceError> {
         for segment in &segments {
-            spk::validate_j2000_frame(segment.frame_id)?;
+            spk::validate_indexed_segment(segment)?;
         }
         Ok(Self {
             segments: segments
