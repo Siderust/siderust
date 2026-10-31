@@ -6,6 +6,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.18.1] - 2026-10-31
+
+### Fixed
+
+- Adopt `tempoch` 0.11.2 so EOP lookups reject fractional UTC MJDs beyond
+  the final IERS sample and non-finite epochs, without changing valid
+  in-coverage interpolation or leap-second-aware UT1 handling.
+
+### Changed
+
+- Synchronize `siderust` and `siderust-ffi` at 0.18.1, update the direct
+  `tempoch` and `tempoch-ffi` dependencies to 0.11.2, and advance the
+  reported FFI version to 1801 without changing public ABI layouts.
+
+
 ## [0.18.0]
 
 Release preparation; no release date has been assigned.
