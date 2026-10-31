@@ -517,7 +517,7 @@ is a **Terrestrial Time (TT)** Julian Date.
 
 ## 7. Frame-Rotation Hub
 
-All frame rotations route through the **ICRS** hub frame:
+ICRS is the orientation hub; direct frame-pair implementations may bypass it:
 
 ```
 F1 → ICRS → F2
@@ -525,11 +525,11 @@ F1 → ICRS → F2
 
 The following constant rotation matrices are pre-computed:
 
-| Rotation | Matrix constant | Reference |
+| Rotation | Implementation | Reference |
 |---|---|---|
-| FK4 B1950 → ICRS | `FK4_TO_ICRS` | Standish (1982) + frame bias |
+| FK4 B1950 → ICRS | `FK4_TO_FK5` composed with the shared inverse bias | Standish (1982) + frame bias |
 | Galactic → ICRS | `GALACTIC_TO_ICRS` | Murray (1989), NGP coordinates |
-| ICRS → EquatorialMeanJ2000 | `FRAME_BIAS_ICRS_TO_J2000` | IAU 2006 frame bias |
+| ICRS → EquatorialMeanJ2000 | `bias::frame_bias_icrs_to_j2000()` | IAU 2006 frame bias |
 
 Time-dependent rotations:
 
@@ -539,8 +539,9 @@ Time-dependent rotations:
 | CIRS ↔ TIRS | Earth Rotation Angle |
 | TIRS ↔ ITRF | Polar motion matrix **W** |
 | TEME ↔ TOD | Rz(equation of equinoxes) |
-| EquatorialMean ↔ EquatorialTrueOfDate | selected nutation model (IAU 2006A default) |
-| Body-fixed ↔ ICRS | IAU 2015 rotation parameters |
+| EquatorialMeanJ2000 ↔ EquatorialMeanOfDate | IAU 2006 precession with fixed bias removed |
+| EquatorialMeanOfDate ↔ EquatorialTrueOfDate | selected nutation model (IAU 2006A default) |
+| Body-fixed ↔ ICRS | body-specific IAU rotation model (Moon: periodic IAU 2009) |
 
 Provider implementations are grouped by responsibility:
 
