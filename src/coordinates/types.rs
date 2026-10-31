@@ -121,8 +121,7 @@ pub use super::spherical::position::MarsFixed as MarsFixedPos;
 pub use super::spherical::position::MercuryFixed as MercuryFixedPos;
 /// **Selenocentric** NAIF `IAU_MOON` analytical Mean-Earth spherical position.
 pub use super::spherical::position::MoonIauMeanEarth as MoonIauMeanEarthPos;
-/// **Selenocentric** NAIF `IAU_MOON` analytical Mean-Earth spherical position
-/// (legacy name; prefer [`MoonIauMeanEarthPos`]).
+/// **Selenocentric** lunar principal-axes spherical position.
 pub use super::spherical::position::MoonPrincipalAxes as MoonPrincipalAxesPos;
 /// **Neptunocentric** body-fixed spherical position.
 pub use super::spherical::position::NeptuneFixed as NeptuneFixedPos;
@@ -210,8 +209,7 @@ pub use super::cartesian::position::MercuryFixed as MercuryFixedCartPos;
 /// **Selenocentric** cartesian position in the NAIF `IAU_MOON` analytical
 /// Mean-Earth frame.
 pub use super::cartesian::position::MoonIauMeanEarth as MoonIauMeanEarthCartPos;
-/// **Selenocentric** cartesian position in the NAIF `IAU_MOON` analytical
-/// Mean-Earth frame (legacy name; prefer [`MoonIauMeanEarthCartPos`]).
+/// **Selenocentric** cartesian position in lunar principal axes; no analytical provider.
 pub use super::cartesian::position::MoonPrincipalAxes as MoonPrincipalAxesCartPos;
 /// **Neptunocentric** body-fixed cartesian position.
 pub use super::cartesian::position::NeptuneFixed as NeptuneFixedCartPos;

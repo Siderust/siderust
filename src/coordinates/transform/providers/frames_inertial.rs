@@ -9,7 +9,7 @@
 //!
 //! Key rotation chains:
 //!
-//! - **Frame bias**: ICRS ↔ EquatorialMeanJ2000 (constant ~80 µas matrix).
+//! - **Frame bias**: ICRS ↔ EquatorialMeanJ2000 (constant ~23 mas matrix).
 //! - **Obliquity**: EquatorialMeanJ2000 ↔ EclipticMeanJ2000 (Rx by −ε₀).
 //! - **Precession**: EquatorialMeanJ2000 → EquatorialMeanOfDate (IAU 2006).
 //! - **Nutation**: EquatorialMeanOfDate → EquatorialTrueOfDate (IAU 2000B).

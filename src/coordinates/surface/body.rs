@@ -217,9 +217,9 @@ pub const EARTH_WGS84_SURFACE: ReferenceSurface = ReferenceSurface::Ellipsoid {
 ///
 /// The associated body-fixed frame is the NAIF text-PCK `IAU_MOON` analytical
 /// Mean-Earth/Polar-Axis orientation (IAU 2009), including 13 periodic terms
-/// and quadratic W. Prefer the [`MoonIauMeanEarth`] name. The legacy affn
-/// marker [`crate::coordinates::frames::MoonPrincipalAxes`] is a compatibility
-/// alias and does **not** denote JPL DE `MOON_PA` or binary-PCK `MOON_ME`.
+/// and quadratic W. The [`MoonIauMeanEarth`] marker is distinct from
+/// [`crate::coordinates::frames::MoonPrincipalAxes`]. DE-specific PA and ME
+/// realizations require binary PCK and frame kernels.
 /// Model evaluation converts the public TT epoch to TDB using tempoch.
 pub const MOON_IAU_SPHERE: ReferenceSurface = ReferenceSurface::Sphere {
     radius: Meters::new(1_737_400.0),

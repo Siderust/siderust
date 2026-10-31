@@ -14,10 +14,14 @@
 //! - [`ICRS`]: International Celestial Reference System (quasi-inertial, fundamental reference).
 //! - [`ICRF`]: International Celestial Reference Frame (ICRS realization via VLBI).
 //! - [`Horizontal`]: Local horizon system (altitude-azimuth).
-//! - [`EquatorialMeanJ2000`]: Mean equator/equinox of J2000 (FK5/J2000 mean).
+//! - [`EquatorialMeanJ2000`]: IAU 2006 mean equator/equinox of J2000 (SOFA `bp06` bias).
 //! - [`EquatorialMeanOfDate`]: Mean equator/equinox of date (precessed, no nutation).
 //! - [`EquatorialTrueOfDate`]: True equator/equinox of date (precession + nutation).
-//! - [`EclipticMeanJ2000`]: Mean ecliptic coordinate system at J2000.
+//! - [`EclipticMeanJ2000`]: IAU 2006 mean ecliptic and equinox at J2000.
+//!   Its ICRS mapping is SOFA `ecm06(2451545.0, 0.0)`: J2000 bias followed
+//!   by obliquity 84381.406 arcseconds. This differs from native analytical
+//!   dynamical ecliptics and from SPICE `ECLIPJ2000`. Ephemeris outputs are
+//!   normalized at their source; see `doc/ephemeris_frames.md`.
 //! - [`EclipticOfDate`]: Mean ecliptic coordinate system of date.
 //! - [`EclipticMeanOfDate`]: Alias for [`EclipticOfDate`] (naming parity).
 //! - [`EclipticTrueOfDate`]: True ecliptic coordinate system of date.
@@ -30,7 +34,7 @@
 //!
 //! ## Siderust-Specific Frames
 //!
-//! All frames are now defined in `affn` and re-exported here.
+//! Most markers are defined in `affn`; the analytical lunar frame is defined here.
 //!
 //! ## Planetary Body-Fixed Frames (from `affn`)
 //!
@@ -45,7 +49,7 @@
 //! - [`VenusFixed`]: Venus IAU 2015 body-fixed rotation model.
 //! - [`MarsFixed`]: Mars IAU 2015 body-fixed rotation model.
 //! - [`MoonIauMeanEarth`]: NAIF IAU_MOON analytical Mean-Earth frame.
-//!   The legacy [`MoonPrincipalAxes`] name is an alias, **not** DE MOON_PA.
+//! - [`MoonPrincipalAxes`]: lunar principal axes; no analytical orientation provider.
 //! - [`JupiterSystemIII`]: Jupiter System III magnetic-field-based rotation.
 //! - [`SaturnFixed`]: Saturn IAU body-fixed rotation model.
 //! - [`UranusFixed`]: Uranus IAU body-fixed rotation model.
@@ -77,13 +81,20 @@ pub mod planetary {
         SaturnFixed, UranusFixed, VenusFixed,
     };
 
-    /// NAIF `IAU_MOON` analytical lunar Mean-Earth orientation (preferred name).
+    /// NAIF `IAU_MOON` analytical lunar Mean-Earth orientation.
     ///
-    /// This is a type alias for the `affn`-defined [`MoonPrincipalAxes`] marker,
-    /// retained so existing code continues to compile. **Neither** name is a
-    /// JPL DE `MOON_PA` or binary-PCK `MOON_ME` realization; use an explicit
-    /// SPICE binary PCK / frame kernel for that precision.
-    pub type MoonIauMeanEarth = MoonPrincipalAxes;
+    /// Distinct from [`MoonPrincipalAxes`]. High precision DE lunar principal
+    /// axes and Mean-Earth realizations require binary PCK and frame kernels.
+    ///
+    /// ```compile_fail
+    /// use siderust::coordinates::{cartesian::Direction, frames::{MoonIauMeanEarth, MoonPrincipalAxes}};
+    /// let analytical = Direction::<MoonIauMeanEarth>::new_unchecked(1.0, 0.0, 0.0);
+    /// let principal_axes: Direction<MoonPrincipalAxes> = analytical;
+    /// ```
+    #[derive(Debug, Copy, Clone, PartialEq, Eq, Default, affn::prelude::ReferenceFrame)]
+    #[frame(polar = "lat", azimuth = "lon", distance = "radius")]
+    #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+    pub struct MoonIauMeanEarth;
 
     // Re-export planetary IAU rotation parameters from solar-system body metadata.
     pub use crate::astro::{HasIauRotation, IauRotationParams};

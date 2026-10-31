@@ -11,7 +11,7 @@
 //!
 //! Where a case claims agreement with an external tool (e.g. SPICE), the
 //! body-fixed frame realisation must match. Siderust's lunar marker
-//! `MoonIauMeanEarth` (legacy alias `MoonPrincipalAxes`) uses the NAIF
+//! `MoonIauMeanEarth` uses the NAIF
 //! IAU_MOON analytical Mean-Earth model, not the JPL DE `MOON_PA` or
 //! binary-PCK `MOON_ME` realizations.
 //!

@@ -28,6 +28,38 @@ use crate::time::JulianDate;
 pub struct Vsop87Ephemeris;
 
 impl Ephemeris for Vsop87Ephemeris {
+    fn try_planet_barycentric(
+        planet: super::MajorPlanet,
+        jd: JulianDate,
+    ) -> Result<
+        Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>,
+        super::PlanetEphemerisError,
+    > {
+        use super::MajorPlanet::*;
+        Ok(match planet {
+            Mercury => crate::bodies::solar_system::Mercury::vsop87e(jd),
+            Venus => crate::bodies::solar_system::Venus::vsop87e(jd),
+            Mars => crate::bodies::solar_system::Mars::vsop87e(jd),
+            Jupiter => crate::bodies::solar_system::Jupiter::vsop87e(jd),
+            Saturn => crate::bodies::solar_system::Saturn::vsop87e(jd),
+            Uranus => crate::bodies::solar_system::Uranus::vsop87e(jd),
+            Neptune => crate::bodies::solar_system::Neptune::vsop87e(jd),
+        })
+    }
+
+    fn pluto_barycentric(
+        jd: JulianDate,
+    ) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> {
+        // Preserve the default backend's existing coarse catalogue model.
+        let helio = crate::bodies::solar_system::PLUTO.orbit.kepler_position(jd);
+        let sun = <Self as Ephemeris>::sun_barycentric(jd);
+        Position::new(
+            helio.x() + sun.x(),
+            helio.y() + sun.y(),
+            helio.z() + sun.z(),
+        )
+    }
+
     #[inline]
     fn sun_barycentric(
         jd: JulianDate,

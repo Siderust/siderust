@@ -325,12 +325,25 @@ impl SpkKernelSet {
 
     /// Build a kernel set from pre-parsed segments (tests and tooling).
     pub fn from_indexed_segments(segments: Vec<IndexedSegmentData>) -> Self {
-        Self {
+        Self::try_from_indexed_segments(segments).expect("unsupported SPK frame metadata")
+    }
+
+    /// Validate frame IDs before building an ICRF kernel set.
+    ///
+    /// The caller must independently establish that the kernel realizes ICRF;
+    /// NAIF frame ID 1 alone cannot distinguish historical FK5 realizations.
+    pub fn try_from_indexed_segments(
+        segments: Vec<IndexedSegmentData>,
+    ) -> Result<Self, SpiceError> {
+        for segment in &segments {
+            spk::validate_j2000_frame(segment.frame_id)?;
+        }
+        Ok(Self {
             segments: segments
                 .into_iter()
                 .map(KernelSegment::from_indexed)
                 .collect(),
-        }
+        })
     }
 }
 

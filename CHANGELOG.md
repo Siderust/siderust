@@ -6,6 +6,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Normalize public VSOP87A/E positions and velocities and post-Laskar ELP82B
+  positions to the canonical IAU 2006 J2000 ecliptic using their separate
+  published FK5 ties. ELP now evaluates its documented TDB time argument.
+- Validate ICRF-only SPK frame IDs for byte and parsed-segment loaders;
+  add fallible parsed constructors and share the J2000 bias matrix.
+- Planetary center shifts use the selected ephemeris's optional
+  `try_planet_barycentric` capability instead of silently using VSOP87E;
+  Pluto likewise requires the backend's explicit `pluto_barycentric` capability.
+
+### Changed
+
+- **Breaking:** `MoonIauMeanEarth` and `MoonPrincipalAxes` are distinct frames.
+  Analytical `IAU_MOON` rotations use `MoonIauMeanEarth`; migrate code that
+  relied on the old alias. Principal axes require a data-backed orientation.
+- Analytical ephemeris numerical outputs change while signatures remain
+  source-compatible. See [frame conventions and validation](doc/ephemeris_frames.md).
+
+
 ## [0.17.0] - 2026-10-29
 
 ### Added

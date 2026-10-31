@@ -279,7 +279,7 @@ provider for periodic lunar orientation.
 | Body | Surface default | Fixed frame | Notes |
 |---|---|---|---|
 | Earth | WGS84 ellipsoid | `ECEF` | Coexists with `Topocentric` / GAST APIs; pgr lon east-positive |
-| Moon | IAU sphere 1737.4 km | `MoonIauMeanEarth` (`MoonPrincipalAxes` compatibility alias) | NAIF IAU_MOON analytical Mean-Earth, **not** JPL DE PA / binary-PCK ME; pgr lon east-positive |
+| Moon | IAU sphere 1737.4 km | `MoonIauMeanEarth` (distinct from `MoonPrincipalAxes`) | NAIF IAU_MOON analytical Mean-Earth, **not** JPL DE PA / binary-PCK ME; pgr lon east-positive |
 | Mars | IAU ellipsoid 3396.19 km | `MarsFixed` | Default latitude planetographic; **SPICE pgr lon west-positive** — convert explicitly |
 | Mercury, Venus, Pluto | IAU mean spheres | `*Fixed` | Mercury/Pluto pgr lon west-positive; Venus east-positive |
 | Gas giants | *(no `BodySurfaceModel`)* | — | Implement the trait only with a documented reference surface |
@@ -511,3 +511,6 @@ major rocky bodies are in scope as of v0.16 via `coordinates::surface`.
 ---
 
 *Last updated for v0.16 generic body-surface horizontal transforms.*
+
+Canonical ephemeris axes and native realization conversions are specified in
+[Ephemeris reference frames](ephemeris_frames.md).

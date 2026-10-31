@@ -74,7 +74,7 @@ pub mod centers;
 pub mod context;
 pub mod ecliptic_of_date;
 pub mod ext;
-mod frames;
+pub(crate) mod frames;
 pub mod horizontal;
 pub mod providers;
 pub mod surface_horizontal;

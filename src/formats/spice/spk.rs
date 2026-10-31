@@ -249,15 +249,29 @@ pub fn read_type2_segment(
     read_segment(file_data, daf, summary)
 }
 
+/// Check the frame supported by the ICRF-only ephemeris loaders.
+///
+/// Frame ID 1 is necessary, but does not establish a historical kernel's
+/// physical realization. Callers must establish ICRF provenance separately.
+pub(crate) fn validate_j2000_frame(frame_id: i32) -> Result<(), SpiceError> {
+    if frame_id != 1 {
+        return Err(SpiceError::FormatParse(format!(
+            "SPK frame {frame_id} is unsupported: ICRF ephemeris requires NAIF J2000 frame ID 1"
+        )));
+    }
+    Ok(())
+}
+
 /// Parse every supported J2000 Type 2/3 segment in a BSP file.
 pub fn parse_indexed_segments(file_data: &[u8]) -> Result<Vec<IndexedSegmentData>, SpiceError> {
     let daf = Daf::parse(file_data)?;
     let mut segments = Vec::new();
 
     for summary in &daf.summaries {
-        if summary.frame_id != 1 || (summary.data_type != 2 && summary.data_type != 3) {
+        if summary.data_type != 2 && summary.data_type != 3 {
             continue;
         }
+        validate_j2000_frame(summary.frame_id)?;
         segments.push(IndexedSegmentData {
             target_id: summary.target_id,
             center_id: summary.center_id,
@@ -301,6 +315,7 @@ pub fn parse_bsp(file_data: &[u8]) -> Result<BspSegments, SpiceError> {
             )));
         }
 
+        validate_j2000_frame(summary.frame_id)?;
         read_segment(file_data, &daf, summary)
     };
 
@@ -309,6 +324,7 @@ pub fn parse_bsp(file_data: &[u8]) -> Result<BspSegments, SpiceError> {
     let moon = find_segment(MOON_TARGET, MOON_CENTER, "Moon")?;
     let earth = match find_summary(EARTH_TARGET, EARTH_CENTER) {
         Some(summary) if summary.data_type == 2 || summary.data_type == 3 => {
+            validate_j2000_frame(summary.frame_id)?;
             Some(read_segment(file_data, &daf, summary)?)
         }
         Some(summary) => {

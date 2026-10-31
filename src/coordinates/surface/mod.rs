@@ -33,9 +33,9 @@
 //!
 //! Lunar fixed orientation uses the NAIF `IAU_MOON` analytical Mean-Earth
 //! model with 13 periodic arguments ([`crate::coordinates::frames::MoonIauMeanEarth`]),
-//! **not** a DE-specific `MOON_PA` / binary-PCK `MOON_ME` realisation. The
-//! legacy name `MoonPrincipalAxes` is a compatibility alias for the same
-//! marker. Public epochs are TT; tempoch converts them to TDB for lunar
+//! **not** a DE-specific `MOON_PA` / binary-PCK `MOON_ME` realisation.
+//! `MoonPrincipalAxes` is a distinct frame with no analytical provider.
+//! Public epochs are TT; tempoch converts them to TDB for lunar
 //! orientation.
 //!
 //! Geometric Alt/Az computed here does **not** include atmospheric

@@ -702,12 +702,16 @@ pub(crate) use series_wrappers::*;
 // ====================
 
 impl Moon {
-    /// Get the geocentric ecliptic coordinates of the Moon for a given Julian date
+    /// Geocentric Moon position in the canonical IAU 2006 J2000 ecliptic.
+    ///
+    /// The TT input is converted to TDB. After the native Laskar rotation,
+    /// the ELP82B section 8 FK5 tie and the fixed J2000 FK5-to-ICRS orientation
+    /// are applied before conversion to the canonical frame.
     pub fn get_geo_position<U>(jd: JulianDate) -> Position<Geocentric, EclipticMeanJ2000, U>
     where
         U: LengthUnit,
     {
-        let t1 = jd.julian_centuries();
+        let t1 = jd.to_scale::<crate::time::TDB>().julian_centuries();
         let t2 = t1 * t1;
         let t3 = t2 * t1;
         let t4 = t2 * t2;
@@ -790,10 +794,12 @@ impl Moon {
         let y2 = pwqw * x_val + qw2 * y_val - qw_ra * z_val;
         let z2 = -pw_ra * x_val + qw_ra * y_val + (pw2 + qw2 - 1.0) * z_val;
 
+        let [x, y, z] =
+            crate::ephemeris::native_frames::elp_to_canonical().apply_array([x2, y2, z2]);
         Position::<Geocentric, EclipticMeanJ2000, U>::new(
-            Kilometers::new(x2).to::<U>(),
-            Kilometers::new(y2).to::<U>(),
-            Kilometers::new(z2).to::<U>(),
+            Kilometers::new(x).to::<U>(),
+            Kilometers::new(y).to::<U>(),
+            Kilometers::new(z).to::<U>(),
         )
     }
 }

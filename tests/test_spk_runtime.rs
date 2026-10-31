@@ -112,3 +112,44 @@ fn optional_real_bsp_smoke() {
     assert!(earth.x().is_finite());
     assert!(eph.moon_geocentric(jd).x().is_finite());
 }
+
+#[test]
+fn pre_parsed_non_j2000_frames_are_rejected() {
+    for frame in [0, 2, 17, 10020, -1] {
+        let mut segments = de_chain_indexed();
+        segments[0].frame_id = frame;
+        let error = RuntimeEphemeris::try_from_indexed_segments(segments).unwrap_err();
+        assert!(error.to_string().contains(&format!("frame {frame}")));
+        let mut segments = de_chain_indexed();
+        segments[0].frame_id = frame;
+        assert!(SpkKernelSet::try_from_indexed_segments(segments).is_err());
+    }
+}
+
+#[test]
+fn byte_loaders_reject_non_j2000_frame_before_reading_coefficients() {
+    // A DAF Sun summary in ECLIPJ2000 (17). No coefficients are needed:
+    // rejection must happen before any attempt to interpret them as ICRF.
+    let mut bytes = vec![0u8; 2048];
+    bytes[0..8].copy_from_slice(b"DAF/SPK ");
+    bytes[8..12].copy_from_slice(&2i32.to_le_bytes());
+    bytes[12..16].copy_from_slice(&6i32.to_le_bytes());
+    bytes[76..80].copy_from_slice(&2i32.to_le_bytes());
+    let summary = &mut bytes[1024..];
+    summary[16..24].copy_from_slice(&1f64.to_le_bytes());
+    summary[32..40].copy_from_slice(&86400f64.to_le_bytes());
+    summary[40..44].copy_from_slice(&10i32.to_le_bytes());
+    summary[48..52].copy_from_slice(&17i32.to_le_bytes());
+    summary[52..56].copy_from_slice(&2i32.to_le_bytes());
+    summary[56..60].copy_from_slice(&1i32.to_le_bytes());
+    summary[60..64].copy_from_slice(&100i32.to_le_bytes());
+    for error in [
+        spk::parse_indexed_segments(&bytes).unwrap_err().to_string(),
+        spk::parse_bsp(&bytes).unwrap_err().to_string(),
+        RuntimeEphemeris::from_bytes(&bytes)
+            .unwrap_err()
+            .to_string(),
+    ] {
+        assert!(error.contains("frame 17"), "{error}");
+    }
+}

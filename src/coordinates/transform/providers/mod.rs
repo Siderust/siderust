@@ -46,7 +46,7 @@ use crate::coordinates::centers::{
 #[cfg(feature = "lagrange-centers")]
 use crate::coordinates::centers::{SunEarthL1, SunEarthL2, SunEarthL3, SunEarthL4, SunEarthL5};
 use crate::coordinates::frames::planetary::{
-    JupiterSystemIII, MarsFixed, MercuryFixed, MoonPrincipalAxes, NeptuneFixed, PlutoFixed,
+    JupiterSystemIII, MarsFixed, MercuryFixed, MoonIauMeanEarth, NeptuneFixed, PlutoFixed,
     SaturnFixed, UranusFixed, VenusFixed,
 };
 use crate::coordinates::frames::{

@@ -76,13 +76,33 @@ impl RuntimeEphemeris {
     }
 
     /// Load a runtime ephemeris from raw BSP bytes already in memory.
+    ///
+    /// Requires an ICRF-realized kernel (e.g. DE440/441). Frame ID 1 is checked;
+    /// the producer's physical realization cannot be inferred from that ID.
+    /// Historical FK5/DE200 kernels are not supported by this loader.
     pub fn from_bytes(data: &[u8]) -> Result<Self, ArchiveError> {
         let indexed = spk::parse_indexed_segments(data).map_err(spice_error_to_archive)?;
-        Ok(Self::from_indexed_segments(indexed))
+        Self::try_from_indexed_segments(indexed)
     }
 
-    /// Construct from every parsed J2000 Type 2/3 segment in a BSP file.
+    /// Construct from ICRF-realized J2000 Type 2/3 segments.
+    ///
+    /// Panics on unsupported frame metadata. Use [`Self::try_from_indexed_segments`]
+    /// for fallible validation. Frame ID 1 alone does not prove ICRF provenance.
     pub fn from_indexed_segments(indexed: Vec<spk::IndexedSegmentData>) -> Self {
+        Self::try_from_indexed_segments(indexed).expect("unsupported SPK frame metadata")
+    }
+
+    /// Validate parsed frame metadata before interpreting coefficients as ICRF.
+    ///
+    /// All segments must use NAIF J2000 frame ID 1. The caller must verify
+    /// ICRF realization from the kernel producer's documentation (e.g. DE440/441).
+    pub fn try_from_indexed_segments(
+        indexed: Vec<spk::IndexedSegmentData>,
+    ) -> Result<Self, ArchiveError> {
+        for segment in &indexed {
+            spk::validate_j2000_frame(segment.frame_id).map_err(spice_error_to_archive)?;
+        }
         let inner = RuntimeEphemerisInner {
             sun: DynSegmentStack::for_indexed_pair(&indexed, spk::SUN_TARGET, spk::SUN_CENTER),
             emb: DynSegmentStack::for_indexed_pair(&indexed, spk::EMB_TARGET, spk::EMB_CENTER),
@@ -100,12 +120,15 @@ impl RuntimeEphemeris {
                 }
             },
         };
-        Self {
+        Ok(Self {
             inner: Arc::new(inner),
-        }
+        })
     }
 
     /// Construct from legacy single-segment [`spk::BspSegments`] (tests and tooling).
+    ///
+    /// This metadata-free input explicitly assumes ICRF axes. Prefer
+    /// [`Self::try_from_indexed_segments`] when frame metadata is available.
     pub fn from_segments(segments: spk::BspSegments) -> Self {
         let inner = RuntimeEphemerisInner {
             sun: DynSegmentStack::from_spk_segment(&segments.sun),
