@@ -119,7 +119,7 @@ pub fn cip_cio(jd: JulianDate, dpsi: Radians, deps: Radians) -> CipCio {
 /// (CIRS), using the CIP coordinates (X, Y) and CIO locator s.
 ///
 /// ```text
-/// Q(t) = R₃(−E)·R₂(−d)·R₃(E + s)
+/// Q(t) = Rz(E + s) · Ry(−d) · Rz(−E)
 /// ```
 ///
 /// where `E = atan2(Y, X)`, `d = acos(√(1 − X² − Y²))`.
@@ -133,39 +133,10 @@ pub fn gcrs_to_cirs_matrix(x: CipCoordinates, y: CipCoordinates, s: Radians) -> 
     let e = yv.atan2(xv);
     let d = r2.sqrt().atan2((1.0 - r2).max(0.0).sqrt());
 
-    let (se, ce) = e.sin_cos();
-    let (sd, cd) = d.sin_cos();
-
-    // R₃(-(E+s)) · R₂(-d) · R₃(E)
-    // Following SOFA's iauC2ixys construction:
-    let es = e + s.value();
-    let (ses, ces) = es.sin_cos();
-
-    #[rustfmt::skip]
-    let m = [
-        [
-            ces * cd * ce + ses * se,
-            ces * cd * se - ses * ce,
-            ces * sd,
-        ],
-        [
-            ses * cd * ce - ces * se,
-            ses * cd * se + ces * ce,
-            ses * sd,
-        ],
-        [
-            -sd * ce,
-            -sd * se,
-            cd,
-        ],
-    ];
-
-    // The matrix above is Q^T (intermediate-to-celestial). We need Q (celestial-to-intermediate).
-    // Actually, SOFA's C2IXYS returns the celestial-to-intermediate matrix directly.
-    // Let's verify: at J2000 with X≈0, Y≈0, s≈0, this should be ≈ identity.
-    // E = atan2(0,0) = 0, d = 0, s = 0.
-    // m[0][0] = 1, m[1][1] = 1, m[2][2] = 1. ✓
-    Rotation3::from_matrix_unchecked(m)
+    // Expand the SOFA rotations using the active Rotation3 convention.
+    Rotation3::rz(s + Radians::new(e))
+        * Rotation3::ry(Radians::new(-d))
+        * Rotation3::rz(Radians::new(-e))
 }
 
 #[cfg(test)]

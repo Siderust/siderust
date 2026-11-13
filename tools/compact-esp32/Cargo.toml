@@ -1,0 +1,25 @@
+[package]
+name = "siderust-compact-esp32"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[workspace]
+
+[dependencies]
+siderust = { path = "../..", default-features = false, features = ["embedded-compact"] }
+esp-hal = { version = "=1.2.2", features = ["esp32"] }
+esp-bootloader-esp-idf = { version = "=0.6.0", features = ["esp32"] }
+esp-println = { version = "=0.18.0", default-features = false, features = ["esp32", "uart"] }
+
+# Temporary while Archive and Tempoch are unpublished.
+[patch.crates-io]
+siderust-archive = { path = "../../../archive" }
+tempoch = { path = "../../../tempoch/tempoch" }
+tempoch-core = { path = "../../../tempoch/tempoch-core" }
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"

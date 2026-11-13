@@ -139,7 +139,7 @@ impl ElpPrecomputed {
 
 /// Sum main problem series with SIMD batching.
 /// No per-term angle normalization needed since sin() is 2π-periodic.
-#[inline(always)]
+#[inline]
 fn sum_main_problem_series(series: &[MainProblem], pc: &ElpPrecomputed, y_offset: f64) -> f64 {
     // Precompute combined coefficient
     let delta_aux = DELNP.value() - AM * DELNU.value();
@@ -258,7 +258,7 @@ define_main_series!(sum_series_elp3_ctx, ELP3, FRAC_PI_2);
 /// Sum Earth perturbation series with SIMD batching.
 /// `scale_idx` multiplies amplitude by t[i] if Some(i).
 /// No per-term angle normalization needed since sin() is 2π-periodic.
-#[inline(always)]
+#[inline]
 fn sum_earth_pert_series(
     series: &[EarthPert],
     pc: &ElpPrecomputed,
@@ -421,7 +421,7 @@ fn compute_planet_arg(entry: &PlanetPert, pc: &ElpPrecomputed, use_alt_del: bool
 /// Sum planetary perturbation series with SIMD batching.
 /// `scale_o` multiplies `o` by t[1], `use_alt_del` switches argument terms.
 /// No per-term angle normalization needed since sin() is 2π-periodic.
-#[inline(always)]
+#[inline]
 fn sum_planet_pert_series(
     series: &[PlanetPert],
     pc: &ElpPrecomputed,

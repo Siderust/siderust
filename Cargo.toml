@@ -22,7 +22,7 @@ broken_intra_doc_links = "deny"
 
 [package]
 name = "siderust"
-version = "0.18.1"
+version = "0.19.0"
 edition = "2021"
 authors = ["VPRamon <vallespuigramon@gmail.com>"]
 description = "High-precision astronomy and satellite mechanics in Rust."
@@ -65,7 +65,13 @@ path = "tests/spice_context.rs"
 required-features = ["spice"]
 
 [features]
-default = ["std", "serde"]
+default = ["std", "serde", "full-ephemeris", "full-nutation"]
+## Full VSOP87A/E and ELP2000-82B ephemerides.
+full-ephemeris = ["siderust-archive/vsop", "siderust-archive/elp", "dep:paste", "dep:wide"]
+## IAU 2000A and IAU 2006A nutation models.
+full-nutation = ["siderust-archive/nutation"]
+## Checked compact VSOP87E and ELP2000-82B positions for 2020–2050.
+embedded-compact = ["siderust-archive/vsop-compact", "siderust-archive/elp-compact"]
 ## Enable the Rust standard library (filesystem, OS I/O, `Utc::now`, etc.).
 ## Without `std`, the crate builds as `no_std` + `alloc`.
 std = [
@@ -84,7 +90,7 @@ std = [
     "serde_json?/std",
     "toml?/std",
     "thiserror/std",
-    "wide/std",
+    "wide?/std",
 ]
 lagrange-centers = ["serde", "siderust-archive/lagrange"]
 ## Runtime dataset download/cache via `siderust-archive`. Requires `std`.
@@ -122,18 +128,18 @@ keplerian = { version = "0.5.1", default-features = false, features = ["alloc"] 
 optica = { version = "0.5", default-features = false, features = ["alloc"] }
 principia = { version = "0.7", default-features = false, features = ["alloc"] }
 qtty = { version = "0.8", default-features = false, features = ["alloc", "astro", "density", "frequency", "radiometry", "satellite"] }
-tempoch = { version = "0.11", default-features = false, features = ["alloc"] }
-siderust-archive = { version = "0.1.5", default-features = false, features = ["jpl", "vsop", "elp", "nutation", "gravity", "atmosphere", "pluto", "time"] }
+tempoch = { version = "0.11.3", default-features = false, features = ["alloc"] }
+siderust-archive = { version = "0.2.0", default-features = false, features = ["jpl", "nutation-2000b", "gravity", "atmosphere", "pluto", "time"] }
 
 thiserror = { version = "2", default-features = false }
 chrono = { version = "0.4", default-features = false, features = ["alloc"] }
-paste = "1.0"
+paste = { version = "1.0", optional = true }
 quick-xml = { version = "0.41", default-features = false, optional = true }
 serde = { version = "1.0", default-features = false, features = ["derive", "alloc"], optional = true }
 serde_json = { version = "1.0", default-features = false, features = ["alloc"], optional = true }
 toml = { version = "1.1", default-features = false, features = ["parse", "serde", "display"], optional = true }
 sha2 = { version = "0.11", default-features = false, optional = true }
-wide = { version = "1.7", default-features = false }
+wide = { version = "1.7", default-features = false, optional = true }
 hashbrown = { version = "0.15", default-features = false, features = ["default-hasher", "inline-more"] }
 spin = { version = "0.10", default-features = false, features = ["once"] }
 
@@ -220,3 +226,14 @@ harness = false
 [[example]]
 name = "24_spice_lunar"
 required-features = ["spice"]
+
+# Temporary while the upstream versions are unpublished.
+[patch.crates-io]
+siderust-archive = { path = "../archive" }
+tempoch = { path = "../tempoch/tempoch" }
+tempoch-core = { path = "../tempoch/tempoch-core" }
+tempoch-ffi = { path = "../tempoch/tempoch-ffi" }
+
+[[example]]
+name = "25_embedded_compact"
+required-features = ["embedded-compact"]

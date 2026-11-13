@@ -867,28 +867,48 @@ type BaryEclPos = CoordinateWithPM<Position<Barycentric, EclJ2000, AstronomicalU
 type GeoEclPos = Position<Geocentric, EclJ2000, Kilometer>;
 
 macro_rules! impl_trackable_vsop87 {
-    ($($Planet:ident),+ $(,)?) => {
+    ($($Planet:ident => $position:expr),+ $(,)?) => {
         $(
             impl Trackable for $Planet {
                 type Coords = BaryEclPos;
 
                 #[inline]
                 fn track(&self, jd: JulianDate) -> Self::Coords {
-                    CoordinateWithPM::new_static($Planet::vsop87e(jd), jd)
+                    CoordinateWithPM::new_static($position(jd), jd)
                 }
             }
         )+
     };
 }
 
-impl_trackable_vsop87!(Sun, Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune);
+use crate::coordinates::transform::context::DefaultEphemeris;
+use crate::ephemeris::{Ephemeris, MajorPlanet};
+
+impl_trackable_vsop87!(
+    Sun => DefaultEphemeris::sun_barycentric,
+    Earth => DefaultEphemeris::earth_barycentric,
+    Mercury => |jd| planet_barycentric(MajorPlanet::Mercury, jd),
+    Venus => |jd| planet_barycentric(MajorPlanet::Venus, jd),
+    Mars => |jd| planet_barycentric(MajorPlanet::Mars, jd),
+    Jupiter => |jd| planet_barycentric(MajorPlanet::Jupiter, jd),
+    Saturn => |jd| planet_barycentric(MajorPlanet::Saturn, jd),
+    Uranus => |jd| planet_barycentric(MajorPlanet::Uranus, jd),
+    Neptune => |jd| planet_barycentric(MajorPlanet::Neptune, jd),
+);
+
+pub(crate) fn planet_barycentric(
+    planet: MajorPlanet,
+    jd: JulianDate,
+) -> Position<Barycentric, EclJ2000, AstronomicalUnit> {
+    DefaultEphemeris::try_planet_barycentric(planet, jd).expect("planet position unavailable")
+}
 
 impl Trackable for Moon {
     type Coords = GeoEclPos;
 
     #[inline]
     fn track(&self, jd: JulianDate) -> Self::Coords {
-        Moon::get_geo_position::<Kilometer>(jd)
+        DefaultEphemeris::moon_geocentric(jd)
     }
 }
 

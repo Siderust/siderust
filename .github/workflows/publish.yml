@@ -34,6 +34,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - uses: ./.github/actions/checkout-unpublished
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -61,8 +62,9 @@ jobs:
           RUSTDOCFLAGS: "-D rustdoc::broken_intra_doc_links -D rustdoc::invalid_html_tags"
         run: cargo doc -p siderust --all-features --no-deps
 
-      - name: Dry-run publishable package
-        run: bash scripts/publish-changed.sh --dry-run
+      # Restore the dry run once the pinned dependencies are on crates.io.
+      - name: Verify locked dependency resolution
+        run: cargo metadata --locked --format-version 1 > /dev/null
 
   publish:
     name: cargo publish
@@ -79,6 +81,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - uses: ./.github/actions/checkout-unpublished
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -105,6 +108,7 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/checkout-unpublished
 
       - uses: dtolnay/rust-toolchain@stable
 

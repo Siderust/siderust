@@ -164,6 +164,9 @@ pub mod bodies;
 pub mod catalogs;
 pub mod checksum;
 pub mod coordinates;
+#[cfg(not(any(feature = "full-ephemeris", feature = "embedded-compact")))]
+compile_error!("enable full-ephemeris or embedded-compact");
+
 pub mod ephemeris;
 pub mod event;
 pub mod formats;

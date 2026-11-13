@@ -7,10 +7,14 @@
 //! fixed axes: the FK5 catalogue spin is not a rotation of these frames.
 //! See `doc/frames_and_centers.md` for provenance and precision limitations.
 
-use crate::coordinates::cartesian::{Position, Velocity};
+use crate::coordinates::cartesian::Position;
+#[cfg(feature = "full-ephemeris")]
+use crate::coordinates::cartesian::Velocity;
 use crate::coordinates::frames::EclipticMeanJ2000;
 use crate::coordinates::transform::frames::bias;
-use crate::qtty::{AstronomicalUnit, AstronomicalUnits, Quantity};
+#[cfg(feature = "full-ephemeris")]
+use crate::qtty::Quantity;
+use crate::qtty::{AstronomicalUnit, AstronomicalUnits};
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar};
 use affn::{ReferenceCenter, Rotation3};
@@ -72,6 +76,7 @@ pub(super) fn vsop_position<C: ReferenceCenter<Params = ()>>(
     Position::new(x, y, z)
 }
 
+#[cfg(feature = "full-ephemeris")]
 #[inline]
 pub(super) fn vsop_velocity(
     x: Quantity<super::AuPerDay>,

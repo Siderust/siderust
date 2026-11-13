@@ -27,7 +27,7 @@
 //!
 //! | Backend              | Source                     |
 //! |----------------------|----------------------------|
-//! | [`Vsop87Ephemeris`]  | VSOP87 + ELP2000-82B       |
+//! | `Vsop87Ephemeris`  | VSOP87 + ELP2000-82B       |
 //! | [`RuntimeEphemeris`] | ICRF J2000 BSP (runtime)     |
 //!
 //! ## Provenance
@@ -44,25 +44,35 @@
 /// by the [`siderust_archive`] crate; this module only re-exports them.
 pub mod provenance {
     pub use crate::archive::atmosphere::provenance as atmosphere;
+    #[cfg(feature = "full-ephemeris")]
     pub use crate::archive::elp::provenance as elp;
     pub use crate::archive::gravity::provenance as gravity;
     pub use crate::archive::nutation::provenance as nutation;
     pub use crate::archive::pluto::provenance as pluto;
     pub use crate::archive::time::provenance as time;
+    #[cfg(feature = "full-ephemeris")]
     pub use crate::archive::vsop::provenance as vsop;
 }
 
+#[cfg(feature = "full-ephemeris")]
 pub(crate) mod elp2000;
 pub(crate) mod jpl;
 #[cfg(feature = "lagrange-centers")]
 pub mod lagrange;
 pub mod pluto;
 pub mod tabulated;
+#[cfg(feature = "full-ephemeris")]
 pub(crate) mod vsop87;
+
+#[cfg(feature = "embedded-compact")]
+mod compact_backend;
+#[cfg(feature = "embedded-compact")]
+pub use compact_backend::CompactEphemeris;
 
 mod native_frames;
 mod planetary;
 mod runtime_backend;
+#[cfg(feature = "full-ephemeris")]
 mod vsop87_backend;
 
 #[cfg(not(feature = "std"))]
@@ -70,7 +80,9 @@ use crate::qtty::{Real, Scalar};
 pub use planetary::PlanetState;
 pub use pluto::Pluto;
 pub use runtime_backend::RuntimeEphemeris;
+#[cfg(feature = "full-ephemeris")]
 pub use vsop87::VSOP87;
+#[cfg(feature = "full-ephemeris")]
 pub use vsop87_backend::Vsop87Ephemeris;
 
 use crate::coordinates::{

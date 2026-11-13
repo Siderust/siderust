@@ -25,10 +25,10 @@
 //!     [`NullEop`](crate::astro::eop::NullEop) for zero overhead).
 //! - [`AstroContext::with_model::<Nut>()`] — attaches a compile-time nutation
 //!   model marker, returning a zero-cost [`ModelContext`]. The nutation model
-//!   is always a **phantom type**: use [`Iau2006A`](crate::astro::nutation::Iau2006A)
+//!   is always a **phantom type**: use `Iau2006A`
 //!   (default, full 1365-term MHB2000 + P03 correction),
 //!   [`Iau2000B`](crate::astro::nutation::Iau2000B) (77-term abridged),
-//!   [`Iau2000A`](crate::astro::nutation::Iau2000A) (uncorrected 2000A), or
+//!   `Iau2000A` (uncorrected 2000A), or
 //!   [`Iau2006`](crate::astro::nutation::Iau2006) (precession-only). This is
 //!   the canonical model-selection mechanism — no runtime enum dispatch.
 //! - [`ModelContext<Eph, Eop, Nut>`] — lightweight borrow wrapper that satisfies
@@ -65,13 +65,19 @@ use crate::astro::eop::{EopError, EopProvider, EopValues, IersEop};
 use crate::astro::nutation::NutationModel;
 use crate::time::JulianDate;
 
+#[cfg(feature = "full-ephemeris")]
 use crate::ephemeris::Vsop87Ephemeris;
 
-/// Default ephemeris type: [`Vsop87Ephemeris`] (VSOP87 + ELP2000-82B).
+/// Default ephemeris type: `Vsop87Ephemeris` (VSOP87 + ELP2000-82B).
 ///
 /// For larger JPL datasets, use [`RuntimeEphemeris`](crate::ephemeris::RuntimeEphemeris)
 /// with a BSP file loaded at runtime.
+#[cfg(feature = "full-ephemeris")]
 pub type DefaultEphemeris = Vsop87Ephemeris;
+
+/// Default backend when selecting only compact ephemerides.
+#[cfg(all(feature = "embedded-compact", not(feature = "full-ephemeris")))]
+pub type DefaultEphemeris = crate::ephemeris::CompactEphemeris;
 
 /// Default Earth orientation model: [`IersEop`], backed by `tempoch`'s active
 /// runtime IERS `finals2000A.all` bundle when loaded.
@@ -85,7 +91,12 @@ pub type DefaultEop = IersEop;
 /// Uses the full IAU 2006/2000A nutation model for SOFA-grade accuracy.
 /// For the abridged 77-term model, substitute
 /// [`Iau2000B`](crate::astro::nutation::Iau2000B).
+#[cfg(feature = "full-nutation")]
 pub type DefaultNutationModel = crate::astro::nutation::Iau2006A;
+
+/// Abridged IAU 2000B nutation for builds without `full-nutation`.
+#[cfg(not(feature = "full-nutation"))]
+pub type DefaultNutationModel = crate::astro::nutation::Iau2000B;
 
 /// Astronomical context for coordinate transformations.
 ///
@@ -431,10 +442,10 @@ mod tests {
 
     #[test]
     fn test_dyn_context_creation() {
-        use crate::ephemeris::Vsop87Ephemeris;
+        use super::DefaultEphemeris;
 
         // Vsop87Ephemeris implements DynEphemeris via blanket impl
-        let dyn_ctx = DynAstroContext::with_ephemeris(Box::new(Vsop87Ephemeris));
+        let dyn_ctx = DynAstroContext::with_ephemeris(Box::new(DefaultEphemeris::default()));
         let _eph = dyn_ctx.ephemeris();
         let _eop = dyn_ctx.eop_at_tt(crate::J2000);
         let _eop_ref = dyn_ctx.eop();
@@ -446,10 +457,10 @@ mod tests {
 
     #[test]
     fn test_dyn_context_with_eop() {
-        use crate::ephemeris::Vsop87Ephemeris;
+        use super::DefaultEphemeris;
 
         let dyn_ctx = DynAstroContext::with_ephemeris_and_eop(
-            Box::new(Vsop87Ephemeris),
+            Box::new(DefaultEphemeris::default()),
             DefaultEop::default(),
         );
         let eop = dyn_ctx.eop_at_tt(crate::J2000);

@@ -31,6 +31,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - uses: ./.github/actions/checkout-unpublished
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo check --workspace $CARGO_CI_TARGETS --all-features
 
@@ -39,6 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/checkout-unpublished
       - uses: dtolnay/rust-toolchain@stable
       - name: Build API docs with docs.rs features and strict links
         env:
@@ -50,24 +52,35 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/checkout-unpublished
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: thumbv7em-none-eabihf
-      - run: cargo check -p siderust --lib --no-default-features
-      - run: cargo check -p siderust --lib --no-default-features --features serde
-      - run: cargo check -p siderust --lib --target thumbv7em-none-eabihf --no-default-features
-      - run: cargo check -p siderust --lib --target thumbv7em-none-eabihf --no-default-features --features serde
-      - run: cargo check -p siderust --lib --no-default-features --features atmosphere
-      - run: cargo check -p siderust --lib --no-default-features --features atmosphere,serde
-      - run: cargo check -p siderust --lib --target thumbv7em-none-eabihf --no-default-features --features atmosphere
-      - run: cargo check -p siderust --lib --target thumbv7em-none-eabihf --no-default-features --features atmosphere,serde
-      - run: cargo test -p siderust --test observatory_catalog_no_default --no-default-features --features std
+      - run: cargo check --locked -p siderust --lib --target thumbv7em-none-eabihf --no-default-features --features embedded-compact
+      - name: Verify compact Archive feature isolation
+        run: |
+          cargo tree --locked -p siderust --no-default-features --features embedded-compact -e features -i siderust-archive > archive-features.txt
+          cat archive-features.txt
+          if grep -E 'siderust-archive feature "(vsop|elp|nutation|fetch|std)"' archive-features.txt; then
+            exit 1
+          fi
+      - run: cargo test --locked -p siderust --test compact_ephemeris --no-default-features --features embedded-compact
+      - run: cargo check -p siderust --lib --no-default-features --features full-ephemeris,full-nutation
+      - run: cargo check -p siderust --lib --no-default-features --features full-ephemeris,full-nutation,serde
+      - run: cargo check -p siderust --lib --target thumbv7em-none-eabihf --no-default-features --features full-ephemeris,full-nutation
+      - run: cargo check -p siderust --lib --target thumbv7em-none-eabihf --no-default-features --features full-ephemeris,full-nutation,serde
+      - run: cargo check -p siderust --lib --no-default-features --features full-ephemeris,full-nutation,atmosphere
+      - run: cargo check -p siderust --lib --no-default-features --features full-ephemeris,full-nutation,atmosphere,serde
+      - run: cargo check -p siderust --lib --target thumbv7em-none-eabihf --no-default-features --features full-ephemeris,full-nutation,atmosphere
+      - run: cargo check -p siderust --lib --target thumbv7em-none-eabihf --no-default-features --features full-ephemeris,full-nutation,atmosphere,serde
+      - run: cargo test -p siderust --test observatory_catalog_no_default --no-default-features --features full-ephemeris,full-nutation,std
 
   release-preflight:
     name: Release preflight
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/checkout-unpublished
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo test -p siderust-release
       - run: cargo build -p siderust-release
@@ -80,6 +93,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - uses: ./.github/actions/checkout-unpublished
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt
@@ -92,6 +106,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - uses: ./.github/actions/checkout-unpublished
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
@@ -104,6 +119,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - uses: ./.github/actions/checkout-unpublished
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo test --workspace $CARGO_CI_TARGETS --all-features
       - run: cargo test --doc --workspace --all-features
@@ -113,6 +129,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/checkout-unpublished
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo test --features pod
 
@@ -121,6 +138,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/checkout-unpublished
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo test --features spice
 
@@ -129,6 +147,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/checkout-unpublished
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo test --features runtime-data
 
@@ -137,6 +156,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/checkout-unpublished
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo test --features pod-parquet
 
@@ -145,6 +165,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/checkout-unpublished
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo test --features pod-doris
 
@@ -159,6 +180,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - uses: ./.github/actions/checkout-unpublished
 
       - name: Set up Rust (nightly + llvm-tools)
         uses: dtolnay/rust-toolchain@v1

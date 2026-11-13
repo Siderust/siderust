@@ -6,6 +6,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.19.0]
+
+### Added
+
+- Opt-in compact VSOP87E and ELP2000-82B backend for offline observations in 2020–2050.
+- Lunar phase and bright-limb geometry from precomputed topocentric positions.
+
+### Changed
+
+- Builds that disable defaults must explicitly select `full-ephemeris` or `embedded-compact`. Add `full-nutation` to retain the IAU 2006A default when disabling defaults.
+- Topocentric lunar phase uses the selected ephemeris for both directions and distances.
+
+- Correct the Earth rotation sign for observer parallax and align the CIO rotation with SOFA.
+
 ## [0.18.1] - 2026-10-31
 
 ### Fixed

@@ -8,7 +8,7 @@
 //!
 //! * [`kvn`] — keyword-value notation (CCSDS 502.0-B-2 §4.1).
 //! * [`xml`] — XML Schema for OMM (CCSDS 502.0-B-2 Annex E).
-//! * [`json`] — Celestrak's JSON encoding (`OBJECT_NAME`, `MEAN_MOTION`, …).
+//! * `json` — Celestrak's JSON encoding (`OBJECT_NAME`, `MEAN_MOTION`, …).
 //!   Requires the `serde` feature.
 //!
 //! All three round-trip through the same in-memory [`Omm`] record. Use

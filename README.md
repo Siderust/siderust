@@ -456,3 +456,5 @@ representations for leap instants and explicit snapshots for reproducibility.
 Public geometry and mechanics dependencies (`affn` 0.12, `principia` 0.7,
 `keplerian`, `optica`, and related crates) resolve from crates.io without Git
 patches.
+
+For offline embedded use, see the [compact ephemeris profile](doc/embedded_compact.md).

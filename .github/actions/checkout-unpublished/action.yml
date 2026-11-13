@@ -1,0 +1,19 @@
+name: Check out unpublished Cargo dependencies
+description: Populate sibling directories referenced by the temporary Cargo patches
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@v4
+      with:
+        repository: Siderust/archive
+        ref: 5ec0343d4623b84ffbe5f990d15f0d48986b425d
+        path: .ci-deps/archive
+        persist-credentials: false
+    - uses: actions/checkout@v4
+      with:
+        repository: Siderust/tempoch
+        ref: 1a28a91de777b21caf3499b4d5f950545381f0f1
+        path: .ci-deps/tempoch
+        persist-credentials: false
+    - shell: bash
+      run: mv .ci-deps/archive .ci-deps/tempoch ..
