@@ -196,7 +196,11 @@ fn dependency_is_blocked(dep: &MetadataDependency) -> Option<String> {
     None
 }
 
-fn validate_workspace(root: &Path, expected_version: &str) -> Result<Vec<String>, ValidationError> {
+fn validate_workspace(
+    root: &Path,
+    expected_version: &str,
+    publishing: bool,
+) -> Result<Vec<String>, ValidationError> {
     let mut notes = Vec::new();
     let root_version = root_crate_version(root)?;
     if root_version != expected_version {
@@ -222,13 +226,18 @@ fn validate_workspace(root: &Path, expected_version: &str) -> Result<Vec<String>
     }
 
     let root_toml = fs::read_to_string(root.join("Cargo.toml"))?;
-    if root_toml.lines().any(|line| {
+    let has_patch = root_toml.lines().any(|line| {
         let trimmed = line.trim();
         trimmed == "[patch.crates-io]" || trimmed.starts_with("[patch.")
-    }) {
+    });
+    if publishing && has_patch {
         return Err(ValidationError(
             "Cargo.toml [patch] is present; remove patches before publishing".to_owned(),
         ));
+    }
+
+    if has_patch {
+        notes.push("Workspace checks use temporary Cargo patches".to_owned());
     }
 
     let metadata = cargo_metadata_for_manifest(&root.join("Cargo.toml"))?;
@@ -348,7 +357,7 @@ pub fn run_validation(
     }
     let resolved = resolve_version(root, tag, version)?;
     validate_tag_version(tag, &resolved)?;
-    let mut notes = validate_workspace(root, &resolved)?;
+    let mut notes = validate_workspace(root, &resolved, tag.is_some())?;
     let body = validate_changelog(root, &resolved)?;
     notes.push(format!(
         "CHANGELOG.md contains nonempty [{resolved}] ({} lines)",
@@ -409,6 +418,17 @@ mod tests {
         let root = default_root();
         let notes = run_validation(&root, None, None, false, false).expect("repo ready");
         assert!(notes.iter().any(|note| note.contains("CHANGELOG.md")));
+    }
+
+    #[test]
+    fn tagged_validation_rejects_workspace_patch() {
+        let root = default_root();
+        let manifest = fs::read_to_string(root.join("Cargo.toml")).unwrap();
+        if manifest.contains("[patch.crates-io]") {
+            let tag = format!("v{}", root_crate_version(&root).unwrap());
+            let err = run_validation(&root, Some(&tag), None, true, false).unwrap_err();
+            assert!(err.0.contains("remove patches before publishing"));
+        }
     }
 
     #[test]
