@@ -5,14 +5,15 @@
 //!
 //! Reference numbers in this file were precomputed with SOFA routines:
 //! - sidereal angle: GMST06 + Nut00B equation-of-equinoxes form
-//! - terrestrial->celestial chain: W(xp,yp,s') · R3(-ERA) · Q(X,Y,s)
-//!   with frame-bias to EquatorialMeanJ2000
+//! - terrestrial to celestial chain: transpose of ERFA c2t06a, followed by
+//!   the J2000 frame bias from bp06
 
+use siderust::astro::eop::NullEop;
 use siderust::coordinates::cartesian::position;
 use siderust::coordinates::centers::{Geocentric, Geodetic, Topocentric};
 use siderust::coordinates::frames::{self, ECEF};
 use siderust::coordinates::spherical;
-use siderust::coordinates::transform::context::AstroContext;
+use siderust::coordinates::transform::context::{AstroContext, DefaultEphemeris};
 use siderust::coordinates::transform::TransformCenter;
 use siderust::event::horizontal::equatorial_to_horizontal_true_of_date_with_ctx;
 use siderust::qtty::*;
@@ -91,18 +92,20 @@ fn topocentric_site_vector_matches_sofa_chain_roque_2020() {
     let site = Geodetic::<ECEF>::new(-17.8925 * DEG, 28.7543 * DEG, 2396.0 * M);
     let origin = position::EquatorialMeanJ2000::<Kilometer, Geocentric>::new(0.0, 0.0, 0.0);
 
+    let ctx = AstroContext::<DefaultEphemeris, NullEop>::default();
     let topo_default: position::EquatorialMeanJ2000<Kilometer, Topocentric> =
-        origin.to_center((site, jd_tt));
+        origin.to_center_with(site, jd_tt, &ctx);
 
     // If target is at geocenter, topocentric vector is -r_site.
     let site_eq_x = -topo_default.x();
     let site_eq_y = -topo_default.y();
     let site_eq_z = -topo_default.z();
 
-    // SOFA reference (km) for this epoch/site using full IAU chain.
-    let ex = 1_081.752_851_23;
-    let ey = 5_493.726_969_09;
-    let ez = 3_049.140_205_07;
+    // ERFA: bp06(J2000).rb @ c2t06a(TT, TT-69.184s, 0, 0).T @
+    // gd2gc(WGS84, lon, lat, height) / 1000.
+    let ex = -2_333.676_983_87;
+    let ey = -5_085.751_188_61;
+    let ez = 3_055.743_414_41;
 
     assert!(
         (site_eq_x.value() - ex).abs() < 0.05,

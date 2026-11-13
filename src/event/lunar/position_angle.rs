@@ -131,9 +131,10 @@ impl LunarObservationCenter for Topocentric {
             frames::EquatorialTrueOfDate,
             AstronomicalUnit,
         >::from_array(site, rotation * *sun_topo.as_array());
-        spherical::Position::from_cartesian(&moon_true)
-            .direction()
-            .position_angle_to(&spherical::Position::from_cartesian(&sun_true).direction())
+        moon_bright_limb_from_topocentric(
+            &spherical::Position::from_cartesian(&moon_true),
+            &spherical::Position::from_cartesian(&sun_true),
+        )
     }
 }
 
@@ -195,6 +196,17 @@ pub fn moon_bright_limb_position_angle<E: Ephemeris, C: LunarObservationCenter>(
     input: C::Input,
 ) -> Option<Radians> {
     C::bright_limb_position_angle::<E>(input)
+}
+
+/// Bright-limb position angle from precomputed topocentric positions.
+///
+/// Both positions must share the observer, epoch and true-of-date equator.
+/// Returns radians from celestial north through east, or `None` at a singularity.
+pub fn moon_bright_limb_from_topocentric(
+    moon: &spherical::Position<Topocentric, frames::EquatorialTrueOfDate, Kilometer>,
+    sun: &spherical::Position<Topocentric, frames::EquatorialTrueOfDate, AstronomicalUnit>,
+) -> Option<Radians> {
+    moon.direction().position_angle_to(&sun.direction())
 }
 
 // Compute each state once; negate heliocentric Earth to obtain geocentric Sun.
