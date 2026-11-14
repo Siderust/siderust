@@ -21,8 +21,8 @@ serde_json = "1.0"
 semver = "1.0"
 regex = "1"
 percent-encoding = "2"
-toml = { version = "1.1", default-features = false, features = ["parse", "serde"] }
-ureq = "3.5"
+toml = { version = "1.2", default-features = false, features = ["parse", "serde"] }
+ureq = "3.5.2"
 
 [dev-dependencies]
 tempfile = "3"

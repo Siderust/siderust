@@ -617,13 +617,13 @@ pub fn read_oem_xml<R: std::io::Read>(mut r: R) -> Result<OemFile, FormatError> 
         {
             Event::Eof => break,
             Event::Start(e) => {
-                let name = String::from_utf8_lossy(e.name().as_ref()).to_string();
+                let name = e.name().as_ref().to_owned();
                 let local = name.rsplit(':').next().unwrap_or(&name).to_string();
                 match local.as_str() {
                     "oem" => {
                         for attr in e.attributes().flatten() {
-                            if attr.key.as_ref() == b"version" {
-                                version = String::from_utf8_lossy(&attr.value).into_owned();
+                            if attr.key.as_ref() == "version" {
+                                version = attr.value.into_owned();
                             }
                         }
                     }
@@ -638,7 +638,7 @@ pub fn read_oem_xml<R: std::io::Read>(mut r: R) -> Result<OemFile, FormatError> 
                 cur_tag = Some(local);
             }
             Event::End(e) => {
-                let name = String::from_utf8_lossy(e.name().as_ref()).to_string();
+                let name = e.name().as_ref().to_owned();
                 let local = name.rsplit(':').next().unwrap_or(&name).to_string();
                 match local.as_str() {
                     "stateVector" => {
@@ -692,12 +692,9 @@ pub fn read_oem_xml<R: std::io::Read>(mut r: R) -> Result<OemFile, FormatError> 
                 cur_tag = None;
             }
             Event::Text(t) => {
-                let txt =
-                    unescape(&t.xml10_content().map_err(|e| {
-                        FormatError::Format(format!("read_oem_xml: xml text: {e}"))
-                    })?)
+                let txt = unescape(&t.xml10_content())
                     .map_err(|e| FormatError::Format(format!("read_oem_xml: xml text: {e}")))?
-                    .to_string();
+                    .into_owned();
                 let tag = match &cur_tag {
                     Some(t) => t.as_str(),
                     None => continue,
