@@ -58,7 +58,7 @@ Independent regressions cover
 The [analytical lunar axis test](../../tests/body_surface_horizontal.rs)
 compares all three axes with CSPICE and `pck00011.tpc` at five TT epochs from
 1900 through 2050, with a direction-cosine tolerance of 10⁻¹⁰. Regeneration
-uses the [surface reference script](../../scripts/cspice/cspice_surface_references.py).
+uses the [independent CSPICE surface references](../../scripts/cspice/README.md).
 
 These comparisons establish agreement only for their tested data, epochs,
 operations, and reference models. Separate approximation error, data

@@ -4,16 +4,11 @@ Measurements from the compact integration at Siderust commit `c15ccf1`.
 These are sample maxima over the fixture and its synthetic Earth
 orientation inputs.
 
-The [generator](compact_reference.py) uses DE440s and
-ERFA. Python keeps the generator on the existing ERFA and jplephem reference
-implementations and preserves independence from Siderust.
-The SHA-256 of `de440s.bsp` is
-`c1c7feeab882263fc493a9d5a5b2ddd71b54826cdf65d8d17a76126b260a49f2`.
+The [siderust-py reference generator](https://github.com/Siderust/siderust-py/tree/fb8069a2d5710d450d40f1abcbbc3df3960a8f76/scripts/validation#compact-ephemeris)
+uses DE440s and ERFA via jplephem and PyERFA. Generate or verify the fixture
+by following that guide. Run the Rust regression test with:
 
 ```sh
-uv run --python 3.14 --with numpy==2.5.4 --with pyerfa==2.0.1.5 --with jplephem==2.24 \
-  scripts/validation/compact_reference.py /path/to/de440s.bsp > /tmp/compact_reference.csv
-cmp /tmp/compact_reference.csv tests/fixtures/compact_reference.csv
 cargo test --locked -p siderust --test compact_ephemeris --no-default-features --features embedded-compact -- --nocapture
 ```
 
@@ -41,7 +36,7 @@ independently of the availability of measured EOP.
 
 ## SGP4 vectors
 
-`generate_iau.py` uses the pinned python-sgp4 package to call Vallado's
-compiled C++ implementation independently of the Rust SGP4 implementation.
-See the [SGP4 fixture notes](../../tests/fixtures/sgp4/README.md) for
-the regeneration command and tolerances.
+The [siderust-py SGP4 generator](https://github.com/Siderust/siderust-py/tree/fb8069a2d5710d450d40f1abcbbc3df3960a8f76/scripts/validation#sgp4)
+calls Vallado's compiled C++ implementation through the pinned python-sgp4
+package. See the [SGP4 fixture notes](../../tests/fixtures/sgp4/README.md)
+for provenance and tolerances.

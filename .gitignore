@@ -23,10 +23,6 @@ artifacts
 # Local Cargo overrides (intentionally untracked)
 .cargo/config.local.toml
 
-## Python env
-.venv/
-__pycache__/
-
 # Build-time datasets are downloaded on demand (not tracked in git).
 scripts/**/dataset/
 .siderust_datasets/
