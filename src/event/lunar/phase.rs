@@ -43,12 +43,10 @@
 //! `Interval<ModifiedJulianDate>` intervals where the geocentric *k* satisfies a
 //! threshold or band condition.  Parameters typed as `IlluminationFractions`.
 //!
-//! All free functions are generic over `E: Ephemeris`, supporting
-//! `Vsop87Ephemeris` via [`DefaultEphemeris`](crate::coordinates::transform::context::DefaultEphemeris)
-//! (always available) or a custom `Ephemeris` implementor such as
-//! [`RuntimeEphemeris`](crate::ephemeris::RuntimeEphemeris). All `JulianDate` /
-//! `ModifiedJulianDate` values are on
-//! the TT axis.
+//! Convenience functions use [`DefaultEphemeris`](crate::coordinates::transform::context::DefaultEphemeris).
+//! Generic variants accept static `Ephemeris` implementations. The
+//! precomputed-coordinate helpers accept positions from any source.
+//! `JulianDate` and `ModifiedJulianDate` inputs use TT.
 //!
 //! ## References
 //!

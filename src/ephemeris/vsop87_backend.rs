@@ -3,7 +3,7 @@
 
 //! VSOP87 / ELP2000-82B ephemeris backend.
 //!
-//! This is the default (always-available) backend. It delegates to the
+//! This is the default backend when `full-ephemeris` is enabled. It delegates to the
 //! existing `Planet::vsop87*` inherent methods and `Moon::get_geo_position`.
 
 use super::{AuPerDay, Ephemeris, PlanetState};
@@ -18,7 +18,7 @@ use crate::coordinates::{
 use crate::qtty::{AstronomicalUnit, Kilometer};
 use crate::time::JulianDate;
 
-/// VSOP87 / ELP2000-82B ephemeris backend (always available).
+/// VSOP87 / ELP2000-82B ephemeris backend (requires `full-ephemeris`).
 ///
 /// Zero-sized marker type. Coefficient tables originate from
 /// [`siderust-archive`](https://crates.io/crates/siderust-archive); this crate

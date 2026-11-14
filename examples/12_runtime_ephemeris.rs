@@ -19,8 +19,8 @@
 //! # With the `runtime-data` feature: uses DatasetManager (auto-cache)
 //! cargo run --features runtime-data --example 12_runtime_ephemeris -- /path/to/de440.bsp
 //!
-//! # With `runtime-data` and no path: shows how to download DE440 on first run
-//! cargo run --features runtime-data --example 12_runtime_ephemeris
+//! # With `runtime-data`: explicitly download DE440 if it is missing
+//! cargo run --features runtime-data --example 12_runtime_ephemeris -- --download
 //! ```
 #![allow(clippy::print_stdout)]
 

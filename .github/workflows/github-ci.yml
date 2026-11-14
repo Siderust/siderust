@@ -35,11 +35,12 @@ jobs:
       - run: cargo check --workspace $CARGO_CI_TARGETS --all-features
 
   docs:
-    name: Rustdoc (all features)
+    name: Markdown and Rustdoc (all features)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - run: python3 scripts/check-doc-links.py
       - name: Build API docs with docs.rs features and strict links
         env:
           RUSTDOCFLAGS: "-D rustdoc::broken_intra_doc_links -D rustdoc::invalid_html_tags"

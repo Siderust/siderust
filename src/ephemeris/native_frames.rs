@@ -5,7 +5,7 @@
 //!
 //! The two native realizations have separate published FK5 ties. These are
 //! fixed axes: the FK5 catalogue spin is not a rotation of these frames.
-//! See `doc/frames_and_centers.md` for provenance and precision limitations.
+//! See `doc/concepts/accuracy-and-models.md` for provenance and precision limitations.
 
 use crate::coordinates::cartesian::Position;
 #[cfg(feature = "full-ephemeris")]

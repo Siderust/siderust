@@ -18,18 +18,17 @@
 //!
 //! ## Technical scope
 //!
-//! The convenience functions in this module use the **VSOP87E barycentric
-//! Earth velocity** (SSB-referenced), rotated from the dynamical *ecliptic
-//! J2000* frame into [`frames::EquatorialMeanJ2000`]. The aberration is
-//! applied via the full Lorentz transform of unit direction vectors rather
-//! than the classical first-order approximation, ensuring < 1 μas residuals.
+//! The convenience functions use barycentric Earth velocity from the default
+//! ephemeris, rotated from the canonical J2000 ecliptic into
+//! [`frames::EquatorialMeanJ2000`]. The direction transform uses the full
+//! special-relativistic Lorentz formula. Its accuracy depends on the input
+//! direction and Earth velocity.
 //! The speed of light in AU/day is computed from exact SI definitions of
 //! `c`, the day, and the AU.
 //!
 //! ## References
 //!
-//! * IERS Conventions 2020, §7.2 (aberration)
-//! * SOFA: stellar aberration as a full SR (Lorentz) transform
+//! * [IAU SOFA astrometry tools](https://www.iausofa.org/cookbooks)
 //!   (cf. `iauAb` / `eraAb`)
 
 use crate::coordinates::transform::context::DefaultEphemeris;
@@ -97,9 +96,13 @@ pub fn remove_aberration_from_direction_with_velocity(
 /// Apply **annual aberration** to a unit direction vector (mean J2000).
 ///
 /// * `mean` – Geocentric unit vector in the mean equator & equinox of J2000.
-/// * `jd`   – Epoch for Earth state evaluation (VSOP87 expects TDB; TT is a close approximation).
+/// * `jd`   – TT epoch for Earth state evaluation.
 ///
 /// Returns a new [`crate::coordinates::cartesian::direction::EquatorialMeanJ2000`] including annual aberration.
+///
+/// # Panics
+///
+/// Panics if the default ephemeris cannot supply Earth velocity at the epoch.
 #[must_use]
 pub fn apply_aberration_to_direction(
     mean: direction::EquatorialMeanJ2000,
@@ -113,6 +116,10 @@ pub fn apply_aberration_to_direction(
 
 /// Remove **annual aberration** from an apparent direction.
 /// Inverse operation of [`apply_aberration_to_direction`].
+///
+/// # Panics
+///
+/// Panics if the default ephemeris cannot supply Earth velocity at the epoch.
 #[must_use]
 pub fn remove_aberration_from_direction(
     app: direction::EquatorialMeanJ2000,
@@ -128,10 +135,8 @@ pub fn remove_aberration_from_direction(
 ///
 /// # Panics
 ///
-/// Will not panic on user input: the zero-distance case (`|p| == 0`) is
-/// short-circuited early to return the input unchanged. The internal
-/// `direction()` extraction is guarded by that distance check, so the
-/// `expect` it contains is unreachable for any well-formed `Position`.
+/// For nonzero positions, panics if the default ephemeris cannot supply
+/// Earth velocity at the epoch. Zero-distance positions are returned unchanged.
 #[must_use]
 pub fn apply_aberration<U: LengthUnit>(
     mean: position::EquatorialMeanJ2000<U>,
@@ -154,9 +159,8 @@ pub fn apply_aberration<U: LengthUnit>(
 ///
 /// # Panics
 ///
-/// As for [`apply_aberration`]: the zero-distance case is short-circuited
-/// and the internal direction extraction is provably safe under the
-/// guarded distance check.
+/// As for [`apply_aberration`], a nonzero position requires Earth velocity
+/// from the default ephemeris at the supplied epoch.
 #[must_use]
 pub fn remove_aberration<U: LengthUnit>(
     app: position::EquatorialMeanJ2000<U>,

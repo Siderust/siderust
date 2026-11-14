@@ -3,37 +3,15 @@
 
 //! # Siderust
 //!
-//! **Precision positional astrometry, atmospheric optics, ephemerides,
-//! sky-brightness and satellite mechanics in Rust.**
+//! Typed coordinates and ephemerides for observation planning and orbit analysis.
 //!
-//! `siderust` is a research-grade astronomy toolkit built on two explicit pillars:
-//!
-//! 1. **Typed quantities everywhere** — every physical quantity at a public API
-//!    boundary is a [`qtty`] newtype (e.g. `Meters`, `Radians`, `JulianDate`,
-//!    `Airmass`, `OpticalDepth`, `Albedo`, `IlluminationFraction`, `Refractivity`,
-//!    `CipCoordinate`, …).  Bare `f64` is confined to internal math kernels.
-//!
-//! 2. **Compile-time model selection** — when a function can use one of several
-//!    algorithms or conventions (nutation theory, airmass formula, extinction
-//!    parameterisation, …) the choice is expressed as a zero-sized phantom-type
-//!    parameter, not a runtime enum.  For example:
-//!    ```rust,ignore
-//!    // picks Iau2006A nutation at compile time — no runtime dispatch
-//!    let equatorial = ecliptic.to_frame_as::<Equatorial, Iau2006A>(ctx);
-//!    ```
-//!
-//! Together these two properties make type errors in physical calculations into
-//! compile-time errors and eliminate whole classes of unit-confusion bugs.
-//!
-//! See [`doc/conventions.md`](../doc/conventions.md) for the mandatory
-//! authoring rules: the academic-style module-doc template
-//! (*Scientific scope / Technical scope / References*), typed-quantity
-//! guidelines, and the phantom-type model-selection pattern.
+//! The [Siderust manual](https://github.com/Siderust/siderust/tree/main/doc)
+//! covers usage, model selection, and scientific conventions.
 //!
 //! ## Scientific scope
 //!
 //! - Strongly-typed coordinates (center + frame + unit encoded in the type system)
-//! - Ephemerides (VSOP87/ELP2000 always available; optional JPL DE4xx backends)
+//! - Ephemerides (full or compact VSOP87/ELP2000; runtime JPL DE4xx)
 //! - Observation planning (altitude periods, crossings, culminations, azimuth windows)
 //! - Atmospheric refraction and extinction (airmass, optical depth, scattering)
 //! - Sky brightness and lunar photometry (phase geometry, albedo, spectral radiance)
@@ -62,6 +40,7 @@
 //! | [`siderust_archive`] | Scientific datasets, manifests, checksums, provenance, generated coefficient snapshots |
 //! | `tempoch` | Time scales (TT/TAI/UTC/UT1/TDB/TCG/TCB), ΔT, EOP, active time-data status |
 //! | `qtty` | Physical units and typed quantity arithmetic |
+//! | `affn` | Typed affine geometry, coordinate and frame types |
 //! | `cheby` | Chebyshev / polynomial interpolation |
 //! | `keplerian` | Keplerian orbital primitives |
 //! | `principia` | Dynamics and physical force-model primitives |
@@ -114,17 +93,15 @@
 //! ## Minimal Example
 //!
 //! ```rust
-//! use siderust::{bodies::Mars, time::{JulianDate, JD, TT, Time, UTC}};
-//! use chrono::prelude::*;
+//! # #[cfg(feature = "full-ephemeris")]
+//! # fn main() {
+//! use siderust::{bodies::Mars, J2000};
 //!
-//! // 1. Select an epoch (UTC now to JD)
-//! let jd: JulianDate = Time::<UTC>::from_chrono(Utc::now()).to::<TT>().to::<JD>();
-//!
-//! // 2. Compute barycentric ecliptic coordinates via VSOP87
-//! let mars = Mars::vsop87e(jd);
-//!
-//! // 3. Print Mars's barycentric ecliptic position (AstronomicalUnits)
-//! println!("{:?}", mars);
+//! let mars = Mars::vsop87e(J2000);
+//! println!("{mars:?}");
+//! # }
+//! # #[cfg(not(feature = "full-ephemeris"))]
+//! # fn main() {}
 //! ```
 //!
 //! For a runnable tour of the library, see the `examples/` directory.

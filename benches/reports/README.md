@@ -4,7 +4,7 @@ This folder contains engineering reports and performance investigations for the
 Criterion benchmarks under `benches/`.
 
 These documents are **not** treated as stable architecture docs. Architectural
-decisions and guarantees live under `doc/`.
+contracts live in [the manual](../../doc/README.md).
 
 ## Benchmark taxonomy
 
@@ -58,3 +58,5 @@ profiling loop, then pick the subsystem report that matches the benchmark.
 - `benches/reports/fast_root_finding_brent.md`
   How Brent root refinement and endpoint reuse reduce expensive function
   evaluations in scan→refine pipelines.
+
+- [Compact ephemeris footprint and timing](compact_ephemeris.md)

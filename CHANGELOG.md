@@ -64,7 +64,7 @@ Release preparation; no release date has been assigned.
 
 - Analytical ephemeris numbers change while coordinate signatures remain
   backend-independent. FFI layouts remain unchanged; the ABI version reports 1800.
-- Consolidate the physical conventions in [Frames and centers](doc/frames_and_centers.md).
+- Consolidate the physical conventions in [Frames and centers](doc/concepts/coordinates-and-frames.md).
   Permanent Cargo reference tests/fixtures remain; development-only reports,
   comparison utilities and datasets are removed.
 
@@ -96,7 +96,8 @@ Release preparation; no release date has been assigned.
   and kernel provenance. Existing analytical lunar frames retain their meaning.
 - DE440 CSPICE regressions with small kernel excerpts, external-kernel checks,
   a reproducible reference generator, and `24_spice_lunar` example. See
-  [SPICE lunar geometry](doc/spice_lunar.md) for conventions and residuals.
+  [SPICE lunar geometry](doc/guides/spice-kernels.md) for conventions and
+  [the CSPICE regression report](tests/fixtures/lunar_de440/README.md) for residuals.
 
 ### Fixed
 

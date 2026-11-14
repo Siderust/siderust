@@ -117,14 +117,14 @@ cargo run --example 10_time_periods
 ## Optional Features
 
 - `11_serde_serialization`: JSON round-trips for time and coordinate values.
-- `12_runtime_ephemeris`: runtime JPL ephemeris loading and DE feature checks.
+- `12_runtime_ephemeris`: runtime JPL ephemeris loading from a local file or the dataset cache.
 - `18_lisa_pod`: load LISA CCSDS OEM samples and compute a light-time-corrected inter-spacecraft range.
 - `20_mars_saturn_orientation`: geocentric Mars pole/bright-limb and Saturn ring orientation via the generic planetary orientation API.
 
 ```bash
 cargo run --example 11_serde_serialization --features serde
 cargo run --example 12_runtime_ephemeris -- /path/to/de440.bsp
-cargo run --features runtime-data --example 12_runtime_ephemeris
+cargo run --features runtime-data --example 12_runtime_ephemeris -- --download
 cargo run --example 18_lisa_pod --features pod
 cargo run --example 20_mars_saturn_orientation
 ```
@@ -134,4 +134,10 @@ cargo run --example 20_mars_saturn_orientation
 `cargo run --features spice --example 24_spice_lunar -- /path/to/kernels`
 loads a DE440 SPK/BPC/FK configuration and prints geometric Sun/Earth Alt/Az
 and slant range for an explicitly radial lunar site. See
-[the full kernel, frame, time and validation guide](../doc/spice_lunar.md).
+[the full kernel, frame, time and validation guide](../doc/guides/spice-kernels.md).
+
+## Compact offline ephemerides
+
+`cargo run --locked --example 25_embedded_compact --no-default-features --features embedded-compact`
+runs the offline Sun, Moon, and Mars workflow. See the
+[compact guide](../doc/guides/embedded.md) for coverage and assumptions.

@@ -96,7 +96,7 @@ invokes Cargo for you and installs both headers and libraries via `cmake --insta
 - Treat Rust as the source of truth for enums/structs/constants.
 - `include/siderust_ffi.h` is generated; regenerate it by running `cargo build`.
 - The generated header is also emitted into Cargo `OUT_DIR`; treat both copies as build artifacts.
-- The cross-repo parity checklist lives in `../doc/ffi_bindings_matrix.md`.
+- See the [crate and binding boundaries](../doc/contributing/architecture.md#binding-boundaries).
 - When changing exported signatures or the meaning/values of public enums, consider ABI
   compatibility and bump `siderust_ffi_version()` in `src/lib.rs` accordingly.
 
