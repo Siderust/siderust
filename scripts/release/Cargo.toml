@@ -2,6 +2,7 @@
 name = "siderust-release"
 version = "0.1.0"
 edition = "2021"
+default-run = "siderust-release"
 publish = false
 description = "Internal release validation and changelog helpers for Siderust."
 license = "AGPL-3.0-only"
@@ -18,6 +19,8 @@ path = "src/main.rs"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 semver = "1.0"
+regex = "1"
+percent-encoding = "2"
 toml = { version = "1.1", default-features = false, features = ["parse", "serde"] }
 ureq = "3.5"
 

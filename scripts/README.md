@@ -9,12 +9,10 @@ specify another directory.
 | [CSPICE references](cspice/README.md) | Reproduce or verify independent lunar and surface references | Python, pinned SpiceyPy and NumPy, local NAIF kernels |
 | [Compact and SGP4 references](validation/README.md) | Reproduce independent DE440s/ERFA and Vallado vectors | Python and the pinned reference libraries |
 | [ESP32 harness](../benches/reports/compact_ephemeris.md#esp32) | Build the compact workload for hardware measurements | Espressif Xtensa toolchain |
-| [Markdown link checker](check-doc-links.py) | Check relative links and heading fragments in the manuals and reports | Python 3 standard library |
+| [Markdown link checker](release/src/bin/check-doc-links.rs) | Check relative links and heading fragments in the manuals and reports | Cargo |
 
-The Markdown checker uses a small standard-library scanner for the
-repository's inline links and GitHub heading fragments, so the docs job
-requires no Markdown library installation. Run it with
-`python3 scripts/check-doc-links.py`.
+Run the Markdown checker with
+`cargo run --locked -p siderust-release --bin check-doc-links`.
 
 ## Releases
 

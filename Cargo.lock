@@ -1743,6 +1743,8 @@ dependencies = [
 name = "siderust-release"
 version = "0.1.0"
 dependencies = [
+ "percent-encoding",
+ "regex",
  "semver",
  "serde",
  "serde_json",
