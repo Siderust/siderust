@@ -1364,6 +1364,8 @@ dependencies = [
 [[package]]
 name = "siderust-archive"
 version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "811ccf7987b903ae3096ac77efe77ef5c7d77fac42ef3f41d0c64ffed3e11a45"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1485,6 +1487,8 @@ dependencies = [
 [[package]]
 name = "tempoch"
 version = "0.11.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "70a5fc7a88cc79cdaa0035444914da2c4b65a822f8b153aab2847be571dd4cbb"
 dependencies = [
  "tempoch-core",
 ]
@@ -1492,6 +1496,8 @@ dependencies = [
 [[package]]
 name = "tempoch-core"
 version = "0.11.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "db05e9c7a3ea5e45ef1aa30367abe3faaaf5419e0381d34136c3eb767049eea0"
 dependencies = [
  "affn",
  "chrono",

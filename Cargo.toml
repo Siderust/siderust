@@ -129,7 +129,7 @@ optica = { version = "0.5", default-features = false, features = ["alloc"] }
 principia = { version = "0.7", default-features = false, features = ["alloc"] }
 qtty = { version = "0.8", default-features = false, features = ["alloc", "astro", "density", "frequency", "radiometry", "satellite"] }
 tempoch = { version = "0.11.3", default-features = false, features = ["alloc"] }
-siderust-archive = { version = "0.2.0", default-features = false, features = ["jpl", "nutation-2000b", "gravity", "atmosphere", "pluto", "time"] }
+siderust-archive = { version = "0.2.0", default-features = false, features = ["jpl", "nutation", "gravity", "atmosphere", "pluto", "time"] }
 
 thiserror = { version = "2", default-features = false }
 chrono = { version = "0.4", default-features = false, features = ["alloc"] }
@@ -226,13 +226,6 @@ harness = false
 [[example]]
 name = "24_spice_lunar"
 required-features = ["spice"]
-
-# Temporary while the upstream versions are unpublished.
-[patch.crates-io]
-siderust-archive = { path = "../archive" }
-tempoch = { path = "../tempoch/tempoch" }
-tempoch-core = { path = "../tempoch/tempoch-core" }
-tempoch-ffi = { path = "../tempoch/tempoch-ffi" }
 
 [[example]]
 name = "25_embedded_compact"

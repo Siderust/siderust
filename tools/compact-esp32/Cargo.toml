@@ -12,12 +12,6 @@ esp-hal = { version = "=1.2.2", features = ["esp32"] }
 esp-bootloader-esp-idf = { version = "=0.6.0", features = ["esp32"] }
 esp-println = { version = "=0.18.0", default-features = false, features = ["esp32", "uart"] }
 
-# Temporary while Archive and Tempoch are unpublished.
-[patch.crates-io]
-siderust-archive = { path = "../../../archive" }
-tempoch = { path = "../../../tempoch/tempoch" }
-tempoch-core = { path = "../../../tempoch/tempoch-core" }
-
 [profile.release]
 opt-level = "z"
 lto = true
