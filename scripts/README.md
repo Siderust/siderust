@@ -26,7 +26,8 @@ cargo run --locked -p siderust-release -- publish --dry-run
 ```
 
 Local validation checks workspace versions, dependency sources, and the
-matching changelog section. Tagged validation also rejects Cargo patches.
+matching changelog section. Tagged validation and live publication reject
+Cargo patches.
 Use `--check-published` to include a read-only crates.io lookup. The
 `already-published NAME VERSION` subcommand exits with 0 for an existing
 version, 1 for a confirmed absence, 2 for incorrect usage, and 3 when the

@@ -196,7 +196,7 @@ fn cargo_publish(
 
 /// Validate the release, check all selected versions, then publish missing packages.
 pub fn publish(root: &Path, dry_run: bool, confirm_ffi: bool) -> Result<(), ValidationError> {
-    let (_, _, metadata) = preflight(root, None, None, true)?;
+    let (_, _, metadata) = preflight(root, None, None, !dry_run)?;
     let candidates = publish_candidates(&metadata, confirm_ffi)?;
     if !dry_run && env::var_os("CARGO_REGISTRY_TOKEN").is_none_or(|token| token.is_empty()) {
         return Err(ValidationError(
