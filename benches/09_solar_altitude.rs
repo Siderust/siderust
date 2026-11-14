@@ -235,8 +235,26 @@ fn bench_twilight_profile(c: &mut Criterion) {
         let period = build_period(days);
         let mut g = c.benchmark_group(format!("engines/solar/{label}/twilight_profile"));
 
+        let validation = std::cell::OnceCell::new();
+        let validate_crossings = || {
+            validation.get_or_init(|| {
+                let batch = bench_internals::solar_twilight_profile(site, period, thresholds, opts);
+                assert_eq!(batch.len(), thresholds.len());
+                for (&threshold, events) in thresholds.iter().zip(&batch) {
+                    let reference =
+                        bench_internals::solar_twilight_crossings(site, period, threshold, opts);
+                    assert_eq!(events.len(), reference.len());
+                    for (event, expected) in events.iter().zip(reference) {
+                        assert_eq!(event.direction, expected.direction);
+                        assert!((event.t.raw() - expected.t.raw()).abs() <= opts.time_tolerance);
+                    }
+                }
+            });
+        };
+
         // Single-pass batch: computes all five thresholds in one daily sweep.
         g.bench_function("daily_batch_all_thresholds", |b| {
+            validate_crossings();
             b.iter(|| {
                 black_box(bench_internals::solar_twilight_profile(
                     site,
@@ -247,13 +265,21 @@ fn bench_twilight_profile(c: &mut Criterion) {
             });
         });
 
-        // Independent baseline: five separate `below_threshold` calls.
-        g.bench_function("independent_below_threshold_x5", |b| {
+        // Independent baseline: five single-threshold crossing searches.
+        g.bench_function("independent_crossings_x5", |b| {
+            validate_crossings();
             b.iter(|| {
                 black_box(
                     thresholds
                         .iter()
-                        .map(|&thr| below_threshold(&Sun, &site, black_box(period), thr, opts))
+                        .map(|&thr| {
+                            bench_internals::solar_twilight_crossings(
+                                site,
+                                black_box(period),
+                                thr,
+                                opts,
+                            )
+                        })
                         .collect::<Vec<_>>(),
                 )
             });

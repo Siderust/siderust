@@ -16,19 +16,19 @@ fn bench_sidereal(c: &mut Criterion) {
     let mut group = c.benchmark_group("sidereal");
 
     group.bench_function("gmst_iau2006", |b| {
-        b.iter(|| black_box(gmst_iau2006(black_box(ut1), jd)));
+        b.iter(|| black_box(gmst_iau2006(black_box(ut1), black_box(jd))));
     });
     group.bench_function("gast_iau2006a", |b| {
-        b.iter(|| black_box(gast_iau2006a(black_box(ut1), jd)));
+        b.iter(|| black_box(gast_iau2006a(black_box(ut1), black_box(jd))));
     });
     group.bench_function("gast_iau2006_low_level", |b| {
         let nut = siderust::astro::nutation::nutation_iau2000b(jd);
         b.iter(|| {
             black_box(gast_iau2006(
                 black_box(ut1),
-                jd,
-                nut.dpsi,
-                nut.mean_obliquity,
+                black_box(jd),
+                black_box(nut.dpsi),
+                black_box(nut.mean_obliquity),
             ))
         });
     });

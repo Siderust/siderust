@@ -96,7 +96,7 @@ fn bench_spk_eval(c: &mut Criterion) {
 }
 
 fn bench_spk_parse(c: &mut Criterion) {
-    let Some(path) = std::env::var("SIDERUST_BSP_PATH").ok() else {
+    let Some(path) = std::env::var_os("SIDERUST_BSP_PATH") else {
         eprintln!("[spk_perf] SIDERUST_BSP_PATH not set, skipping BSP parse benches");
         return;
     };
@@ -109,35 +109,32 @@ fn bench_spk_parse(c: &mut Criterion) {
 }
 
 fn bench_runtime_and_kernel_set(c: &mut Criterion) {
-    let Some(path) = std::env::var("SIDERUST_BSP_PATH").ok() else {
+    let Some(path) = std::env::var_os("SIDERUST_BSP_PATH") else {
         eprintln!("[spk_perf] SIDERUST_BSP_PATH not set, skipping runtime BSP benches");
         return;
     };
     let eph = RuntimeEphemeris::from_bsp(&path).expect("load BSP");
     let set = SpkKernelSet::from_paths([&path]).expect("kernel set");
-    let mut jd = JulianDate::new(JD_J2000);
+    let jd = JulianDate::new(JD_J2000);
 
     let mut group = c.benchmark_group("runtime_ephemeris_bsp");
     group.bench_function("earth_barycentric", |b| {
-        b.iter(|| {
-            jd = JulianDate::new(jd.raw().value() + 0.01);
-            black_box(eph.earth_barycentric(black_box(jd)));
-        });
+        eph.try_earth_barycentric(jd)
+            .expect("BSP must cover J2000 TT for earth_barycentric");
+        b.iter(|| eph.earth_barycentric(black_box(jd)));
     });
     group.bench_function("moon_geocentric", |b| {
-        b.iter(|| {
-            jd = JulianDate::new(jd.raw().value() + 0.01);
-            black_box(eph.moon_geocentric(black_box(jd)));
-        });
+        eph.try_moon_geocentric(jd)
+            .expect("BSP must cover J2000 TT for moon_geocentric");
+        b.iter(|| eph.moon_geocentric(black_box(jd)));
     });
     group.finish();
 
     let mut group = c.benchmark_group("spk_kernel_set_bsp");
     group.bench_function("geometric_state_earth_moon", |b| {
-        b.iter(|| {
-            jd = JulianDate::new(jd.raw().value() + 0.01);
-            black_box(set.try_geometric_state(301, 399, black_box(jd)).unwrap());
-        });
+        set.try_geometric_state(301, 399, jd)
+            .expect("BSP must cover the Earth-to-Moon state at J2000 TT");
+        b.iter(|| set.try_geometric_state(301, 399, black_box(jd)).unwrap());
     });
     group.finish();
 }

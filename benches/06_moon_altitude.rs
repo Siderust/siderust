@@ -14,7 +14,7 @@
 //!   - `chebyshev_context` — default engine (same as `public_api`, labelled for
 //!     direct comparison)
 //!   - `scan_brent_baseline` — uniform scan + Brent refinement over the full
-//!     window (not exposed publicly)
+//!     window using the same interpolated altitude context
 //!
 //! Note: topocentric parallax (~1° at the horizon) means each precise lunar
 //! altitude evaluation is heavier than the solar equivalent.

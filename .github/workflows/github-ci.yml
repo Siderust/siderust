@@ -20,7 +20,7 @@ env:
   # Deterministic CI: do not download multi-GB JPL BSP files during --all-features.
   SIDERUST_JPL_STUB: all
   # Regular CI should cover library, binaries, examples, and tests without compiling
-  # Criterion benchmark targets. Benchmarks remain available through `cargo bench`.
+  # Criterion benchmark targets. The benchmark job checks those separately.
   CARGO_CI_TARGETS: "--lib --bins --tests --examples"
 
 jobs:
@@ -33,6 +33,14 @@ jobs:
           fetch-depth: 0
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo check --workspace $CARGO_CI_TARGETS --all-features
+
+  benchmarks:
+    name: Benchmark integrity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo check --locked -p siderust --benches --features bench-internals,embedded-compact
 
   docs:
     name: Markdown and Rustdoc (all features)

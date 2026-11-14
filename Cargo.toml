@@ -165,49 +165,66 @@ required-features = ["bench-internals"]
 
 [[bench]]
 name = "converters"
+path = "benches/02_converters.rs"
 harness = false
 
 [[bench]]
 name = "vsop87"
+path = "benches/12_vsop87.rs"
 harness = false
+required-features = ["full-ephemeris"]
 
 [[bench]]
 name = "solar_altitude"
+path = "benches/09_solar_altitude.rs"
 harness = false
 required-features = ["bench-internals"]
 
 [[bench]]
 name = "moon_altitude"
+path = "benches/06_moon_altitude.rs"
 harness = false
 required-features = ["bench-internals"]
 
 [[bench]]
 name = "star_altitude"
+path = "benches/11_star_altitude.rs"
 harness = false
 required-features = ["bench-internals"]
 
 [[bench]]
 name = "elp2000"
+path = "benches/04_elp2000.rs"
 harness = false
+required-features = ["full-ephemeris"]
 
 [[bench]]
 name = "ephemeris_comparison"
+path = "benches/05_ephemeris_comparison.rs"
 harness = false
+required-features = ["full-ephemeris"]
 
 [[bench]]
 name = "altitude_comparison"
+path = "benches/01_altitude_comparison.rs"
 harness = false
+required-features = ["full-ephemeris"]
 
 [[bench]]
 name = "de441"
+path = "benches/03_de441.rs"
 harness = false
+required-features = ["std"]
 
 [[bench]]
 name = "spk_perf"
+path = "benches/10_spk_perf.rs"
 harness = false
+required-features = ["std"]
 
 [[bench]]
 name = "sidereal"
+path = "benches/08_sidereal.rs"
 harness = false
 
 [lints]
@@ -219,6 +236,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [[bench]]
 name = "sgp4"
+path = "benches/07_sgp4.rs"
 harness = false
 
 [[example]]

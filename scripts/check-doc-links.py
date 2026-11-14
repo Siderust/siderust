@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check relative inline links and GitHub heading fragments in the manual."""
+"""Check relative inline links and GitHub heading fragments in the manual and benchmark reports."""
 
 import re
 import sys
@@ -50,13 +50,12 @@ def anchors(path):
 
 def main():
     pages = sorted((ROOT / "doc").rglob("*.md"))
+    pages.extend(sorted((ROOT / "benches").rglob("*.md")))
     pages.extend(ROOT / name for name in (
         "README.md",
         "CHANGELOG.md",
         "examples/README.md",
         "siderust-ffi/README.md",
-        "benches/reports/README.md",
-        "benches/reports/compact_ephemeris.md",
         "tests/fixtures/lunar_de440/README.md",
         "tools/validation/README.md",
     ))

@@ -4,8 +4,8 @@
 //! Cross-body altitude comparison benchmarks.
 //!
 //! Measures single-point altitude evaluation and period-finding performance for
-//! Sun, Moon, and Star (Sirius) side-by-side. Criterion's HTML reports show the
-//! relative cost of each body's altitude engine.
+//! Sun, Moon, and Sirius side by side. These are body-specific workloads
+//! with different physical models and, for the 30-day case, thresholds.
 //!
 //! Group names follow the project taxonomy:
 //!
