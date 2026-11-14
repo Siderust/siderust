@@ -74,37 +74,9 @@ pub(crate) fn iter_sections(text: &str) -> Vec<ChangelogSection> {
 }
 
 /// Return `X.Y.Z` when *label* is a version heading, else `None`.
-pub(crate) fn normalize_version(label: &str) -> Option<String> {
-    if label.eq_ignore_ascii_case("unreleased") {
-        return None;
-    }
-    let candidate = label
-        .strip_prefix('v')
-        .or_else(|| label.strip_prefix('V'))
-        .unwrap_or(label);
-    if is_semver_like(candidate) {
-        Some(candidate.to_owned())
-    } else {
-        None
-    }
-}
-
-fn is_semver_like(value: &str) -> bool {
-    let mut parts = value.splitn(2, ['-', '+']);
-    let core = parts.next().unwrap_or("");
-    let mut nums = core.split('.');
-    let (Some(major), Some(minor), Some(patch)) = (nums.next(), nums.next(), nums.next()) else {
-        return false;
-    };
-    if nums.next().is_some() {
-        return false;
-    }
-    major.chars().all(|c| c.is_ascii_digit())
-        && !major.is_empty()
-        && minor.chars().all(|c| c.is_ascii_digit())
-        && !minor.is_empty()
-        && patch.chars().all(|c| c.is_ascii_digit())
-        && !patch.is_empty()
+pub(crate) fn normalize_version(label: &str) -> Option<semver::Version> {
+    let candidate = label.strip_prefix(['v', 'V']).unwrap_or(label);
+    semver::Version::parse(candidate).ok()
 }
 
 /// Return the unique nonempty section for *version* (with or without a leading `v`).
@@ -112,13 +84,11 @@ pub fn extract_version_section(
     text: &str,
     version: &str,
 ) -> Result<ChangelogSection, ChangelogError> {
-    let wanted = version
-        .strip_prefix('v')
-        .or_else(|| version.strip_prefix('V'))
-        .unwrap_or(version);
+    let wanted = normalize_version(version)
+        .ok_or_else(|| ChangelogError(format!("invalid release version {version:?}")))?;
     let matches: Vec<_> = iter_sections(text)
         .into_iter()
-        .filter(|section| normalize_version(&section.label).as_deref() == Some(wanted))
+        .filter(|section| normalize_version(&section.label).as_ref() == Some(&wanted))
         .collect();
     match matches.len() {
         0 => Err(ChangelogError(format!(

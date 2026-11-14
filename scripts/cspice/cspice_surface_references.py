@@ -29,7 +29,7 @@ results. They are a composite: CSPICE orientation (+ optional pgrrec) with
 independent ENU geometry.
 
 Dependencies (optional):
-  uv pip install spiceypy numpy
+  uv pip install -r scripts/cspice/requirements.txt
 
 Kernels (NAIF generic; download once):
   https://naif.jpl.nasa.gov/pub/naif/generic_kernels/pck/pck00011.tpc
@@ -38,7 +38,7 @@ Kernels (NAIF generic; download once):
 Usage:
   export CSPICE_PCK=/path/to/pck00011.tpc
   export CSPICE_LSK=/path/to/naif0012.tls
-  python3 tools/cspice_refs/cspice_surface_references.py
+  python3 scripts/cspice/cspice_surface_references.py
 
 Prints Rust-ready literals for tests/body_surface_horizontal.rs.
 Validated against CSPICE N0067 / SpiceyPy 8.3.0.
@@ -49,6 +49,9 @@ from __future__ import annotations
 import math
 import os
 import sys
+from pathlib import Path
+
+from provenance import check_kernel, check_toolkit
 
 
 def require_spice():
@@ -58,7 +61,7 @@ def require_spice():
     except ImportError as exc:  # pragma: no cover
         raise SystemExit(
             "spiceypy and numpy are required to regenerate references:\n"
-            "  uv pip install spiceypy numpy\n"
+            "  uv pip install -r scripts/cspice/requirements.txt\n"
             f"({exc})"
         ) from exc
     return np, spice
@@ -93,10 +96,13 @@ def main() -> int:
     np, spice = require_spice()
     pck = os.environ.get("CSPICE_PCK", "pck00011.tpc")
     lsk = os.environ.get("CSPICE_LSK", "naif0012.tls")
-    for path in (pck, lsk):
-        if not os.path.isfile(path):
-            print(f"missing kernel: {path}", file=sys.stderr)
-            return 1
+    try:
+        check_kernel(Path(pck), "pck00011.tpc")
+        check_kernel(Path(lsk), "naif0012.tls")
+        check_toolkit(spice)
+    except (OSError, ValueError) as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 1
 
     spice.furnsh(pck)
     spice.furnsh(lsk)
@@ -106,6 +112,7 @@ def main() -> int:
     # CSPICE: body-fixed → J2000. Columns of M are body axes in J2000.
     r_moon = spice.pxform("IAU_MOON", "J2000", et)
 
+    print(f"// SpiceyPy {spice.__version__} / {spice.tkvrsn('TOOLKIT')}")
     print("// --- CSPICE orientation ---")
     print(f"// jd_tt={jd_tt}, ET via unitim(TDT→TDB)")
     print(f"// kernels={os.path.basename(pck)}+{os.path.basename(lsk)}")

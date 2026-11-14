@@ -29,6 +29,9 @@ requires no external ephemeris kernels.
 
 ## Contributing
 
+See the [developer tooling guide](scripts/README.md) for release checks,
+reference generation, and the ESP32 harness.
+
 See the [contributor architecture](doc/contributing/architecture.md) and
 [documentation guide](doc/contributing/documentation.md). For numerical
 discrepancies, include the epoch and scale, frame and center, units,

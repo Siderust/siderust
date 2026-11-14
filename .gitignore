@@ -25,6 +25,7 @@ artifacts
 
 ## Python env
 .venv/
+__pycache__/
 
 # Build-time datasets are downloaded on demand (not tracked in git).
 scripts/**/dataset/

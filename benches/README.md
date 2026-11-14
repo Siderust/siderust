@@ -50,7 +50,7 @@ the full tables because its single-evaluation epoch is outside compact coverage.
 
 All targets can be checked by ordinary CI. Dataset-free cases can also be
 smoke-tested there. Use a controlled host for timing. The
-[ESP32 harness](../tools/compact-esp32) is separate from Criterion and requires
+[ESP32 harness](../scripts/compact-esp32) is separate from Criterion and requires
 an Xtensa toolchain and board for device measurements.
 
 ## Kernel-backed runs

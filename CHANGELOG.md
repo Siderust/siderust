@@ -130,7 +130,7 @@ Release preparation; no release date has been assigned.
   (Mars/Mercury/Pluto planetographic longitudes are west-positive).
 - Composite lunar Alt/Az validation: CSPICE `IAU_MOON` orientation plus
   independent ENU geometry, with regeneration script
-  `tools/cspice_refs/cspice_surface_references.py`.
+  `scripts/cspice/cspice_surface_references.py`.
 - Scale-free zenith/nadir azimuth singularity (`32 ε`) so exact vertical
   lines of sight report the documented `0°` azimuth convention without
   inventing noise-driven bearings.

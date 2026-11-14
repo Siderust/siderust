@@ -5,12 +5,15 @@ These are sample maxima over the fixture and its synthetic Earth
 orientation inputs.
 
 The [generator](compact_reference.py) uses DE440s and
-ERFA. Regenerate the fixture with Python and `numpy pyerfa jplephem`.
+ERFA. Python keeps the generator on the existing ERFA and jplephem reference
+implementations and preserves independence from Siderust.
 The SHA-256 of `de440s.bsp` is
 `c1c7feeab882263fc493a9d5a5b2ddd71b54826cdf65d8d17a76126b260a49f2`.
 
 ```sh
-python tools/validation/compact_reference.py /path/to/de440s.bsp > tests/fixtures/compact_reference.csv
+uv run --python 3.14 --with numpy==2.5.4 --with pyerfa==2.0.1.5 --with jplephem==2.24 \
+  scripts/validation/compact_reference.py /path/to/de440s.bsp > /tmp/compact_reference.csv
+cmp /tmp/compact_reference.csv tests/fixtures/compact_reference.csv
 cargo test --locked -p siderust --test compact_ephemeris --no-default-features --features embedded-compact -- --nocapture
 ```
 
@@ -34,3 +37,11 @@ interval and targets within 0.051° of the horizon:
 The geometric reference uses shared synthetic DUT1 = 0.4 seconds, xp = 0.15″
 and yp = −0.25″, including for future dates. This checks transformations
 independently of the availability of measured EOP.
+
+
+## SGP4 vectors
+
+`generate_iau.py` uses the pinned python-sgp4 package to call Vallado's
+compiled C++ implementation independently of the Rust SGP4 implementation.
+See the [SGP4 fixture notes](../../tests/fixtures/sgp4/README.md) for
+the regeneration command and tolerances.

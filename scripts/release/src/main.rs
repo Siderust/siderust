@@ -1,4 +1,4 @@
-//! CLI for Siderust release validation and changelog extraction.
+//! CLI for Siderust release validation, changelog extraction, and publication.
 //!
 //! ```text
 //! cargo run -p siderust-release -- validate
@@ -6,6 +6,7 @@
 //! cargo run -p siderust-release -- extract-changelog --tag v0.15.0 -o notes.md
 //! cargo run -p siderust-release -- package-meta Cargo.toml
 //! cargo run -p siderust-release -- already-published siderust 0.14.1
+//! cargo run -p siderust-release -- publish --dry-run
 //! ```
 
 use std::env;
@@ -15,19 +16,29 @@ use std::process::ExitCode;
 use std::slice::Iter;
 
 use siderust_release::{
-    crates_io_has_version, default_root, extract_version_section, format_release_notes,
-    package_meta, parse_tag, run_validation,
+    crates_io_has_version, default_root, explicit_version, extract_version_section,
+    format_release_notes, package_meta, publish, run_validation,
 };
 
-fn usage() -> ! {
-    eprintln!(
-        "\
+const USAGE: &str = "\
 usage:
   siderust-release validate [--root DIR] [--tag vX.Y.Z] [--version X.Y.Z] [--require-tag] [--check-published]
   siderust-release extract-changelog [--root DIR] (--tag vX.Y.Z | --version X.Y.Z) [-o FILE]
   siderust-release package-meta <MANIFEST>
-  siderust-release already-published <NAME> <VERSION>"
-    );
+  siderust-release already-published <NAME> <VERSION>
+  siderust-release publish [--root DIR] [--dry-run] [--confirm-ffi]
+
+already-published exits 0 for present, 1 for absent, 2 for usage, 3 for unverifiable.
+publish uploads missing versions unless --dry-run is set.
+Live publication requires CARGO_REGISTRY_TOKEN. FFI requires explicit confirmation.";
+
+fn help() -> ExitCode {
+    println!("{USAGE}");
+    ExitCode::SUCCESS
+}
+
+fn usage() -> ! {
+    eprintln!("{USAGE}");
     std::process::exit(2);
 }
 
@@ -46,6 +57,11 @@ fn main() -> ExitCode {
     if args.is_empty() {
         usage();
     }
+    if matches!(args[0].as_str(), "-h" | "--help" | "help")
+        || matches!(args.get(1).map(String::as_str), Some("-h" | "--help"))
+    {
+        return help();
+    }
     let mut iter = args.iter();
     let cmd = iter.next().map(String::as_str).unwrap_or_default();
     match cmd {
@@ -53,7 +69,7 @@ fn main() -> ExitCode {
         "extract-changelog" => cmd_extract(&mut iter),
         "package-meta" => cmd_package_meta(&mut iter),
         "already-published" => cmd_already_published(&mut iter),
-        "-h" | "--help" | "help" => usage(),
+        "publish" => cmd_publish(&mut iter),
         other => {
             eprintln!("error: unknown command {other}");
             usage();
@@ -74,7 +90,7 @@ fn cmd_validate(args: &mut Iter<'_, String>) -> ExitCode {
             "--version" => version = Some(take_value(args, "--version").to_owned()),
             "--require-tag" => require_tag = true,
             "--check-published" => check_published = true,
-            "-h" | "--help" => usage(),
+            "-h" | "--help" => return help(),
             other => {
                 eprintln!("error: unknown argument {other}");
                 usage();
@@ -114,7 +130,7 @@ fn cmd_extract(args: &mut Iter<'_, String>) -> ExitCode {
             "--tag" => tag = Some(take_value(args, "--tag").to_owned()),
             "--version" => version = Some(take_value(args, "--version").to_owned()),
             "-o" | "--output" => output = Some(PathBuf::from(take_value(args, "-o"))),
-            "-h" | "--help" => usage(),
+            "-h" | "--help" => return help(),
             other => {
                 eprintln!("error: unknown argument {other}");
                 usage();
@@ -122,32 +138,14 @@ fn cmd_extract(args: &mut Iter<'_, String>) -> ExitCode {
         }
     }
     let root = root.unwrap_or_else(default_root);
-    let resolved = match (tag.as_deref(), version.as_deref()) {
-        (Some(tag), Some(version)) => match parse_tag(tag) {
-            Ok(tagged) if tagged == version => version.to_owned(),
-            Ok(_) => {
-                eprintln!("error: --version {version} does not match --tag {tag}");
-                return ExitCode::FAILURE;
-            }
-            Err(err) => {
-                eprintln!("error: {err}");
-                return ExitCode::FAILURE;
-            }
-        },
-        (Some(tag), None) => match parse_tag(tag) {
-            Ok(v) => v,
-            Err(err) => {
-                eprintln!("error: {err}");
-                return ExitCode::FAILURE;
-            }
-        },
-        (None, Some(version)) => version
-            .strip_prefix('v')
-            .or_else(|| version.strip_prefix('V'))
-            .unwrap_or(version)
-            .to_owned(),
-        (None, None) => {
+    let resolved = match explicit_version(tag.as_deref(), version.as_deref()) {
+        Ok(Some(version)) => version,
+        Ok(None) => {
             eprintln!("error: provide --tag and/or --version");
+            usage();
+        }
+        Err(err) => {
+            eprintln!("error: {err}");
             return ExitCode::FAILURE;
         }
     };
@@ -218,10 +216,33 @@ fn cmd_already_published(args: &mut Iter<'_, String>) -> ExitCode {
         Ok(true) => ExitCode::SUCCESS,
         Ok(false) => ExitCode::from(1),
         Err(err) => {
-            eprintln!("warning: {err}");
-            // Match publish-changed.sh: treat lookup failures as "not found"
-            // so a transient API issue does not skip a needed publish forever.
-            ExitCode::from(1)
+            eprintln!("error: {err}");
+            ExitCode::from(3)
+        }
+    }
+}
+
+fn cmd_publish(args: &mut Iter<'_, String>) -> ExitCode {
+    let mut root = None;
+    let mut dry_run = false;
+    let mut confirm_ffi = false;
+    while let Some(arg) = args.next().map(String::as_str) {
+        match arg {
+            "--root" => root = Some(PathBuf::from(take_value(args, "--root"))),
+            "--dry-run" => dry_run = true,
+            "--confirm-ffi" => confirm_ffi = true,
+            "-h" | "--help" => return help(),
+            other => {
+                eprintln!("error: unknown argument {other}");
+                usage();
+            }
+        }
+    }
+    match publish(&root.unwrap_or_else(default_root), dry_run, confirm_ffi) {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(err) => {
+            eprintln!("error: {err}");
+            ExitCode::FAILURE
         }
     }
 }

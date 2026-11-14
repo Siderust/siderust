@@ -5,7 +5,7 @@ from sgp4 import __version__
 from sgp4.api import Satrec, WGS72, WGS84, accelerated
 
 assert __version__ == "2.25" and accelerated, "Requires python-sgp4 2.25's C++ extension"
-root = Path(__file__).parent
+root = Path(__file__).resolve().parents[2] / "tests/fixtures/sgp4"
 lines = (root / "vallado.txt").read_text().splitlines()
 cases = [(line, lines[i + 1]) for i, line in enumerate(lines) if line.startswith("1 ")]
 

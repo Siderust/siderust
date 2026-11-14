@@ -19,7 +19,7 @@ mode), independently of Siderust. Source: https://github.com/brandon-rhodes/pyth
 (MIT license in `LICENSE-python-sgp4`). Reproduce from the repository root:
 
 ```sh
-uv run --python 3.12 --with sgp4==2.25 tests/fixtures/sgp4/generate_iau.py
+uv run --python 3.12 --with sgp4==2.25 scripts/validation/generate_iau.py
 ```
 
 `synthetic.txt` adds 315 independent C++ vectors for all three model modes.

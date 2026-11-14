@@ -40,18 +40,8 @@ checks have a 5e-12 element bound, including epochs centuries from J2000.
 A Horizons comparison requires matching corrections, epochs, sites, and
 frame models.
 
-To regenerate the references, obtain the [original kernels](../../../doc/guides/spice-kernels.md#kernel-set) and run these commands from the repository root. The
-[provenance manifest](provenance.json) records the hashes.
-
-```sh
-uv venv /tmp/lunar-reference-env
-uv pip install --python /tmp/lunar-reference-env/bin/python spiceypy==8.3.0 numpy==2.5.4
-KERNEL_DIR=/tmp/lunar-kernels /tmp/lunar-reference-env/bin/python \
-  tools/cspice_refs/cspice_lunar_de440_references.py
-cargo test --features spice --test spice_lunar
-SIDERUST_LUNAR_KERNEL_DIR=/tmp/lunar-kernels \
-  cargo test --features spice --test spice_lunar cspice_external -- --ignored --nocapture
-```
+The [CSPICE tooling guide](../../../scripts/cspice/README.md) gives the
+pinned environment and commands to verify or regenerate the references.
 
 The optional external test spans approximately 1850–2150 and tests the original
 BPC's coverage endpoints. No large kernels or network access are needed for
