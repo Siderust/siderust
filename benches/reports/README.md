@@ -23,10 +23,3 @@ case selection.
   and nutation caches and the tests that bound sampled interpolation error.
 - [Root refinement](fast_root_finding_brent.md) explains bracket, endpoint and
   crossing-direction reuse, and where function counts can be measured.
-
-## Interpret historical measurements
-
-- [Compact ephemeris footprint and timing](compact_ephemeris.md) records a
-  revision-specific Linux workload migration and ESP32 image sizes.
-- [Legacy altitude and ELP2000 results](historical_measurements.md) preserves
-  reported values with provenance gaps that prevent their use as baselines.
