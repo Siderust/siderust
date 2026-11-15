@@ -21,6 +21,9 @@ use crate::qtty::*;
 use crate::time::{Interval, ModifiedJulianDate};
 use alloc::vec::Vec;
 
+// Reuse the production lunar evaluator and its position cache in microbenchmarks.
+pub use crate::event::lunar::moon_cache::{MoonAltitudeContext, MoonPositionCache};
+
 // Re-export the diagnostics struct so bench binaries can inspect it.
 pub use crate::event::solar::daily_events::SolarDailyDiagnostics;
 

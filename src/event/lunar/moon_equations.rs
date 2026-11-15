@@ -6,7 +6,7 @@
 //! ## Scientific scope
 //!
 //! High‑level methods on [`Moon`] for the most common observational
-//! quantities: apparent topocentric equatorial coordinates, horizontal
+//! quantities: topocentric true-of-date equatorial coordinates, horizontal
 //! coordinates, and phase geometry (illuminated fraction, phase angle,
 //! elongation, waxing flag, principal phase events). The pipelines apply
 //! topocentric parallax (~1° at horizon for the Moon), J2000 → mean‑of‑date
@@ -35,9 +35,11 @@ use alloc::vec::Vec;
 
 use crate::coordinates::transform::context::DefaultEphemeris;
 use crate::coordinates::transform::TransformFrame;
+use crate::coordinates::transform::{
+    horizontal::project_position_with, AstroContext, PositionAstroExt, TransformCenter,
+};
 use crate::coordinates::{cartesian, centers::*, frames, spherical};
 use crate::ephemeris::Ephemeris;
-use crate::event::horizontal;
 use crate::event::lunar::phase::{
     find_phase_events, illumination_above, illumination_below, illumination_range,
     moon_phase_geocentric, moon_phase_topocentric, MoonPhaseGeometry, PhaseEvent, PhaseSearchOpts,
@@ -48,35 +50,18 @@ use crate::qtty::{
 use crate::time::{Interval, JulianDate, ModifiedJulianDate};
 
 impl Moon {
-    /// Returns the **apparent topocentric equatorial coordinates** of the Moon
-    /// as seen from a given `Geodetic<ECEF>` at the specified Julian Date.
+    /// Returns the Moon's geometric topocentric position in the true
+    /// equator and equinox of date at the supplied TT Julian Date.
     ///
-    /// This method accounts for:
-    /// - **Topocentric parallax**: Critical for the Moon due to its proximity (~1° at horizon)
-    /// - **Precession**: J2000 → mean-of-date transformation
-    /// - **Nutation**: Mean-of-date → true-of-date correction
+    /// The default ephemeris supplies the geocentric position at reception.
+    /// The observer's WGS84 position is rotated using DUT1, polar motion
+    /// and celestial pole offsets, then subtracted to account for parallax.
+    /// The default frame model determines frame bias, precession and
+    /// nutation for the returned axes.
     ///
-    /// ### Parameters
-    /// - `jd`: Julian Day for which to compute the Moon's apparent position
-    /// - `site`: Observer location on Earth
-    ///
-    /// ### Returns
-    /// A `spherical::Position<Topocentric, EquatorialTrueOfDate, U>` representing the Moon's
-    /// apparent right ascension and declination from the observer's location.
-    ///
-    /// ### Notes
-    /// Unlike the Sun, topocentric parallax correction is **essential** for the Moon
-    /// due to its proximity to Earth (average distance ~384,400 km).
-    ///
-    /// # Arguments
-    ///
-    /// * `jd`, instant on the TT axis as a Julian Date.
-    /// * `site`, geodetic observer location.
-    ///
-    /// # Returns
-    ///
-    /// `spherical::Position<Topocentric, EquatorialTrueOfDate, U>`: apparent
-    /// topocentric right ascension, declination, and distance in unit `U`.
+    /// The historical method name uses “apparent” for the true-of-date
+    /// axes. The calculation omits light-time, aberration, gravitational
+    /// deflection, and atmospheric refraction.
     pub fn get_apparent_topocentric_equ<U: LengthUnit>(
         jd: JulianDate,
         site: Geodetic<frames::ECEF>,
@@ -98,13 +83,12 @@ impl Moon {
             Kilometer,
         > = TransformFrame::to_frame(&moon_geo_ecliptic);
 
-        // 3-5) Shared pipeline in Kilometer: topocentric parallax → precession → nutation → spherical
-        let topo_sph_km: spherical::Position<Topocentric, frames::EquatorialTrueOfDate, Kilometer> =
-            horizontal::geocentric_j2000_to_apparent_topocentric::<Kilometer>(
-                &moon_geo_eq_j2000,
-                site,
-                jd,
-            );
+        let ctx: AstroContext = AstroContext::default();
+        let relative: cartesian::Position<Topocentric, _, _> =
+            moon_geo_eq_j2000.to_center_with(site, jd, &ctx);
+        let topo_sph_km = relative
+            .to_frame_with::<frames::EquatorialTrueOfDate, _>(&jd, &ctx)
+            .to_spherical();
 
         // 6) Convert from Kilometer to target unit U
         let dist_u: Quantity<U> = topo_sph_km.distance.into();
@@ -117,49 +101,24 @@ impl Moon {
         )
     }
 
-    /// Returns the Moon's **horizontal coordinates** (altitude, azimuth) as seen
-    /// from a given `Geodetic<ECEF>` at the specified Julian Date or Modified Julian Date.
+    /// Projects the geometric topocentric position onto the observer's
+    /// horizon using the default Earth orientation.
     ///
-    /// This is a convenience wrapper that computes the apparent topocentric equatorial
-    /// position and transforms it to horizontal coordinates.
+    /// The result carries the observer, range, altitude and azimuth.
+    /// Azimuth increases from north through east. Refraction is omitted.
+    /// Convert an MJD (TT) to JD explicitly.
     ///
-    /// ### Parameters
-    /// - `time`: Any type that can be converted to `JulianDate` (JD or Mjd)
-    /// - `site`: Observer location on Earth
-    ///
-    /// ### Returns
-    /// A `spherical::Position<Topocentric, Horizontal, U>` with:
-    /// - Altitude (polar): elevation above horizon in degrees, [-90°, +90°]
-    /// - Azimuth: bearing from North through East in degrees, [0°, 360°)
-    /// - Distance: in the specified length unit
-    ///
-    /// ### Example
     /// ```rust
-    /// use siderust::bodies::solar_system::Moon;
-    /// use siderust::coordinates::centers::Geodetic;
-    /// use siderust::coordinates::frames::ECEF;
-    /// use siderust::time::{JulianDate, ModifiedJulianDate};
-    /// use siderust::qtty::*;
+    /// use siderust::bodies::Moon;
+    /// use siderust::coordinates::{centers::Geodetic, frames::ECEF};
+    /// use siderust::qtty::{Kilometer, DEG, M};
+    /// use siderust::time::{ModifiedJulianDate, JD};
     ///
     /// let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
-    ///
-    /// // Using JulianDate
-    /// let moon_pos = Moon::get_horizontal::<Kilometer>(siderust::J2000, site);
-    /// println!("Moon altitude: {}", moon_pos.alt().to::<Deg>());
-    ///
-    /// // Using ModifiedJulianDate
-    /// let mjd = siderust::ModifiedJulianDate::new(60000.0);
+    /// let tt = ModifiedJulianDate::new(60_310.0);
+    /// let moon = Moon::get_horizontal::<Kilometer>(tt.to::<JD>(), site);
+    /// assert_eq!(moon.center_params(), &site);
     /// ```
-    ///
-    /// # Arguments
-    ///
-    /// * `time`, any value convertible to `JulianDate` (JD or MJD).
-    /// * `site`, geodetic observer location.
-    ///
-    /// # Returns
-    ///
-    /// `spherical::Position<Topocentric, Horizontal, U>` with altitude,
-    /// azimuth (North through East), and distance in unit `U`.
     pub fn get_horizontal<U: LengthUnit>(
         time: impl Into<JulianDate>,
         site: Geodetic<frames::ECEF>,
@@ -169,7 +128,8 @@ impl Moon {
     {
         let jd = time.into();
         let eq = Self::get_apparent_topocentric_equ::<U>(jd, site);
-        horizontal::equatorial_to_horizontal(&eq, site, jd)
+        let ctx: AstroContext = AstroContext::default();
+        project_position_with(&eq, jd, &ctx)
     }
 }
 
@@ -200,7 +160,7 @@ impl Moon {
     /// use siderust::bodies::solar_system::Moon;
     /// use siderust::coordinates::{centers::{Geocentric, Geodetic, Topocentric}, frames::ECEF};
     /// use siderust::qtty::{Degrees, Meters};
-    /// let jd = siderust::J2000;
+    /// let jd = siderust::JulianDate::new(2_460_310.5);
     /// let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
     /// assert!(Moon::bright_limb_position_angle::<Geocentric>(jd).is_some());
     /// assert!(Moon::bright_limb_position_angle::<Topocentric>((jd, site)).is_some());
@@ -211,7 +171,7 @@ impl Moon {
     /// ```compile_fail,E0277
     /// use siderust::bodies::solar_system::Moon;
     /// use siderust::coordinates::centers::Heliocentric;
-    /// let _ = Moon::bright_limb_position_angle::<Heliocentric>(siderust::J2000);
+    /// let _ = Moon::bright_limb_position_angle::<Heliocentric>(siderust::JulianDate::new(2_460_310.5));
     /// ```
     pub fn bright_limb_position_angle<C: super::position_angle::LunarObservationCenter>(
         input: C::Input,
@@ -231,7 +191,7 @@ impl Moon {
     /// use siderust::bodies::solar_system::Moon;
     /// use siderust::time::JulianDate;
     ///
-    /// let geom = Moon::phase_geocentric(siderust::J2000);
+    /// let geom = Moon::phase_geocentric(siderust::JulianDate::new(2_460_310.5));
     /// assert!(geom.illuminated_fraction.value() >= 0.0 && geom.illuminated_fraction.value() <= 1.0);
     /// ```
     ///
@@ -262,7 +222,7 @@ impl Moon {
     /// use siderust::qtty::*;
     ///
     /// let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.48 * DEG, 0.0 * M);
-    /// let geom = Moon::phase_topocentric(siderust::J2000, site);
+    /// let geom = Moon::phase_topocentric(siderust::JulianDate::new(2_460_310.5), site);
     /// println!("Illuminated: {:.1} %", geom.illuminated_fraction.value() * 100.0);
     /// ```
     ///
@@ -295,7 +255,7 @@ impl Moon {
     /// use siderust::time::{JulianDate, ModifiedJulianDate, Interval};
     /// use siderust::qtty::Days;
     ///
-    /// let start = siderust::J2000.to::<siderust::time::MJD>();
+    /// let start = siderust::JulianDate::new(2_460_310.5).to::<siderust::time::MJD>();
     /// let end = siderust::ModifiedJulianDate::new(start.raw().value() + 35.0);
     /// let window = Interval::new(start, end);
     /// let events = Moon::phase_events(window, PhaseSearchOpts::default());
@@ -369,7 +329,7 @@ impl Moon {
     /// use siderust::time::{JulianDate, ModifiedJulianDate, Interval};
     /// use siderust::qtty::{Days, IlluminationFractions};
     ///
-    /// let start = siderust::J2000.to::<siderust::time::MJD>();
+    /// let start = siderust::JulianDate::new(2_460_310.5).to::<siderust::time::MJD>();
     /// let end = siderust::ModifiedJulianDate::new(start.raw().value() + 30.0);
     /// let window = Interval::new(start, end);
     /// // Crescent phase: 5–35% illuminated

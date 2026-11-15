@@ -32,10 +32,12 @@ origin, with Earth orientation parameters (EOP) providing corrections
 `dX` and `dY`. The Earth Rotation Angle uses UT1. Polar motion uses
 `xp`, `yp` and the modeled terrestrial origin locator. An equinox-based
 path uses sidereal time. Match mean or apparent sidereal time to the
-coordinate frame expected by the method. The equinox-based
-true-of-date horizontal helper uses DUT1 for apparent sidereal time. A
-site translation can also use polar motion through the Cartesian
-Earth-orientation chain. See
+coordinate frame expected by the method. The explicit UT1/TT
+horizontal traits use equinox-based sidereal rotation. The context-aware
+horizontal projection and its inverse share the full Earth-orientation
+chain with observer parallax. Observed `dX` and `dY` correct the modeled
+celestial pole in the CIO-based chain, while the equinox-of-date axes
+follow the selected precession-nutation model. See
 [IERS Conventions, Chapter 5](https://iers-conventions.obspm.fr/chapter5.php).
 
 `AstroContext` supplies the ephemeris and EOP providers. `with_model`

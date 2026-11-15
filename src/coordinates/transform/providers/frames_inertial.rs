@@ -231,35 +231,17 @@ impl FrameRotationProvider<EquatorialMeanOfDate, ICRS> for () {
 
 /// ICRS → EquatorialTrueOfDate rotation.
 ///
-/// Combines nutation (dispatched via `Nut`) with IERS celestial-pole
-/// corrections (dX, dY) from the EOP provider into a full
-/// precession–nutation matrix.
-///
-/// The first-order correction is:
-///   dψ_eop = dX / sin(εA),  dε_eop = dY
+/// The axes follow the selected bias-precession-nutation model. Observed
+/// celestial pole offsets belong to the GCRS → CIRS link of the terrestrial
+/// chain, so direct and ICRS-composed equinox rotations use the same axes.
 impl FrameRotationProvider<ICRS, EquatorialTrueOfDate> for () {
     #[inline]
     fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
-        ctx: &AstroContext<Eph, Eop>,
+        _ctx: &AstroContext<Eph, Eop>,
     ) -> Rotation3 {
         let nut = Nut::nutation(jd);
-        let mut dpsi = nut.dpsi;
-        let mut deps = nut.deps;
-        let eop = ctx.eop_at_tt(jd);
-        let dx_rad = crate::qtty::Radians::from(eop.dx);
-        let dy_rad = crate::qtty::Radians::from(eop.dy);
-
-        let zero = crate::qtty::Radians::new(0.0);
-        if dx_rad != zero || dy_rad != zero {
-            let sin_eps = nut.mean_obliquity.sin();
-            if sin_eps.abs() > 1e-15 {
-                dpsi += dx_rad / sin_eps;
-            }
-            deps += dy_rad;
-        }
-
-        precession::precession_nutation_matrix(jd, dpsi, deps)
+        precession::precession_nutation_matrix(jd, nut.dpsi, nut.deps)
     }
 }
 

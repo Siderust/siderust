@@ -1,61 +1,31 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! # IAU 2006/GAST Horizontal Coordinate Transformations
+//! Geometric Earth horizon transformations.
 //!
-//! This module provides traits for converting between equatorial and horizontal
-//! coordinates using IAU 2006 precession-nutation and GAST-based sidereal time.
+//! The context-aware projection maps the selected equinox-of-date axes to
+//! Earth-fixed axes, then resolves the sightline into local north, east and
+//! up. Its inverse reverses the same basis change and Earth orientation.
+//! Azimuth increases from north through east. At zenith and nadir, azimuth
+//! is assigned zero when the horizontal component is numerically unresolved.
 //!
-//! ## Approach
-//!
-//! The transformation follows SOFA conventions:
-//! - GAST (Greenwich Apparent Sidereal Time) = `gast_iau2006(UT1, TT, dpsi, mean_obliquity)`
-//! - Hour Angle = GAST + observer_longitude - RA
-//! - Azimuth uses astronomical convention: 0° = North, increasing clockwise through East
-//!
-//! ## Time Requirements
-//!
-//! Horizontal transformations require **both** UT1 and TT timescales:
-//! - **UT1** for Earth rotation angle and sidereal time
-//! - **TT** for precession/nutation models (IAU 2006A nutation)
-//!
-//! ## Observer Location
-//!
-//! The observer's geodetic location is provided via [`Geodetic<ECEF>`], which contains:
-//! - Longitude (positive eastward)
-//! - Latitude (positive northward)  
-//! - Height above WGS84 ellipsoid
-//!
-//! ## Usage
-//!
-//! ```rust
-//! use siderust::coordinates::cartesian::Direction;
-//! use siderust::coordinates::centers::Geodetic;
-//! use siderust::coordinates::frames::{ECEF, EquatorialTrueOfDate, Horizontal};
-//! use siderust::coordinates::spherical;
-//! use siderust::coordinates::transform::horizontal::ToHorizontal;
-//! use siderust::time::JulianDate;
-//! use siderust::qtty::*;
-//!
-//! let jd_ut1 = tempoch::JulianDate::<tempoch::UT1>::new(2_451_545.0);
-//! let jd_tt = siderust::JulianDate::new(2_451_545.000_800_741);
-//!
-//! let equatorial = spherical::Direction::<EquatorialTrueOfDate>::new(45.0 * DEG, 30.0 * DEG)
-//!     .to_cartesian();
-//! let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.5 * DEG, 0.0 * M);
-//!
-//! let horizontal: Direction<Horizontal> = equatorial.to_horizontal(&jd_ut1, &jd_tt, &site);
-//! ```
+//! The explicit-UT1 traits also support the equinox-based sidereal
+//! transformation with a supplied UT1 and TT, using zero polar motion
+//! and zero observed celestial pole offsets.
 
-use crate::astro::{nutation, sidereal};
+use super::TransformContext;
+use super::{providers::frame_rotation_with, surface_horizontal::angles_from_horizontal_cartesian};
+use crate::astro::nutation::NutationModel;
+use crate::astro::sidereal;
 use crate::coordinates::cartesian::{Direction, Position};
 use crate::coordinates::centers::{Geodetic, Topocentric};
 use crate::coordinates::frames::{EquatorialTrueOfDate, Horizontal, ECEF};
-use crate::qtty::{Degrees, LengthUnit, Radians};
+use crate::coordinates::{spherical, surface::EnuBasis};
+use crate::qtty::{Degrees, LengthUnit};
 #[cfg(not(feature = "std"))]
-use crate::qtty::{Real, Scalar, Transcendental};
+use crate::qtty::{Real, Transcendental};
 use crate::time::JulianDate;
-use core::f64::consts::TAU;
+use affn::Rotation3;
 
 // =============================================================================
 // ToHorizontal Trait
@@ -97,42 +67,159 @@ impl ToHorizontal for Direction<EquatorialTrueOfDate> {
         jd_tt: &JulianDate,
         site: &Geodetic<ECEF>,
     ) -> Direction<Horizontal> {
-        // Extract RA/Dec from direction
-        let spherical = self.to_spherical();
-        let ra = Radians::from(spherical.azimuth);
-        let dec = Radians::from(spherical.polar);
-
-        // Convert observer location to radians
-        let obs_lon = Radians::from(site.lon);
-        let obs_lat = Radians::from(site.lat);
-
-        // Compute GAST and hour angle
-        let nut =
-            <super::context::DefaultNutationModel as nutation::NutationModel>::nutation(*jd_tt);
-        let gast = sidereal::gast_iau2006(*jd_ut1, *jd_tt, nut.dpsi, nut.mean_obliquity);
-        let ha = (gast + obs_lon - ra).value();
-
-        // Spherical trigonometry for equatorial → horizontal
-        let (sh, ch) = ha.sin_cos();
-        let (sd, cd) = dec.sin_cos();
-        let (sp, cp) = obs_lat.sin_cos();
-
-        // SOFA-compatible intermediate axes
-        let x = -ch * cd * sp + sd * cp;
-        let y = -sh * cd;
-        let z = ch * cd * cp + sd * sp;
-        let r = (x * x + y * y).sqrt();
-
-        let az = if r != 0.0 { y.atan2(x) } else { 0.0 }.rem_euclid(TAU);
-        let alt = z.atan2(r);
-
-        // Construct horizontal direction from spherical coordinates
-        let spherical_horiz = affn::spherical::Direction::<Horizontal>::new_unchecked(
-            Degrees::new(alt.to_degrees()),
-            Degrees::new(az.to_degrees()),
-        );
-        spherical_horiz.to_cartesian()
+        let rotation = equinox_to_terrestrial(*jd_ut1, *jd_tt);
+        let [n, e, u] = project_cartesian(self.as_array(), site, rotation);
+        Direction::new_unchecked(n, e, u)
     }
+}
+
+/// Project a true-of-date equatorial direction onto the local horizon.
+///
+/// The frame provider uses the selected TT nutation model and EOP for
+/// UT1, terrestrial polar motion and observed celestial pole offsets.
+/// Supply the sightline at the reception epoch in the same model's
+/// true equator and equinox of date. This projection only changes axes.
+pub fn project_direction_with<Ctx: TransformContext>(
+    direction: &spherical::Direction<EquatorialTrueOfDate>,
+    site: &Geodetic<ECEF>,
+    jd: JulianDate,
+    ctx: &Ctx,
+) -> spherical::Direction<Horizontal> {
+    let rotation = frame_rotation_with::<EquatorialTrueOfDate, ECEF, _>(jd, ctx);
+    project(direction, site, rotation)
+}
+
+/// Project a true-of-date topocentric position onto its observer's horizon.
+///
+/// The output preserves the site and distance. Use the same TT epoch and
+/// context as for the preceding center and frame transformations. See
+/// [`project_direction_with`] for the projection's scientific scope.
+///
+/// ```rust
+/// use siderust::astro::nutation::Iau2000B;
+/// use siderust::coordinates::{cartesian::Position, centers::{Geocentric, Geodetic, Topocentric},
+///     frames::{EquatorialMeanJ2000, EquatorialTrueOfDate, ECEF},
+///     transform::{AstroContext, PositionAstroExt, TransformCenter,
+///         horizontal::project_position_with}};
+/// use siderust::ephemeris::Ephemeris;
+/// use siderust::coordinates::transform::context::DefaultEphemeris;
+/// use siderust::qtty::{DEG, M};
+///
+/// let jd = siderust::JulianDate::new(2_460_310.25);
+/// let context: AstroContext = AstroContext::default();
+/// let model = context.with_model::<Iau2000B>();
+/// let site = Geodetic::<ECEF>::new(-17.9 * DEG, 28.8 * DEG, 2300.0 * M);
+/// let moon = DefaultEphemeris::moon_geocentric(jd);
+/// let target: Position<Geocentric, EquatorialMeanJ2000, _> = moon.to_frame_with(&jd, &model);
+/// let relative: Position<Topocentric, _, _> = target.to_center_with(site, jd, &model);
+/// let equatorial = relative.to_frame_with::<EquatorialTrueOfDate, _>(&jd, &model);
+/// let horizontal = project_position_with(&equatorial.to_spherical(), jd, &model);
+/// assert_eq!(horizontal.center_params(), &site);
+/// ```
+///
+/// A geocentric position must first be translated to the observer.
+/// ```compile_fail
+/// use siderust::coordinates::{centers::Geocentric, frames::EquatorialTrueOfDate,
+///     spherical::Position, transform::{AstroContext, horizontal::project_position_with}};
+/// use siderust::qtty::{Kilometer, DEG, KM};
+///
+/// let target: Position<Geocentric, EquatorialTrueOfDate, Kilometer> =
+///     Position::new_unchecked(0.0 * DEG, 0.0 * DEG, 100.0 * KM);
+/// let context: AstroContext = AstroContext::default();
+/// project_position_with(&target, siderust::J2000, &context);
+/// ```
+pub fn project_position_with<U: LengthUnit, Ctx: TransformContext>(
+    position: &spherical::Position<Topocentric, EquatorialTrueOfDate, U>,
+    jd: JulianDate,
+    ctx: &Ctx,
+) -> spherical::Position<Topocentric, Horizontal, U> {
+    let site = position.center_params();
+    project_direction_with(&position.direction(), site, jd, ctx)
+        .position_with_params::<Topocentric, U>(*site, position.distance)
+}
+
+/// Recover a sightline in the selected true equator and equinox of date.
+///
+/// Supply the original observer, reception epoch and context to reverse
+/// [`project_direction_with`]. To express the result in other equatorial
+/// axes, follow this operation with a typed frame rotation.
+///
+/// ```rust
+/// use siderust::coordinates::{
+///     centers::Geodetic,
+///     frames::{Horizontal, ECEF},
+///     spherical::Direction,
+///     transform::{horizontal::unproject_direction_with, AstroContext},
+/// };
+/// use siderust::qtty::{DEG, M};
+///
+/// let site = Geodetic::<ECEF>::new(-17.9 * DEG, 28.8 * DEG, 2300.0 * M);
+/// let context: AstroContext = AstroContext::default();
+/// let horizontal = Direction::<Horizontal>::new(30.0 * DEG, 120.0 * DEG);
+/// let equatorial = unproject_direction_with(&horizontal, &site, siderust::J2000, &context);
+/// assert!(equatorial.ra().value().is_finite());
+/// ```
+pub fn unproject_direction_with<Ctx: TransformContext>(
+    direction: &spherical::Direction<Horizontal>,
+    site: &Geodetic<ECEF>,
+    jd: JulianDate,
+    ctx: &Ctx,
+) -> spherical::Direction<EquatorialTrueOfDate> {
+    let rotation = frame_rotation_with::<EquatorialTrueOfDate, ECEF, _>(jd, ctx);
+    let [x, y, z] = unproject_cartesian(direction.to_cartesian().as_array(), site, rotation);
+    // atan2 keeps the small transverse component near either celestial pole.
+    let dec = z.atan2((x * x + y * y).sqrt());
+    let ra = Degrees::new(y.atan2(x).to_degrees()).normalize();
+    spherical::Direction::new_unchecked(Degrees::new(dec.to_degrees()), ra)
+}
+
+/// Reverse [`project_position_with`], preserving the stored observer and range.
+pub fn unproject_position_with<U: LengthUnit, Ctx: TransformContext>(
+    position: &spherical::Position<Topocentric, Horizontal, U>,
+    jd: JulianDate,
+    ctx: &Ctx,
+) -> spherical::Position<Topocentric, EquatorialTrueOfDate, U> {
+    let site = position.center_params();
+    unproject_direction_with(&position.direction(), site, jd, ctx)
+        .position_with_params::<Topocentric, U>(*site, position.distance)
+}
+
+pub(crate) fn project(
+    direction: &spherical::Direction<EquatorialTrueOfDate>,
+    site: &Geodetic<ECEF>,
+    rotation: Rotation3,
+) -> spherical::Direction<Horizontal> {
+    let [north, east, up] = project_cartesian(direction.to_cartesian().as_array(), site, rotation);
+    let (alt, az) = angles_from_horizontal_cartesian(north, east, up);
+    spherical::Direction::new_unchecked(alt, az)
+}
+
+pub(super) fn project_cartesian(
+    vector: [f64; 3],
+    site: &Geodetic<ECEF>,
+    rotation: Rotation3,
+) -> [f64; 3] {
+    let fixed = rotation.apply_array(vector);
+    EnuBasis::geodetic(site.lon, site.lat).to_horizontal(fixed)
+}
+
+pub(super) fn unproject_cartesian(
+    vector: [f64; 3],
+    site: &Geodetic<ECEF>,
+    rotation: Rotation3,
+) -> [f64; 3] {
+    let fixed = EnuBasis::geodetic(site.lon, site.lat).to_fixed(vector);
+    rotation.inverse().apply_array(fixed)
+}
+
+fn equinox_to_terrestrial(ut1: tempoch::JulianDate<tempoch::UT1>, tt: JulianDate) -> Rotation3 {
+    let nut = super::context::DefaultNutationModel::nutation(tt);
+    Rotation3::rz(-sidereal::gast_iau2006(
+        ut1,
+        tt,
+        nut.dpsi,
+        nut.mean_obliquity,
+    ))
 }
 
 // =============================================================================
@@ -175,36 +262,9 @@ impl FromHorizontal for Direction<Horizontal> {
         jd_tt: &JulianDate,
         site: &Geodetic<ECEF>,
     ) -> Direction<EquatorialTrueOfDate> {
-        // Extract Az/Alt from direction
-        let spherical = self.to_spherical();
-        let az = Radians::from(spherical.azimuth);
-        let alt = Radians::from(spherical.polar);
-
-        // Convert observer location to radians
-        let obs_lon = Radians::from(site.lon);
-        let obs_lat = Radians::from(site.lat);
-
-        // Compute LAST (Local Apparent Sidereal Time)
-        let nut =
-            <super::context::DefaultNutationModel as nutation::NutationModel>::nutation(*jd_tt);
-        let gast = sidereal::gast_iau2006(*jd_ut1, *jd_tt, nut.dpsi, nut.mean_obliquity);
-        let last = (gast + obs_lon).value();
-
-        // Spherical trigonometry for horizontal → equatorial
-        let (sp, cp) = obs_lat.sin_cos();
-        let (sa, ca) = alt.sin_cos();
-        let (sz, cz) = az.sin_cos();
-
-        let dec = (sp * sa + cp * ca * cz).clamp(-1.0, 1.0).asin();
-        let ha = (-sz * ca).atan2(sa * cp - ca * cz * sp);
-        let ra = (last - ha).rem_euclid(TAU);
-
-        // Construct equatorial direction from spherical coordinates
-        let spherical_equ = affn::spherical::Direction::<EquatorialTrueOfDate>::new_unchecked(
-            Degrees::new(dec.to_degrees()),
-            Degrees::new(ra.to_degrees()),
-        );
-        spherical_equ.to_cartesian()
+        let rotation = equinox_to_terrestrial(*jd_ut1, *jd_tt);
+        let [x, y, z] = unproject_cartesian(self.as_array(), site, rotation);
+        Direction::new_unchecked(x, y, z)
     }
 }
 
@@ -255,18 +315,10 @@ impl<U: LengthUnit> TopocentricEquatorialExt<U> for Position<Topocentric, Equato
         jd_tt: &JulianDate,
     ) -> Position<Topocentric, Horizontal, U> {
         let site = *self.center_params();
-        // Convert to spherical to get direction
-        let sph = affn::Position::<Topocentric, EquatorialTrueOfDate, U>::to_spherical(self);
-        let equ_dir = sph.direction().to_cartesian();
-        let distance = sph.distance;
-
-        // Transform direction
-        let horiz_cart = equ_dir.to_horizontal(jd_ut1, jd_tt, &site);
-        let horiz_sph = horiz_cart.to_spherical();
-
-        // Create spherical position and convert back to cartesian
-        let result_sph = horiz_sph.position_with_params::<Topocentric, U>(site, distance);
-        affn::Position::<Topocentric, Horizontal, U>::from_spherical(&result_sph)
+        let rotation = equinox_to_terrestrial(*jd_ut1, *jd_tt);
+        let [n, e, u] =
+            project_cartesian(self.as_array().map(|axis| axis.value()), &site, rotation);
+        Position::new_with_params(site, n, e, u)
     }
 }
 
@@ -313,18 +365,10 @@ impl<U: LengthUnit> TopocentricHorizontalExt<U> for Position<Topocentric, Horizo
         jd_tt: &JulianDate,
     ) -> Position<Topocentric, EquatorialTrueOfDate, U> {
         let site = *self.center_params();
-        // Convert to spherical to get direction
-        let sph = affn::Position::<Topocentric, Horizontal, U>::to_spherical(self);
-        let horiz_dir = sph.direction().to_cartesian();
-        let distance = sph.distance;
-
-        // Transform direction
-        let equ_cart = horiz_dir.to_equatorial(jd_ut1, jd_tt, &site);
-        let equ_sph = equ_cart.to_spherical();
-
-        // Create spherical position and convert back to cartesian
-        let result_sph = equ_sph.position_with_params::<Topocentric, U>(site, distance);
-        affn::Position::<Topocentric, EquatorialTrueOfDate, U>::from_spherical(&result_sph)
+        let rotation = equinox_to_terrestrial(*jd_ut1, *jd_tt);
+        let [x, y, z] =
+            unproject_cartesian(self.as_array().map(|axis| axis.value()), &site, rotation);
+        Position::new_with_params(site, x, y, z)
     }
 }
 
@@ -332,6 +376,7 @@ impl<U: LengthUnit> TopocentricHorizontalExt<U> for Position<Topocentric, Horizo
 mod tests {
     use super::*;
     use crate::qtty::*;
+    use core::f64::consts::TAU;
 
     #[test]
     fn roundtrip_equatorial_horizontal_is_stable() {

@@ -3,7 +3,7 @@
 
 //! Lunar altitude benchmarks.
 //!
-//! Organized into two halves:
+//! Covers cached evaluations, short event windows and long search-engine comparisons.
 //!
 //! - **`public_api/moon/{30d,184d,365d}`**: what callers invoke via the stable
 //!   Option A API. The default engine (`MoonAltitudeContext` + Chebyshev-first
@@ -28,11 +28,19 @@
 
 use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
 use criterion::{criterion_group, criterion_main, Criterion};
-use siderust::bench_internals;
+use siderust::astro::nutation::NutationModel;
+use siderust::bench_internals::{self, MoonAltitudeContext, MoonPositionCache};
 use siderust::bodies::Moon;
 use siderust::catalogs::observatories::ROQUE_DE_LOS_MUCHACHOS;
-use siderust::event::altitude::{above_threshold, altitude_ranges, below_threshold, SearchOpts};
-use siderust::qtty::Degrees;
+use siderust::coordinates::{
+    centers::Geodetic,
+    frames::{EclipticMeanJ2000, ECEF},
+    transform::{context::DefaultNutationModel, frame_rotation_with, AstroContext},
+};
+use siderust::event::altitude::{
+    above_threshold, altitude_ranges, below_threshold, crossings, SearchOpts,
+};
+use siderust::qtty::{Degrees, DEG, M};
 use siderust::time::{Interval, ModifiedJulianDate};
 use std::hint::black_box;
 use std::time::Duration;
@@ -174,11 +182,154 @@ fn bench_engines_moon(c: &mut Criterion) {
     }
 }
 
+// January 2024 in TT, within compact ephemeris coverage.
+fn audit_period(days: f64) -> Interval<ModifiedJulianDate> {
+    Interval::new(
+        ModifiedJulianDate::new(60_310.0),
+        ModifiedJulianDate::new(60_310.0 + days),
+    )
+}
+
+fn bench_moon_evaluation(c: &mut Criterion) {
+    let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
+    let period = audit_period(30.0);
+    let cache = MoonAltitudeContext::new(period.start, period.end, site);
+    let positions = MoonPositionCache::new(period.start, period.end);
+    let context: AstroContext = AstroContext::default();
+    let times: Vec<_> = (0..1024)
+        .map(|i| ModifiedJulianDate::new(period.start.value() + i as f64 * 30.0 / 1024.0))
+        .collect();
+    let epochs: Vec<_> = times.iter().map(|t| t.to::<siderust::time::JD>()).collect();
+
+    let mut group = c.benchmark_group("evaluation/moon");
+    group.bench_function("cached_altitude", |b| {
+        let mut index = 0;
+        b.iter(|| {
+            let mjd = times[index % times.len()];
+            index += 1;
+            black_box(cache.altitude_rad(black_box(mjd)))
+        })
+    });
+    group.bench_function("cached_position", |b| {
+        let mut index = 0;
+        b.iter(|| {
+            let mjd = times[index % times.len()];
+            index += 1;
+            black_box(positions.get_position_km(black_box(mjd)))
+        })
+    });
+    group.bench_function("earth_orientation", |b| {
+        let mut index = 0;
+        b.iter(|| {
+            let jd = epochs[index % epochs.len()];
+            index += 1;
+            black_box(frame_rotation_with::<EclipticMeanJ2000, ECEF, _>(
+                black_box(jd),
+                &context,
+            ))
+        })
+    });
+    group.bench_function("eop", |b| {
+        let mut index = 0;
+        b.iter(|| {
+            let jd = epochs[index % epochs.len()];
+            index += 1;
+            black_box(context.eop_at_tt(black_box(jd)))
+        })
+    });
+    group.bench_function("nutation", |b| {
+        let mut index = 0;
+        b.iter(|| {
+            let jd = epochs[index % epochs.len()];
+            index += 1;
+            black_box(DefaultNutationModel::nutation(black_box(jd)))
+        })
+    });
+    for days in [1.0, 7.0, 30.0] {
+        let window = audit_period(days);
+        group.bench_function(format!("build_context/{days}d"), |b| {
+            b.iter(|| {
+                black_box(MoonAltitudeContext::new(
+                    black_box(window.start),
+                    black_box(window.end),
+                    site,
+                ))
+            })
+        });
+    }
+    group.finish();
+}
+
+fn bench_moon_event_windows(c: &mut Criterion) {
+    let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
+    let polar = Geodetic::<ECEF>::new(18.95 * DEG, 69.65 * DEG, 0.0 * M);
+    let opts = SearchOpts::default();
+    for days in [1.0, 7.0, 30.0] {
+        let window = audit_period(days);
+        let mut group = c.benchmark_group(format!("event_windows/moon/{days}d"));
+        group.bench_function("rise_set", |b| {
+            b.iter(|| black_box(crossings(&Moon, &site, black_box(window), 0.0 * DEG, opts)))
+        });
+        group.bench_function("above_threshold", |b| {
+            b.iter(|| {
+                black_box(above_threshold(
+                    &Moon,
+                    &site,
+                    black_box(window),
+                    0.0 * DEG,
+                    opts,
+                ))
+            })
+        });
+        group.bench_function("altitude_band", |b| {
+            b.iter(|| {
+                black_box(altitude_ranges(
+                    &Moon,
+                    &site,
+                    black_box(window),
+                    0.0 * DEG,
+                    30.0 * DEG,
+                    opts,
+                ))
+            })
+        });
+        group.bench_function("high_latitude_above_threshold", |b| {
+            b.iter(|| {
+                black_box(above_threshold(
+                    &Moon,
+                    &polar,
+                    black_box(window),
+                    0.0 * DEG,
+                    opts,
+                ))
+            })
+        });
+        group.finish();
+    }
+
+    // The Moon briefly dips below the horizon near lower culmination.
+    let shallow = Interval::new(
+        ModifiedJulianDate::new(60_335.4),
+        ModifiedJulianDate::new(60_335.6),
+    );
+    c.bench_function("event_windows/moon/shallow_horizon", |b| {
+        b.iter(|| {
+            black_box(crossings(
+                &Moon,
+                &polar,
+                black_box(shallow),
+                0.0 * DEG,
+                opts,
+            ))
+        })
+    });
+}
+
 criterion_group! {
     name = moon_benches;
     config = Criterion::default()
         .measurement_time(Duration::from_secs(5))
         .sample_size(20);
-    targets = bench_public_api_moon, bench_engines_moon
+    targets = bench_moon_evaluation, bench_moon_event_windows, bench_public_api_moon, bench_engines_moon
 }
 criterion_main!(moon_benches);

@@ -14,21 +14,15 @@ use siderust::bodies::{Jupiter, Mars, Mercury, Neptune, Saturn, Uranus, Venus};
 use siderust::coordinates::{
     cartesian::Position,
     centers::{Geocentric, Geodetic, Heliocentric, Topocentric},
-    frames::{EclipticMeanJ2000, EquatorialMeanJ2000, ECEF},
-    transform::{AstroContext, TransformCenter, TransformFrame},
+    frames::{EclipticMeanJ2000, EquatorialMeanJ2000, EquatorialTrueOfDate, ECEF},
+    transform::{horizontal::project_position_with, AstroContext, TransformCenter, TransformFrame},
 };
 use siderust::ephemeris::{
     CompactEphemeris, Ephemeris, EphemerisError, MajorPlanet, PlanetEphemerisError, PlanetState,
 };
-use siderust::event::{
-    horizontal::{
-        equatorial_to_horizontal_true_of_date_with_ctx,
-        geocentric_j2000_to_apparent_topocentric_with_ctx,
-    },
-    lunar::{
-        phase::{moon_phase_from_topocentric, moon_phase_topocentric},
-        position_angle::{moon_bright_limb_from_topocentric, moon_bright_limb_position_angle},
-    },
+use siderust::event::lunar::{
+    phase::{moon_phase_from_topocentric, moon_phase_topocentric},
+    position_angle::{moon_bright_limb_from_topocentric, moon_bright_limb_position_angle},
 };
 use siderust::qtty::{Arcseconds, AstronomicalUnit, Degrees, Kilometer, Meters, Seconds};
 use siderust::time::JulianDate;
@@ -261,13 +255,23 @@ fn offline_topocentric_geometry() {
     let moon_eq: Position<Geocentric, EquatorialMeanJ2000, Kilometer> = moon.to_frame();
     let earth = CompactEphemeris::try_earth_heliocentric(jd).unwrap();
     let sun = EarthRelative::<AstronomicalUnit>::new(-earth.x(), -earth.y(), -earth.z());
-    let sun_eq = sun.to_frame();
+    let sun_eq: Position<Geocentric, EquatorialMeanJ2000, _> = sun.to_frame();
 
     let [(moon_a, sun_a), (moon_b, sun_b)] = sites.map(|site| {
         let case = format!("lunar geometry at {site:?}, JD(TT) {}", jd.value());
         let check = |metric, error, tolerance| assert_below(&case, metric, error, tolerance);
-        let moon_topo = geocentric_j2000_to_apparent_topocentric_with_ctx(&moon_eq, site, jd, &ctx);
-        let sun_topo = geocentric_j2000_to_apparent_topocentric_with_ctx(&sun_eq, site, jd, &ctx);
+        let moon_relative: Position<Topocentric, _, _> = moon_eq.to_center_with(site, jd, &ctx);
+        let moon_topo = siderust::coordinates::transform::PositionAstroExt::to_frame_with::<
+            EquatorialTrueOfDate,
+            _,
+        >(&moon_relative, &jd, &ctx)
+        .to_spherical();
+        let sun_relative: Position<Topocentric, _, _> = sun_eq.to_center_with(site, jd, &ctx);
+        let sun_topo = siderust::coordinates::transform::PositionAstroExt::to_frame_with::<
+            EquatorialTrueOfDate,
+            _,
+        >(&sun_relative, &jd, &ctx)
+        .to_spherical();
         let moon_cart = moon_topo.to_cartesian();
         let moon_km = moon_cart.as_array().map(|axis| axis.value());
         let sun_km = sun_topo
@@ -282,12 +286,14 @@ fn offline_topocentric_geometry() {
             moon_eq.to_center_with(site, jd, &ctx);
         let rotated: Position<Topocentric, EquatorialMeanJ2000, Kilometer> = topo_ecl.to_frame();
         let recovered: EarthRelative<Kilometer> = topo_ecl.to_center_with((), jd, &ctx);
-        let moon_in_au = geocentric_j2000_to_apparent_topocentric_with_ctx(
-            &moon_eq.to_unit::<AstronomicalUnit>(),
-            site,
-            jd,
-            &ctx,
-        );
+        let relative_au: Position<Topocentric, _, _> = moon_eq
+            .to_unit::<AstronomicalUnit>()
+            .to_center_with(site, jd, &ctx);
+        let moon_in_au = siderust::coordinates::transform::PositionAstroExt::to_frame_with::<
+            EquatorialTrueOfDate,
+            _,
+        >(&relative_au, &jd, &ctx)
+        .to_spherical();
         // Equivalence to within 10 µm, allowing f64 roundoff through the rotations.
         for (metric, error) in [
             (
@@ -496,10 +502,13 @@ fn de440s_erfa_pointing_and_velocity() {
         let actual = ecliptic.as_array().map(|axis| axis.value());
         let reference = [geo_x_km, geo_y_km, geo_z_km];
         let eq = ecliptic.to_frame();
-        let horizontal = |position| {
-            let topo =
-                geocentric_j2000_to_apparent_topocentric_with_ctx(position, site, jd, &model);
-            let angles = equatorial_to_horizontal_true_of_date_with_ctx(&topo, site, jd, &model);
+        let horizontal = |position: &Position<Geocentric, EquatorialMeanJ2000, Kilometer>| {
+            let topo: Position<Topocentric, _, _> = position.to_center_with(site, jd, &model);
+            let of_date = siderust::coordinates::transform::PositionAstroExt::to_frame_with::<
+                EquatorialTrueOfDate,
+                _,
+            >(&topo, &jd, &model);
+            let angles = project_position_with(&of_date.to_spherical(), jd, &model);
             horizon_vector(angles.az().value(), angles.alt().value())
         };
         let observed = horizontal(&eq);

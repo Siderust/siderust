@@ -113,22 +113,8 @@ impl<F: MutableFrame> Astrometric<spherical::Direction<F>> {
         cartesian::Direction<EquatorialMeanJ2000>: TransformFrame<cartesian::Direction<F>>,
         cartesian::Direction<F>: TransformFrame<cartesian::Direction<EquatorialMeanJ2000>>,
     {
-        // Convert to cartesian for vector operations
-        let cart_dir = self.direction.to_cartesian();
-
-        // Transform to equatorial frame for aberration
-        let cart_eq: cartesian::Direction<EquatorialMeanJ2000> = cart_dir.to_frame();
-
-        // Get observer velocity
-        let vel = obs.velocity();
-
-        let apparent_eq = apply_aberration_to_direction_with_velocity(cart_eq, vel);
-
-        // Transform back to original frame
-        let apparent_cart: cartesian::Direction<F> = apparent_eq.to_frame();
-        let apparent_sph = apparent_cart.to_spherical();
-
-        Apparent::new(apparent_sph)
+        let cartesian = Astrometric::new(self.direction.to_cartesian()).to_apparent(obs);
+        Apparent::new(cartesian.into_inner().to_spherical())
     }
 }
 
@@ -214,22 +200,8 @@ impl<F: MutableFrame> Apparent<spherical::Direction<F>> {
         cartesian::Direction<EquatorialMeanJ2000>: TransformFrame<cartesian::Direction<F>>,
         cartesian::Direction<F>: TransformFrame<cartesian::Direction<EquatorialMeanJ2000>>,
     {
-        // Convert to cartesian for vector operations
-        let cart_dir = self.direction.to_cartesian();
-
-        // Transform to equatorial frame for aberration
-        let cart_eq: cartesian::Direction<EquatorialMeanJ2000> = cart_dir.to_frame();
-
-        // Get observer velocity
-        let vel = obs.velocity();
-
-        let astrometric_eq = remove_aberration_from_direction_with_velocity(cart_eq, vel);
-
-        // Transform back to original frame
-        let astrometric_cart: cartesian::Direction<F> = astrometric_eq.to_frame();
-        let astrometric_sph = astrometric_cart.to_spherical();
-
-        Astrometric::new(astrometric_sph)
+        let cartesian = Apparent::new(self.direction.to_cartesian()).to_astrometric(obs);
+        Astrometric::new(cartesian.into_inner().to_spherical())
     }
 }
 

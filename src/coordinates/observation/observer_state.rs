@@ -115,8 +115,7 @@ impl ObserverState {
     ///
     /// # Note
     ///
-    /// Currently this only includes Earth's orbital velocity (annual aberration).
-    /// Diurnal aberration (~0.3") uses the default EOP-backed Earth-rotation chain.
+    /// The rotational contribution uses the default EOP-backed Earth-rotation chain.
     pub fn topocentric(site: &Geodetic<ECEF>, jd: JulianDate) -> Self {
         let ctx: AstroContext = AstroContext::default();
         Self::topocentric_with(site, jd, &ctx)

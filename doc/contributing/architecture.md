@@ -49,3 +49,77 @@ and time and interval carriers from `tempoch-ffi`. Preserve affine
 distinctions, frames, centers, and units when crossing the ABI.
 Keep handle ownership and destruction explicit. Check adapter exposure
 in the relevant downstream repository before documenting it as supported.
+
+## Public astronomy APIs
+
+| Kind | Examples | When to expose it |
+| --- | --- | --- |
+| Composable primitive | `TransformFrame`, `PositionAstroExt`, `TransformCenter`, `Ephemeris`, `project_position_with` | The operation has a single astronomical meaning, with independently useful inputs and output. |
+| Scientific algorithm | Lunar phase geometry, rise and set searches, light-time iteration | The algorithm computes a domain result or enforces an order of operations needed for physical correctness. |
+| Convenience wrapper | `Sun::get_horizontal`, `Moon::get_horizontal`, default-context transforms | The entry point represents a common workflow and delegates to shared primitives. Document the model, time scale, origin, and any physical effects. |
+
+Use frame, center, and unit types for compile-time distinctions. Use a trait
+when callers need to substitute a provider or support several coordinate
+types through the same contract. Use a function for a single scientific
+operation with a concrete input and result. Avoid encoding choices of frame,
+center, target, and model as a family of function names. Accept the existing
+context when an operation needs time-dependent models. Evaluate each provider
+at the appropriate epoch and pass the same model context through related
+operations.
+
+### Earth horizon coordinates
+
+A geometric sightline from a finite-distance target starts with an ephemeris
+position at the reception epoch. Translate it to the observer with
+`TransformCenter::to_center_with`, rotate it to `EquatorialTrueOfDate` with
+`PositionAstroExt::to_frame_with`, and call
+`coordinates::transform::horizontal::project_position_with`. The position
+carries the observer site. The frame provider uses UT1 for Earth rotation,
+TT for the selected bias-precession-nutation model, and EOP for terrestrial
+polar motion and observed celestial pole offsets. The offsets correct the
+CIP in the CIO-based Earth orientation chain. The true equator and equinox
+of date follow the selected nutation model.
+
+For free directions, pass the site explicitly to `project_direction_with`
+and `unproject_direction_with`. The position inverse
+`unproject_position_with` carries the observer and range back to the
+true-of-date equatorial frame. Use a subsequent typed frame rotation to
+express the recovered sightline in other axes. To change a finite-distance
+observer, translate the original target to the new observer first.
+
+The explicit UT1/TT APIs use the equinox-based sidereal convention with
+zero polar motion and celestial pole offsets. The mean-of-date transform
+uses mean sidereal time. Body-fixed surface projection uses the body's
+orientation model and local tangent basis. These paths share the relevant
+local geometry and preserve their time and frame contracts.
+
+Lunar altitude searches interpolate only geocentric Cartesian position.
+They reuse the site's WGS84 position and local basis, and evaluate the
+default terrestrial rotation at each TT query. A crossing solve refines
+the interpolated altitude signal. Ephemeris and interpolation error must
+be assessed separately from the root solver's time tolerance.
+
+### Physical observation effects
+
+Build the line of sight using the target state and the observer state.
+Evaluate target motion when the model requires it. For light-time, solve for
+the emission epoch using the target trajectory and the reception observer
+state. Apply deflection and aberration in the order and frame defined by the
+selected observation algorithm. Use the final horizon direction for any
+atmospheric refraction model. Frame bias, precession, and nutation describe
+axes. They apply to geometric sightlines as well as to physically corrected
+sightlines.
+
+Use the typed observation wrappers or the specific effect functions for
+explicit corrections. If a policy's required data or effect is unsupported,
+return an error. If the contract permits partial results, expose the applied
+stages through `AppliedCorrections`. Existing target and event interfaces can
+provide different levels of fidelity. In particular, the legacy stellar
+horizontal policy selects how input angles are interpreted and uses a fixed
+nutation model. A solver that needs full apparent observations should accept
+the appropriate observation evaluator at its boundary.
+
+When changing numerical paths, verify the applicable independent references
+and compare implementations at matching epochs, sites, and models. For a
+convenience API migration, publish a working composition with equivalent
+semantics before deprecating the wrapper.

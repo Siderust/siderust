@@ -12,13 +12,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Opt-in compact VSOP87E and ELP2000-82B backend for offline observations in 2020–2050.
 - Lunar phase and bright-limb geometry from precomputed topocentric positions.
+- Context-aware frame rotations preserve parameterized centers, including the observer site of a topocentric position.
+- `project_position_with` and `project_direction_with` provide geometric true-of-date horizon projection. `unproject_position_with` and `unproject_direction_with` reverse it using the same epoch, observer and context.
 
 ### Changed
 
+- Context-aware Earth horizon projection includes DUT1, polar motion, and observed CIP offsets. True-of-date equatorial frame rotations use the selected model equinox. The terrestrial chain applies observed celestial pole offsets directly to the CIP.
+- Cached lunar altitudes use the same terrestrial orientation and local horizon basis as direct observations.
+- Generic callers of the combined `PositionAstroExt::to` and `to_with` methods need the source-center bound `ReferenceCenter<Params = ()>`.
 - Builds that disable defaults must explicitly select `full-ephemeris` or `embedded-compact`. Add `full-nutation` to retain the IAU 2006A default when disabling defaults.
 - Topocentric lunar phase uses the selected ephemeris for both directions and distances.
 
 - Correct the Earth rotation sign for observer parallax and align the CIO rotation with SOFA.
+
+### Removed
+
+- Removed `event::horizontal` helpers `geocentric_j2000_to_apparent_topocentric` and `geocentric_j2000_to_apparent_topocentric_with_ctx`. Compose `TransformCenter::to_center_with(site, tt, &ctx)` and `PositionAstroExt::to_frame_with::<EquatorialTrueOfDate, _>(&tt, &ctx)`, then convert to spherical coordinates if needed.
+- Removed `equatorial_to_horizontal`, `equatorial_to_horizontal_true_of_date`, and `equatorial_to_horizontal_true_of_date_with_ctx` from the same module. Use `project_position_with(&equatorial, tt, &ctx)` and the observer stored in the position. Recompute the center translation to change observers. Use `project_direction_with` for a free sightline with an explicitly supplied site.
 
 ## [0.18.1] - 2026-10-31
 

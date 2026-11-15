@@ -3,27 +3,15 @@
 
 //! # Lunar Altitude Window Periods
 //!
-//! ## Scientific scope
+//! Finds time windows where geometric lunar altitude is above, below
+//! or within a band. The search interpolates geocentric lunar position
+//! and applies the default Earth orientation and WGS84 observer parallax
+//! at each TT query. Atmospheric refraction is omitted.
 //!
-//! Moon‑specific routines for finding time intervals where the
-//! topocentric Moon altitude is above, below, or within a given band —
-//! the kinematic basis for moonrise/moonset, dark‑sky planning, and
-//! lunar visibility windows. Topocentric parallax (~1° at horizon) is
-//! handled by [`Moon::get_horizontal`] inside [`moon_altitude_rad`]; no
-//! atmospheric refraction is applied. Position accuracy is bounded by the
-//! underlying lunar engine (ELP truncation / DE chebyshev cache).
-//!
-//! ## Technical scope
-//!
-//! Crate-internal API: `moon_altitude_rad`, `lunar_above_threshold_impl`,
-//! `lunar_below_threshold_impl`, `lunar_altitude_ranges_impl`.
-//! period‑finding uses Chebyshev-first labelled crossing discovery with
-//! precise validation and local scan+Brent fallback via
-//! [`crate::event::search::crossings`]. `find_and_label_crossings` remains
-//! available as a scan+Brent validation baseline.
-//!
-//! ## References
-//! None.
+//! Chebyshev candidate discovery is followed by root refinement and local
+//! scan fallback. Refinement solves the cached altitude signal. Its time
+//! tolerance describes that solve. Ephemeris and interpolation error
+//! can have a larger effect at shallow crossings.
 
 use crate::bodies::solar_system::Moon;
 use crate::coordinates::centers::Geodetic;
@@ -94,7 +82,7 @@ pub(crate) fn lunar_above_threshold_impl(
 ) -> Vec<Interval<ModifiedJulianDate>> {
     let thr = threshold.to::<Radian>();
 
-    // Build Chebyshev + nutation caches for the period
+    // Build the Chebyshev position cache for the period
     let ctx = MoonAltitudeContext::new(period.start, period.end, site);
 
     let (labeled, start_above) = find_moon_labeled_crossings_with_context(&ctx, period, thr, opts);
@@ -159,7 +147,7 @@ pub(crate) fn lunar_altitude_ranges_impl(
     let h_min = range.0.to::<Radian>();
     let h_max = range.1.to::<Radian>();
 
-    // Build Chebyshev + nutation caches for the period
+    // Build the Chebyshev position cache for the period
     let ctx = MoonAltitudeContext::new(period.start, period.end, site);
 
     let (min_crossings, start_above_min) =

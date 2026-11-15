@@ -5,10 +5,11 @@
 
 use siderust::bench_internals;
 use siderust::bodies::solar_system::{Moon, Sun};
+use siderust::catalogs::observatories::ROQUE_DE_LOS_MUCHACHOS;
 use siderust::coordinates::centers::Geodetic;
 use siderust::coordinates::frames::ECEF;
 use siderust::event::altitude::{
-    above_threshold, altitude_ranges, below_threshold, crossings, SearchOpts,
+    above_threshold, altitude_ranges, below_threshold, crossings, CrossingDirection, SearchOpts,
 };
 use siderust::qtty::*;
 use siderust::time::{Interval, ModifiedJulianDate};
@@ -204,4 +205,80 @@ fn lunar_scan_baselines_run() {
         opts,
     );
     assert_periods_in_window(&ranges, window);
+}
+
+fn direct_moon_altitude(mjd: ModifiedJulianDate, site: Geodetic<ECEF>) -> Radians {
+    Moon::get_horizontal::<Kilometer>(mjd.to::<siderust::time::JD>(), site)
+        .alt()
+        .to::<Radian>()
+}
+
+#[test]
+fn cached_lunar_crossings_match_direct_altitude() {
+    let shallow_site = Geodetic::<ECEF>::new(18.95 * DEG, 69.65 * DEG, 0.0 * M);
+    // At the high-latitude site the Moon barely dips below the horizon.
+    for (site, start, end) in [
+        (ROQUE_DE_LOS_MUCHACHOS.geodetic(), 60_310.0, 60_311.0),
+        (shallow_site, 60_335.4, 60_335.6),
+    ] {
+        let period = Interval::new(ModifiedJulianDate::new(start), ModifiedJulianDate::new(end));
+        let events = crossings(&Moon, &site, period, 0.0 * DEG, default_opts());
+        assert_eq!(
+            events
+                .iter()
+                .map(|event| event.direction)
+                .collect::<Vec<_>>(),
+            [CrossingDirection::Setting, CrossingDirection::Rising],
+        );
+
+        // At a lunar range of 300,000 km, a one-metre interpolation
+        // error subtends 0.00069 arcsec. At the shallow fixture's
+        // slope (about 1 arcsec/s), a 2 ms bracket allows for that
+        // pointing error and the numerical root tolerance.
+        let margin = Seconds::new(0.002).to::<Day>();
+        for event in &events {
+            let before = ModifiedJulianDate::new((event.mjd.raw() - margin).value());
+            let after = ModifiedJulianDate::new((event.mjd.raw() + margin).value());
+            let direct_before = direct_moon_altitude(before, site);
+            let direct_after = direct_moon_altitude(after, site);
+            let sign = if event.direction == CrossingDirection::Rising {
+                1.0
+            } else {
+                -1.0
+            };
+            assert!(
+                direct_before * sign < 0.0 * RAD && direct_after * sign > 0.0 * RAD,
+                "{event}: direct altitudes {direct_before} and {direct_after}",
+            );
+        }
+    }
+}
+
+#[test]
+fn cached_lunar_altitude_matches_direct_across_segment_boundary() {
+    let start = ModifiedJulianDate::new(60_310.0);
+    let end = ModifiedJulianDate::new(60_340.0);
+    let polar = Geodetic::<ECEF>::new(18.95 * DEG, 69.65 * DEG, 0.0 * M);
+    // A one-metre vector error at a conservative 300,000 km
+    // topocentric range bounds the angular error for this fixture.
+    let bound = Radians::new(1.0 / 300_000_000.0);
+    for site in [ROQUE_DE_LOS_MUCHACHOS.geodetic(), polar] {
+        let context = bench_internals::MoonAltitudeContext::new(start, end, site);
+        for t in [
+            60_310.0,
+            60_312.999_999_99,
+            60_313.0,
+            60_313.000_000_01,
+            60_320.0,
+            60_335.0,
+        ] {
+            let mjd = ModifiedJulianDate::new(t);
+            let cached = context.altitude_rad(mjd);
+            let direct = direct_moon_altitude(mjd, site);
+            assert!(
+                (cached - direct).abs() < bound,
+                "{mjd}: {cached} vs {direct}"
+            );
+        }
+    }
 }
