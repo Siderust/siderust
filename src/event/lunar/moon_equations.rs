@@ -160,7 +160,7 @@ impl Moon {
     /// use siderust::bodies::solar_system::Moon;
     /// use siderust::coordinates::{centers::{Geocentric, Geodetic, Topocentric}, frames::ECEF};
     /// use siderust::qtty::{Degrees, Meters};
-    /// let jd = siderust::J2000;
+    /// let jd = siderust::JulianDate::new(2_460_310.5);
     /// let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
     /// assert!(Moon::bright_limb_position_angle::<Geocentric>(jd).is_some());
     /// assert!(Moon::bright_limb_position_angle::<Topocentric>((jd, site)).is_some());
@@ -171,7 +171,7 @@ impl Moon {
     /// ```compile_fail,E0277
     /// use siderust::bodies::solar_system::Moon;
     /// use siderust::coordinates::centers::Heliocentric;
-    /// let _ = Moon::bright_limb_position_angle::<Heliocentric>(siderust::J2000);
+    /// let _ = Moon::bright_limb_position_angle::<Heliocentric>(siderust::JulianDate::new(2_460_310.5));
     /// ```
     pub fn bright_limb_position_angle<C: super::position_angle::LunarObservationCenter>(
         input: C::Input,
@@ -191,7 +191,7 @@ impl Moon {
     /// use siderust::bodies::solar_system::Moon;
     /// use siderust::time::JulianDate;
     ///
-    /// let geom = Moon::phase_geocentric(siderust::J2000);
+    /// let geom = Moon::phase_geocentric(siderust::JulianDate::new(2_460_310.5));
     /// assert!(geom.illuminated_fraction.value() >= 0.0 && geom.illuminated_fraction.value() <= 1.0);
     /// ```
     ///
@@ -222,7 +222,7 @@ impl Moon {
     /// use siderust::qtty::*;
     ///
     /// let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.48 * DEG, 0.0 * M);
-    /// let geom = Moon::phase_topocentric(siderust::J2000, site);
+    /// let geom = Moon::phase_topocentric(siderust::JulianDate::new(2_460_310.5), site);
     /// println!("Illuminated: {:.1} %", geom.illuminated_fraction.value() * 100.0);
     /// ```
     ///
@@ -255,7 +255,7 @@ impl Moon {
     /// use siderust::time::{JulianDate, ModifiedJulianDate, Interval};
     /// use siderust::qtty::Days;
     ///
-    /// let start = siderust::J2000.to::<siderust::time::MJD>();
+    /// let start = siderust::JulianDate::new(2_460_310.5).to::<siderust::time::MJD>();
     /// let end = siderust::ModifiedJulianDate::new(start.raw().value() + 35.0);
     /// let window = Interval::new(start, end);
     /// let events = Moon::phase_events(window, PhaseSearchOpts::default());
@@ -329,7 +329,7 @@ impl Moon {
     /// use siderust::time::{JulianDate, ModifiedJulianDate, Interval};
     /// use siderust::qtty::{Days, IlluminationFractions};
     ///
-    /// let start = siderust::J2000.to::<siderust::time::MJD>();
+    /// let start = siderust::JulianDate::new(2_460_310.5).to::<siderust::time::MJD>();
     /// let end = siderust::ModifiedJulianDate::new(start.raw().value() + 30.0);
     /// let window = Interval::new(start, end);
     /// // Crescent phase: 5–35% illuminated
