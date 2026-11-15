@@ -8,19 +8,15 @@
 use siderust::astro::{eop::NullEop, nutation::Iau2000B};
 use siderust::coordinates::{
     cartesian::Position,
-    centers::{Geocentric, Geodetic},
-    frames::{EclipticMeanJ2000, ECEF},
-    transform::{AstroContext, TransformFrame},
+    centers::{Geocentric, Geodetic, Topocentric},
+    frames::{EclipticMeanJ2000, EquatorialMeanJ2000, EquatorialTrueOfDate, ECEF},
+    transform::{
+        horizontal::project_position_with, AstroContext, PositionAstroExt, TransformCenter,
+    },
 };
 use siderust::ephemeris::{CompactEphemeris, Ephemeris, EphemerisError, PlanetState};
-use siderust::event::{
-    horizontal::{
-        equatorial_to_horizontal_true_of_date_with_ctx,
-        geocentric_j2000_to_apparent_topocentric_with_ctx,
-    },
-    lunar::{
-        phase::moon_phase_from_topocentric, position_angle::moon_bright_limb_from_topocentric,
-    },
+use siderust::event::lunar::{
+    phase::moon_phase_from_topocentric, position_angle::moon_bright_limb_from_topocentric,
 };
 use siderust::qtty::{AstronomicalUnit, Degrees, Meters};
 use siderust::{bodies::Mars, JulianDate};
@@ -49,13 +45,26 @@ fn main() -> Result<(), EphemerisError> {
         mars.y() - earth.y(),
         mars.z() - earth.z(),
     );
-    let moon =
-        geocentric_j2000_to_apparent_topocentric_with_ctx(&moon.to_frame(), site, jd, &model);
-    let sun = geocentric_j2000_to_apparent_topocentric_with_ctx(&sun.to_frame(), site, jd, &model);
-    let mars =
-        geocentric_j2000_to_apparent_topocentric_with_ctx(&mars.to_frame(), site, jd, &model);
-    let moon_horizon = equatorial_to_horizontal_true_of_date_with_ctx(&moon, site, jd, &model);
-    let mars_horizon = equatorial_to_horizontal_true_of_date_with_ctx(&mars, site, jd, &model);
+    let moon: Position<Topocentric, _, _> = moon
+        .to_frame_with::<EquatorialMeanJ2000, _>(&jd, &model)
+        .to_center_with(site, jd, &model);
+    let sun: Position<Topocentric, _, _> = sun
+        .to_frame_with::<EquatorialMeanJ2000, _>(&jd, &model)
+        .to_center_with(site, jd, &model);
+    let mars: Position<Topocentric, _, _> = mars
+        .to_frame_with::<EquatorialMeanJ2000, _>(&jd, &model)
+        .to_center_with(site, jd, &model);
+    let moon = moon
+        .to_frame_with::<EquatorialTrueOfDate, _>(&jd, &model)
+        .to_spherical();
+    let sun = sun
+        .to_frame_with::<EquatorialTrueOfDate, _>(&jd, &model)
+        .to_spherical();
+    let mars = mars
+        .to_frame_with::<EquatorialTrueOfDate, _>(&jd, &model)
+        .to_spherical();
+    let moon_horizon = project_position_with(&moon, jd, &model);
+    let mars_horizon = project_position_with(&mars, jd, &model);
     let phase = moon_phase_from_topocentric(&moon, &sun);
     let limb = moon_bright_limb_from_topocentric(&moon, &sun);
     println!("Moon: {:?}, Mars: {:?}", moon_horizon, mars_horizon);

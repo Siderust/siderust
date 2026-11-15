@@ -14,17 +14,14 @@ use siderust::bodies::{Jupiter, Mars, Mercury, Neptune, Saturn, Uranus, Venus};
 use siderust::coordinates::{
     cartesian::Position,
     centers::{Geocentric, Geodetic, Heliocentric, Topocentric},
-    frames::{EclipticMeanJ2000, EquatorialMeanJ2000, ECEF},
-    transform::{AstroContext, TransformCenter, TransformFrame},
+    frames::{EclipticMeanJ2000, EquatorialMeanJ2000, EquatorialTrueOfDate, ECEF},
+    transform::{horizontal::project_position_with, AstroContext, TransformCenter, TransformFrame},
 };
 use siderust::ephemeris::{
     CompactEphemeris, Ephemeris, EphemerisError, MajorPlanet, PlanetEphemerisError, PlanetState,
 };
 use siderust::event::{
-    horizontal::{
-        equatorial_to_horizontal_true_of_date_with_ctx,
-        geocentric_j2000_to_apparent_topocentric_with_ctx,
-    },
+    horizontal::geocentric_j2000_to_apparent_topocentric_with_ctx,
     lunar::{
         phase::{moon_phase_from_topocentric, moon_phase_topocentric},
         position_angle::{moon_bright_limb_from_topocentric, moon_bright_limb_position_angle},
@@ -496,10 +493,13 @@ fn de440s_erfa_pointing_and_velocity() {
         let actual = ecliptic.as_array().map(|axis| axis.value());
         let reference = [geo_x_km, geo_y_km, geo_z_km];
         let eq = ecliptic.to_frame();
-        let horizontal = |position| {
-            let topo =
-                geocentric_j2000_to_apparent_topocentric_with_ctx(position, site, jd, &model);
-            let angles = equatorial_to_horizontal_true_of_date_with_ctx(&topo, site, jd, &model);
+        let horizontal = |position: &Position<Geocentric, EquatorialMeanJ2000, Kilometer>| {
+            let topo: Position<Topocentric, _, _> = position.to_center_with(site, jd, &model);
+            let of_date = siderust::coordinates::transform::PositionAstroExt::to_frame_with::<
+                EquatorialTrueOfDate,
+                _,
+            >(&topo, &jd, &model);
+            let angles = project_position_with(&of_date.to_spherical(), jd, &model);
             horizon_vector(angles.az().value(), angles.alt().value())
         };
         let observed = horizontal(&eq);

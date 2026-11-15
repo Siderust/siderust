@@ -33,40 +33,44 @@
 //! - **Observation transforms** (this module): Observer-dependent effects.
 //!   Aberration depends on observer velocity. Requires explicit `ObserverState`.
 //!
-//! ## Usage
+//! ## Geometric and aberration-corrected horizon directions
 //!
 //! ```rust
-//! use siderust::coordinates::observation::{Astrometric, Apparent, ObserverState};
-//! use siderust::coordinates::spherical::direction::EquatorialMeanJ2000;
-//! use siderust::time::JulianDate;
-//! use siderust::qtty::*;
+//! use siderust::coordinates::{
+//!     centers::Geodetic,
+//!     frames::{EquatorialMeanJ2000, EquatorialTrueOfDate, ECEF},
+//!     observation::{Astrometric, ObserverState},
+//!     spherical::Direction,
+//!     transform::{AstroContext, SphericalDirectionAstroExt, horizontal::project_direction_with},
+//! };
+//! use siderust::qtty::{DEG, M};
 //!
-//! // A geometric direction to a star
-//! let astrometric_dir: Astrometric<EquatorialMeanJ2000> = Astrometric::new(
-//!     EquatorialMeanJ2000::new(45.0 * DEG, 20.0 * DEG)
-//! );
+//! let jd = siderust::J2000;
+//! let context: AstroContext = AstroContext::default();
+//! let site = Geodetic::<ECEF>::new(-17.9 * DEG, 28.8 * DEG, 2300.0 * M);
+//! let geometric = Direction::<EquatorialMeanJ2000>::new(45.0 * DEG, 20.0 * DEG);
+//! let observer = ObserverState::topocentric(&site, jd);
+//! let apparent = Astrometric::new(geometric).to_apparent(&observer);
 //!
-//! // Get observer state (Earth-bound observer at J2000)
-//! let obs = ObserverState::geocentric(siderust::J2000);
-//!
-//! // Convert to apparent direction (applies aberration)
-//! let apparent_dir: Apparent<EquatorialMeanJ2000> = astrometric_dir.to_apparent(&obs);
-//!
-//! // The transformation is explicit - you can't confuse the two types
+//! let geometric_of_date = geometric.to_frame_with::<EquatorialTrueOfDate, _>(&jd, &context);
+//! let apparent_of_date = apparent.direction().to_frame_with::<EquatorialTrueOfDate, _>(&jd, &context);
+//! let geometric_horizon = project_direction_with(&geometric_of_date, &site, jd, &context);
+//! let apparent_horizon = project_direction_with(&apparent_of_date, &site, jd, &context);
+//! assert_ne!(geometric_horizon.az(), apparent_horizon.az());
 //! ```
+//!
+//! This direction-only example applies annual and diurnal aberration explicitly.
+//! For finite distances, form the observer-relative line of sight before
+//! applying aberration. The observer state and frame rotation use the same TT
+//! epoch and default models.
 //!
 //! ## Design Rationale
 //!
-//! This design follows the IAU-style coordinate pipeline:
-//!
-//! 1. Catalog positions (ICRS, typically astrometric)
-//! 2. Apply proper motion, parallax → geometric position at date
-//! 3. Center transform (barycentric → geocentric) → geometric position from Earth
-//! 4. Frame transform (ICRS → equatorial of date) → geometric direction in observing frame
-//! 5. Apply aberration → **apparent** direction
-//! 6. (Optional) Apply refraction → observed direction
-//!
-//! Each step is explicit. The type system tracks observational state.
+//! Carry the target's epoch and frame through geometric transformations.
+//! Aberration uses an observer velocity at the reception epoch, expressed in
+//! the same axes as the sightline. The wrappers perform that frame alignment
+//! for their supported inertial frames. Light-time, deflection, and atmospheric
+//! refraction are separate operations.
 
 mod observational_direction;
 mod observer_state;

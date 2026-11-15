@@ -14,8 +14,14 @@ use siderust::coordinates::centers::{Geocentric, Geodetic, Topocentric};
 use siderust::coordinates::frames::{self, ECEF};
 use siderust::coordinates::spherical;
 use siderust::coordinates::transform::context::{AstroContext, DefaultEphemeris};
-use siderust::coordinates::transform::TransformCenter;
-use siderust::event::horizontal::equatorial_to_horizontal_true_of_date_with_ctx;
+use siderust::coordinates::transform::{
+    horizontal::{project_direction_with, project_position_with},
+    PositionAstroExt, TransformCenter,
+};
+use siderust::event::horizontal::{
+    equatorial_to_horizontal_true_of_date_with_ctx,
+    geocentric_j2000_to_apparent_topocentric_with_ctx,
+};
 use siderust::qtty::*;
 use siderust::time::JulianDate;
 
@@ -45,7 +51,7 @@ fn horizontal_true_of_date_matches_sofa_roque_sirius_2020() {
     let eq = tod_unit_position(site, 101.287, -16.716);
     let ctx: AstroContext = AstroContext::default();
 
-    let horiz = equatorial_to_horizontal_true_of_date_with_ctx(&eq, site, jd_tt, &ctx);
+    let horiz = project_position_with(&eq, jd_tt, &ctx);
 
     // SOFA reference (degrees)
     let expected_alt = -55.077_584_745_179_26;
@@ -69,7 +75,7 @@ fn horizontal_true_of_date_matches_sofa_greenwich_2024() {
     let eq = tod_unit_position(site, 210.1234, 35.6789);
     let ctx: AstroContext = AstroContext::default();
 
-    let horiz = equatorial_to_horizontal_true_of_date_with_ctx(&eq, site, jd_tt, &ctx);
+    let horiz = project_position_with(&eq, jd_tt, &ctx);
 
     // SOFA reference (degrees)
     let expected_alt = -1.006_037_970_004_032_3;
@@ -155,4 +161,60 @@ fn topocentric_site_vector_matches_sofa_chain_paranal_with_eop() {
         Geodetic::new(-70.403 * DEG, -24.625 * DEG, 2635.0 * M),
         [2_799.501_427_33, -5_080.725_942_18, -2_648.816_162_52],
     );
+}
+
+#[test]
+fn topocentric_composition_preserves_site_range_and_context() {
+    use siderust::astro::nutation::Iau2000B;
+
+    let jd = JulianDate::new(2_460_310.25);
+    let site = Geodetic::new(-70.403 * DEG, -24.625 * DEG, 2635.0 * M);
+    let other_site = Geodetic::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
+    let target =
+        position::EquatorialMeanJ2000::<Kilometer, Geocentric>::new(384_400.0, 52_000.0, -23_000.0);
+    let context = AstroContext::<DefaultEphemeris, ParanalEop>::default();
+    let model = context.with_model::<Iau2000B>();
+    let relative: position::EquatorialMeanJ2000<Kilometer, Topocentric> =
+        target.to_center_with(site, jd, &model);
+    let equatorial = relative
+        .to_frame_with::<frames::EquatorialTrueOfDate, _>(&jd, &model)
+        .to_spherical();
+    let legacy = geocentric_j2000_to_apparent_topocentric_with_ctx(&target, site, jd, &model);
+    assert_eq!(equatorial.center_params(), legacy.center_params());
+    assert_eq!(
+        (equatorial.ra(), equatorial.dec(), equatorial.distance),
+        (legacy.ra(), legacy.dec(), legacy.distance)
+    );
+    let horizon = project_position_with(&equatorial, jd, &model);
+    assert_eq!(horizon.center_params(), &site);
+    assert_eq!(horizon.distance, equatorial.distance);
+    let legacy_horizon = equatorial_to_horizontal_true_of_date_with_ctx(&legacy, site, jd, &model);
+    assert_eq!(horizon.center_params(), legacy_horizon.center_params());
+    assert_eq!(horizon.distance, legacy_horizon.distance);
+    // The legacy constructor renormalizes spherical angles after projection.
+    let rounding = Degrees::new(1.0e-12);
+    assert!(
+        horizon
+            .direction()
+            .angular_separation(&legacy_horizon.direction())
+            < rounding
+    );
+
+    let direction = project_direction_with(&equatorial.direction(), &site, jd, &model);
+    assert_eq!(
+        (horizon.alt(), horizon.az()),
+        (direction.alt(), direction.az())
+    );
+
+    let overridden =
+        equatorial_to_horizontal_true_of_date_with_ctx(&legacy, other_site, jd, &model);
+    assert_eq!(overridden.center_params(), &other_site);
+    assert_eq!(overridden.distance, horizon.distance);
+    let other_direction = project_direction_with(&equatorial.direction(), &other_site, jd, &model);
+    assert!(overridden.direction().angular_separation(&other_direction) < rounding);
+
+    // DUT1 changes the local sidereal angle even for the same of-date sightline.
+    let no_eop = AstroContext::<DefaultEphemeris, NullEop>::default();
+    let no_eop_horizon = project_position_with(&equatorial, jd, &no_eop.with_model::<Iau2000B>());
+    assert_ne!(horizon.az(), no_eop_horizon.az());
 }

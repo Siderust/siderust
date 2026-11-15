@@ -416,8 +416,18 @@ impl<F: ReferenceFrame, U: Unit> VectorAstroExt<F, U> for Vector<F, U> {
 /// Extension trait for `Position<C, F, U>` providing frame transformations
 /// and combined center+frame transformations.
 ///
-/// Positions are affine points that can undergo both frame rotations and
-/// center translations.
+/// Frame rotations preserve the position's center parameters. The combined
+/// methods operate on standard centers whose parameters are `()`.
+///
+/// ```rust
+/// use siderust::coordinates::{cartesian::Position, centers::Barycentric,
+///     frames::{EclipticMeanJ2000, ICRS}, transform::PositionAstroExt};
+/// use siderust::qtty::Au;
+///
+/// let position = Position::<Barycentric, ICRS, Au>::new(1.0, 0.5, 0.0);
+/// let ecliptic = position.to_frame::<EclipticMeanJ2000>(&siderust::J2000);
+/// # let _ = ecliptic;
+/// ```
 ///
 /// **Center-only transforms** are provided by [`TransformCenter`] (use
 /// `pos.to_center(params, jd)`).
@@ -451,6 +461,7 @@ pub trait PositionAstroExt<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit>
         jd: &JulianDate,
     ) -> Position<C2, F2, U>
     where
+        C: ReferenceCenter<Params = ()>,
         (): CenterShiftProvider<C, C2, F>,
         (): FrameRotationProvider<F, F2>;
 
@@ -463,13 +474,14 @@ pub trait PositionAstroExt<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit>
     where
         Ctx: TransformContext,
         Ctx::Eph: crate::ephemeris::Ephemeris,
+        C: ReferenceCenter<Params = ()>,
         (): CenterShiftProvider<C, C2, F>,
         (): FrameRotationProvider<F, F2>;
 }
 
 impl<C, F, U> PositionAstroExt<C, F, U> for Position<C, F, U>
 where
-    C: ReferenceCenter<Params = ()>,
+    C: ReferenceCenter,
     F: ReferenceFrame,
     U: LengthUnit,
 {
@@ -492,7 +504,7 @@ where
     {
         let rot: Rotation3 = frame_rotation_with::<F, F2, Ctx>(*jd, ctx);
         let [x, y, z] = rot * [self.x(), self.y(), self.z()];
-        Position::new(x, y, z)
+        Position::from_array(self.center_params().clone(), [x, y, z])
     }
 
     fn to<C2: ReferenceCenter<Params = ()>, F2: ReferenceFrame>(
@@ -500,6 +512,7 @@ where
         jd: &JulianDate,
     ) -> Position<C2, F2, U>
     where
+        C: ReferenceCenter<Params = ()>,
         (): CenterShiftProvider<C, C2, F>,
         (): FrameRotationProvider<F, F2>,
     {
@@ -515,6 +528,7 @@ where
     where
         Ctx: TransformContext,
         Ctx::Eph: crate::ephemeris::Ephemeris,
+        C: ReferenceCenter<Params = ()>,
         (): CenterShiftProvider<C, C2, F>,
         (): FrameRotationProvider<F, F2>,
     {

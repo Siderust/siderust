@@ -60,6 +60,9 @@
 use crate::coordinates::cartesian;
 use crate::coordinates::centers::*;
 use crate::coordinates::frames;
+use crate::coordinates::transform::{
+    AstroContext, PositionAstroExt, TransformCenter, TransformFrame,
+};
 use crate::ephemeris::Ephemeris;
 use crate::event::search::intervals;
 use crate::qtty::*;
@@ -477,7 +480,7 @@ fn great_circle_elongation(lon1: Radians, lat1: Radians, lon2: Radians, lat2: Ra
 /// Compute the topocentric Moon phase geometry at a given Julian Date
 /// from a specific observer location.
 ///
-/// The topocentric elongation uses the apparent equatorial positions of
+/// The topocentric elongation uses the true-of-date equatorial positions of
 /// both the Moon and the Sun corrected for parallax. The phase angle is
 /// still computed from the geocentric distance triangle (the parallax
 /// shift is < 1° and has negligible effect on the distance ratio).
@@ -510,7 +513,7 @@ pub fn moon_phase_topocentric<E: Ephemeris>(
     jd: JulianDate,
     site: Geodetic<frames::ECEF>,
 ) -> MoonPhaseGeometry {
-    let ctx = crate::coordinates::transform::AstroContext::<E>::default();
+    let ctx = AstroContext::<E>::default();
     let moon = E::moon_geocentric(jd);
     let earth = E::earth_heliocentric(jd);
     let sun = cartesian::Position::<Geocentric, frames::EclipticMeanJ2000, AstronomicalUnit>::new(
@@ -518,21 +521,17 @@ pub fn moon_phase_topocentric<E: Ephemeris>(
         -earth.y(),
         -earth.z(),
     );
-    let moon_topo = crate::event::horizontal::geocentric_j2000_to_apparent_topocentric_with_ctx(
-        &crate::coordinates::transform::TransformFrame::to_frame(&moon),
-        site,
-        jd,
-        &ctx,
-    );
-    let sun_topo = crate::event::horizontal::geocentric_j2000_to_apparent_topocentric_with_ctx(
-        &crate::coordinates::transform::TransformFrame::to_frame(&sun),
-        site,
-        jd,
-        &ctx,
-    );
+    let moon_eq: cartesian::Position<Geocentric, frames::EquatorialMeanJ2000, _> =
+        TransformFrame::to_frame(&moon);
+    let sun_eq: cartesian::Position<Geocentric, frames::EquatorialMeanJ2000, _> =
+        TransformFrame::to_frame(&sun);
+    let moon_topo: cartesian::Position<Topocentric, _, _> = moon_eq.to_center_with(site, jd, &ctx);
+    let sun_topo: cartesian::Position<Topocentric, _, _> = sun_eq.to_center_with(site, jd, &ctx);
+    let moon_topo = moon_topo.to_frame_with::<frames::EquatorialTrueOfDate, _>(&jd, &ctx);
+    let sun_topo = sun_topo.to_frame_with::<frames::EquatorialTrueOfDate, _>(&jd, &ctx);
     phase_from_directions(
-        &moon_topo,
-        &sun_topo,
+        &moon_topo.to_spherical(),
+        &sun_topo.to_spherical(),
         moon.to_spherical().distance.value(),
         sun.to_spherical().distance.value(),
     )

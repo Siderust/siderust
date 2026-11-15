@@ -12,9 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Opt-in compact VSOP87E and ELP2000-82B backend for offline observations in 2020–2050.
 - Lunar phase and bright-limb geometry from precomputed topocentric positions.
+- Context-aware frame rotations preserve parameterized centers, including the observer site of a topocentric position.
+- `project_position_with` and `project_direction_with` provide geometric true-of-date horizon projection using the selected Earth orientation and nutation models.
 
 ### Changed
 
+- Earth horizon helpers share the geometric projection. Existing event helpers remain callable. For new code, compose `TransformCenter::to_center_with`, `PositionAstroExt::to_frame_with`, and `project_position_with`, which derives the horizon from the stored observer site.
+- Generic callers of the combined `PositionAstroExt::to` and `to_with` methods need the source-center bound `ReferenceCenter<Params = ()>`.
 - Builds that disable defaults must explicitly select `full-ephemeris` or `embedded-compact`. Add `full-nutation` to retain the IAU 2006A default when disabling defaults.
 - Topocentric lunar phase uses the selected ephemeris for both directions and distances.
 
