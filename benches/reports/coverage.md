@@ -27,8 +27,7 @@ cargo test --locked -p siderust --test compact_ephemeris --no-default-features -
 
 Host Criterion cases with both features enable full and compact tables in one
 build. For flash size, RAM, stack high-water and device latency, measure a
-compact-only application on its target. See the [embedded guide](../../doc/guides/embedded.md)
-and the [ESP32 experiment](compact_ephemeris.md#esp32).
+compact-only application on its target. See the [embedded guide](../../doc/guides/embedded.md).
 
 ## Observation events
 

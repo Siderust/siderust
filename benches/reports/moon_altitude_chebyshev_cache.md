@@ -31,5 +31,4 @@ crossing, the timing effect of an altitude error depends on the local slope.
 A shallow or grazing crossing requires separate validation.
 
 The [lunar benchmark report](moon_altitude_perf_report.md) describes the current
-search-engine experiment. The [historical record](historical_measurements.md)
-preserves earlier cached-versus-uncached observations.
+search-engine experiment.

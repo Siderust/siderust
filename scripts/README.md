@@ -8,7 +8,7 @@ specify another directory.
 | [Release CLI](#releases) | Maintainer preflight, notes, and crates.io publication | Cargo |
 | [CSPICE references](cspice/README.md) | Reproduce or verify independent lunar and surface references | siderust-py checkout and local NAIF kernels |
 | [Compact and SGP4 references](validation/README.md) | Reproduce independent DE440s/ERFA and Vallado vectors | siderust-py checkout and pinned reference libraries |
-| [ESP32 harness](../benches/reports/compact_ephemeris.md#esp32) | Build the compact workload for hardware measurements | Espressif Xtensa toolchain |
+| [ESP32 harness](compact-esp32) | Build the compact workload for hardware measurements | Espressif Xtensa toolchain |
 | [Markdown link checker](release/src/bin/check-doc-links.rs) | Check relative links and heading fragments in the manuals and reports | Cargo |
 
 Run the Markdown checker with

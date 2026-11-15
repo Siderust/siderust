@@ -51,7 +51,5 @@ reports document the coefficient selection and its error metrics for
 and [ELP2000](https://github.com/Siderust/archive/blob/main/reports/compact-lunar-ephemeris.md).
 
 The [ESP32 harness](../../scripts/compact-esp32) exercises the compact workload
-with a null allocator. The [footprint report](../../benches/reports/compact_ephemeris.md)
-records its build configuration and measured image sizes. Flash size and
-linker stack reservations describe that build. Application peak stack
-use depends on the target, callers, and workload.
+with a null allocator. Application peak stack use depends on the target,
+callers, and workload.

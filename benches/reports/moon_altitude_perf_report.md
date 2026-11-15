@@ -29,5 +29,4 @@ The [event integration test](../../tests/test_event_search.rs) compares horizon
 interval counts and endpoints against the cached scan for a 30-day fixture
 with a `1e-5` day endpoint tolerance. The [lunar interpolation report](moon_altitude_chebyshev_cache.md)
 covers direct comparisons. The current cases have no controlled timings in
-this report. Earlier cached-versus-uncached values used different workloads
-and are recorded in the [historical notes](historical_measurements.md).
+this report. Earlier cached-versus-uncached values used different workloads.

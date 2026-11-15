@@ -60,5 +60,4 @@ Compare identical configurations and account for Criterion buffers and
 process initialization. Heap profiles do not quantify flash or stack use.
 For resident memory use an OS process metric with its accounting definition.
 For device memory use a section map and measure stack and heap high-water
-on the board. The [compact footprint report](compact_ephemeris.md) provides
-an example of build-size accounting.
+on the board.

@@ -44,5 +44,4 @@ compares interval boundaries against a checked-in fixture with a three-second
 tolerance.
 The mid-latitude benchmark primarily samples the normal predictor path.
 Fallback frequency and precise evaluation cost vary by site, threshold and
-geometry. Current timing claims require a new experiment. The previous timings
-and diagnostic counts appear in the [historical record](historical_measurements.md).
+geometry. Current timing claims require a new experiment.
