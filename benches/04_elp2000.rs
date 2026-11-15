@@ -4,10 +4,6 @@
 //! Micro-benchmarks for ELP2000 evaluation.
 //!
 //! Run with: `cargo bench --bench elp2000`
-//!
-//! Baseline (before SIMD optimization):
-//! - get_geo_position_j2000: ~937 µs
-//! - get_geo_position_offset: ~1.66 ms
 
 use criterion::{criterion_group, criterion_main, Criterion};
 use siderust::bodies::solar_system::Moon;
@@ -19,34 +15,26 @@ fn bench_moon_geo_position(c: &mut Criterion) {
 
     // J2000 epoch (t1 = 0, simplest case)
     group.bench_function("get_geo_position_j2000", |b| {
-        b.iter(|| {
-            let jd = black_box(siderust::time::J2000);
-            let _p = Moon::get_geo_position::<Kilometer>(jd);
-        });
+        let jd = siderust::time::J2000;
+        b.iter(|| Moon::get_geo_position::<Kilometer>(black_box(jd)));
     });
 
     // Offset epoch (~3.4 years from J2000)
     group.bench_function("get_geo_position_offset", |b| {
-        b.iter(|| {
-            let jd = black_box(siderust::time::J2000 + Days::new(1234.567));
-            let _p = Moon::get_geo_position::<Kilometer>(jd);
-        });
+        let jd = siderust::time::J2000 + Days::new(1234.567);
+        b.iter(|| Moon::get_geo_position::<Kilometer>(black_box(jd)));
     });
 
     // Far future epoch (~50 years from J2000)
     group.bench_function("get_geo_position_far_future", |b| {
-        b.iter(|| {
-            let jd = black_box(siderust::time::J2000 + Days::new(18262.5)); // ~50 years
-            let _p = Moon::get_geo_position::<Kilometer>(jd);
-        });
+        let jd = siderust::time::J2000 + Days::new(18262.5);
+        b.iter(|| Moon::get_geo_position::<Kilometer>(black_box(jd)));
     });
 
     // Negative epoch (before J2000)
     group.bench_function("get_geo_position_negative", |b| {
-        b.iter(|| {
-            let jd = black_box(siderust::time::J2000 - Days::new(3652.5)); // ~10 years before
-            let _p = Moon::get_geo_position::<Kilometer>(jd);
-        });
+        let jd = siderust::time::J2000 - Days::new(3652.5);
+        b.iter(|| Moon::get_geo_position::<Kilometer>(black_box(jd)));
     });
 
     group.finish();

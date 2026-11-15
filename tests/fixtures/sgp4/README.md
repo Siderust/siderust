@@ -16,11 +16,8 @@ WGS-72/IAU and WGS-84/IAU at -1440, 0, 1440 and 4320 minutes for six satellites
 from the same corpus (00005, 04632, 08195, 24208, 26900, 28623). Generated with
 python-sgp4 2.25's Vallado **C++** extension (`Satrec.twoline2rv`, default improved
 mode), independently of Siderust. Source: https://github.com/brandon-rhodes/python-sgp4/tree/2.25
-(MIT license in `LICENSE-python-sgp4`). Reproduce from the repository root:
-
-```sh
-uv run --python 3.12 --with sgp4==2.25 tests/fixtures/sgp4/generate_iau.py
-```
+(MIT license in `LICENSE-python-sgp4`). Regenerate the vectors using the
+[siderust-py instructions](https://github.com/Siderust/siderust-py/tree/fb8069a2d5710d450d40f1abcbbc3df3960a8f76/scripts/validation#sgp4).
 
 `synthetic.txt` adds 315 independent C++ vectors for all three model modes.
 These isolate half-day eccentricity-polynomial boundaries, low inclinations,

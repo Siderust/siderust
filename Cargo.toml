@@ -2,7 +2,7 @@
 members = [
     ".",
     "siderust-ffi",
-    "tools/release",
+    "scripts/release",
 ]
 
 [workspace.lints.rust]
@@ -133,30 +133,30 @@ siderust-archive = { version = "0.2.0", default-features = false, features = ["j
 thiserror = { version = "2", default-features = false }
 chrono = { version = "0.4", default-features = false, features = ["alloc"] }
 paste = { version = "1.0", optional = true }
-quick-xml = { version = "0.41", default-features = false, optional = true }
+quick-xml = { version = "0.42", default-features = false, optional = true }
 serde = { version = "1.0", default-features = false, features = ["derive", "alloc"], optional = true }
 serde_json = { version = "1.0", default-features = false, features = ["alloc"], optional = true }
-toml = { version = "1.1", default-features = false, features = ["parse", "serde", "display"], optional = true }
+toml = { version = "1.2", default-features = false, features = ["parse", "serde", "display"], optional = true }
 sha2 = { version = "0.11", default-features = false, optional = true }
 wide = { version = "1.7", default-features = false, optional = true }
-hashbrown = { version = "0.15", default-features = false, features = ["default-hasher", "inline-more"] }
-spin = { version = "0.10", default-features = false, features = ["once"] }
+hashbrown = { version = "0.17", default-features = false, features = ["default-hasher", "inline-more"] }
+spin = { version = "0.12", default-features = false, features = ["once"] }
 
 # POD toolkit dependencies (gated on the `pod` feature family)
 faer = { version = "0.24", default-features = false, features = ["std", "linalg"], optional = true }
 hex = { version = "0.4", optional = true }
-parquet = { version = "59", default-features = false, optional = true }
+parquet = { version = "60.1", default-features = false, optional = true }
 
 [dev-dependencies]
 approx = "0.5"
-rstest = "0.26"
+rstest = "0.28"
 criterion = "0.8"
 serde_json = "1.0"
 
 [build-dependencies]
 serde = { version = "1.0", features = ["derive"] }
-toml = { version = "1.1", default-features = false, features = ["parse", "serde", "display"] }
-hashbrown = { version = "0.15", default-features = false, features = ["default-hasher", "inline-more"] }
+toml = { version = "1.2", default-features = false, features = ["parse", "serde", "display"] }
+hashbrown = { version = "0.17", default-features = false, features = ["default-hasher", "inline-more"] }
 
 [[test]]
 name = "test_event_search"
@@ -165,49 +165,66 @@ required-features = ["bench-internals"]
 
 [[bench]]
 name = "converters"
+path = "benches/02_converters.rs"
 harness = false
 
 [[bench]]
 name = "vsop87"
+path = "benches/12_vsop87.rs"
 harness = false
+required-features = ["full-ephemeris"]
 
 [[bench]]
 name = "solar_altitude"
+path = "benches/09_solar_altitude.rs"
 harness = false
 required-features = ["bench-internals"]
 
 [[bench]]
 name = "moon_altitude"
+path = "benches/06_moon_altitude.rs"
 harness = false
 required-features = ["bench-internals"]
 
 [[bench]]
 name = "star_altitude"
+path = "benches/11_star_altitude.rs"
 harness = false
 required-features = ["bench-internals"]
 
 [[bench]]
 name = "elp2000"
+path = "benches/04_elp2000.rs"
 harness = false
+required-features = ["full-ephemeris"]
 
 [[bench]]
 name = "ephemeris_comparison"
+path = "benches/05_ephemeris_comparison.rs"
 harness = false
+required-features = ["full-ephemeris"]
 
 [[bench]]
 name = "altitude_comparison"
+path = "benches/01_altitude_comparison.rs"
 harness = false
+required-features = ["full-ephemeris"]
 
 [[bench]]
 name = "de441"
+path = "benches/03_de441.rs"
 harness = false
+required-features = ["std"]
 
 [[bench]]
 name = "spk_perf"
+path = "benches/10_spk_perf.rs"
 harness = false
+required-features = ["std"]
 
 [[bench]]
 name = "sidereal"
+path = "benches/08_sidereal.rs"
 harness = false
 
 [lints]
@@ -219,6 +236,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [[bench]]
 name = "sgp4"
+path = "benches/07_sgp4.rs"
 harness = false
 
 [[example]]

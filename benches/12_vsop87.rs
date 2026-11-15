@@ -23,19 +23,11 @@ fn bench_vsop87(c: &mut Criterion) {
 
     for (name, planet) in &planet_list {
         c.bench_function(&format!("vsop87a {}", name), |b| {
-            let mut jd = start;
-            b.iter(|| {
-                jd += Days::new(1.0);
-                let _coords = planet.vsop87a(black_box(jd));
-            });
+            b.iter(|| planet.vsop87a(black_box(start)));
         });
 
         c.bench_function(&format!("vsop87e {}", name), |b| {
-            let mut jd = start;
-            b.iter(|| {
-                jd += Days::new(1.0);
-                let _coords = planet.vsop87e(black_box(jd));
-            });
+            b.iter(|| planet.vsop87e(black_box(start)));
         });
     }
 }

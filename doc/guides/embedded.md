@@ -44,13 +44,13 @@ uses `NullEop`, so it approximates UT1 by UTC and sets pole corrections
 to zero. Use an appropriate [EOP provider](../concepts/time-and-earth-orientation.md)
 if that approximation is too coarse.
 
-[DE440s and ERFA comparisons](../../tools/validation/README.md) quantify
+[DE440s and ERFA comparisons](../../scripts/validation/README.md) quantify
 sampled differences in position, pointing, and Earth velocity. The Archive
 reports document the coefficient selection and its error metrics for
 [VSOP87](https://github.com/Siderust/archive/blob/main/reports/compact-vsop87.md)
 and [ELP2000](https://github.com/Siderust/archive/blob/main/reports/compact-lunar-ephemeris.md).
 
-The [ESP32 harness](../../tools/compact-esp32) exercises the compact workload
+The [ESP32 harness](../../scripts/compact-esp32) exercises the compact workload
 with a null allocator. The [footprint report](../../benches/reports/compact_ephemeris.md)
 records its build configuration and measured image sizes. Flash size and
 linker stack reservations describe that build. Application peak stack

@@ -11,13 +11,13 @@
 //! - **`engine_comparison/star/{30d,365d}`**: optimized public
 //!   `above_threshold` versus the generic scan+Brent reference path.
 //!
-//! - **`altitude/single_eval`**: single-point altitude cost for the star engine,
+//! - **`altitude/single_eval/star`**: single-point altitude cost for the star engine,
 //!   useful as a reference for the period-finding benchmarks above.
 //!
 //! Run with:
 //!
 //! ```bash
-//! cargo bench --bench star_altitude
+//! cargo bench --features bench-internals --bench star_altitude
 //! ```
 
 use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};

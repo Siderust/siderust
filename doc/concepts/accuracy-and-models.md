@@ -53,12 +53,12 @@ Independent regressions cover
 [analytical frame normalization](../../tests/ephemeris_frame_consistency.rs),
 [Earth orientation](../../tests/test_high_precision_earth_rotation_regression.rs),
 [body-surface geometry](../../tests/body_surface_horizontal.rs),
-[compact pointing](../../tools/validation/README.md), and
+[compact pointing](../../scripts/validation/README.md), and
 [same-kernel lunar geometry](../../tests/fixtures/lunar_de440/README.md).
 The [analytical lunar axis test](../../tests/body_surface_horizontal.rs)
 compares all three axes with CSPICE and `pck00011.tpc` at five TT epochs from
 1900 through 2050, with a direction-cosine tolerance of 10⁻¹⁰. Regeneration
-uses the [surface reference script](../../tools/cspice_refs/cspice_surface_references.py).
+uses the [independent CSPICE surface references](../../scripts/cspice/README.md).
 
 These comparisons establish agreement only for their tested data, epochs,
 operations, and reference models. Separate approximation error, data
