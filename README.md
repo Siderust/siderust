@@ -51,13 +51,13 @@ No external JPL kernel is required for these VSOP87 examples. For more workflows
 - **Go beyond ephemerides.** Work with coordinate transformations, observatory sites, altitude windows, TLE/SGP4 workflows, and optional precise orbit determination.
 - **Choose your environment.** Default builds use `std`; `default-features = false` supports `no_std` with `alloc` for suitable integrations.
 
-**Scientific use:** Accuracy and coverage depend on the chosen model, epoch, time data, and reference frame. See the [tests](tests/), [dataset guidance](doc/datasets.md), and [benchmark methodology](benches/README.md) before selecting a backend for a precision-sensitive workflow.
+**Scientific use:** Accuracy and coverage depend on the chosen model, epoch, time data, and reference frame. See the [tests](tests/), [dataset guidance](doc/reference/features-and-data.md), and [benchmark methodology](benches/README.md) before selecting a backend for a precision-sensitive workflow.
 
 ## Documentation map
 
 - **Getting started:** [Installation](#installation) · [Examples](#examples) · [Supported feature flags](#supported-feature-flags)
 - **Core concepts:** [Features](#features) · [Coordinate systems](#coordinate-systems) · [Units and physical quantities](#units--physical-quantities)
-- **Data and internals:** [Scientific archive](#scientific-archive-submodule) · [Crate layout](#crate-layout) · [Benchmarks](benches/README.md)
+- **Data and internals:** [Scientific archive](#scientific-archive) · [Crate layout](#crate-layout) · [Benchmarks](benches/README.md)
 - **Community:** [Roadmap](#roadmap) · [Contributing](#contributing) · [License](#license) · [Acknowledgments](#acknowledgments)
 
 ---
@@ -105,7 +105,7 @@ Coordinate algebra and reusable conic geometry are provided by [`affn`](https://
 ### API Design Pillars
 
 Siderust is built on two cross-cutting principles documented in
-[`doc/conventions.md`](doc/conventions.md):
+[the authoring guide](doc/contributing/documentation.md):
 
 1. **Typed quantities everywhere.** Every scalar that has physical meaning —
    pressures, scale heights, optical depths, airmasses, albedos, illumination
@@ -125,26 +125,20 @@ Siderust is built on two cross-cutting principles documented in
 
 ---
 
-## Scientific Archive (submodule)
+## Scientific Archive
 
 Large scientific datasets — VSOP87, IAU 2000A nutation, ELP2000-82B,
 Sun-Earth Lagrange Chebyshev kernels, SPICE time/frame/constants kernels,
 and dataset generators/validators — live in the separate
-[`Siderust/archive`](https://github.com/Siderust/archive) repository, attached
-here as the `archive/` git submodule.
-
-After cloning Siderust, initialise the submodule:
-
-```sh
-git submodule update --init --recursive
-```
+[`Siderust/archive`](https://github.com/Siderust/archive) repository. It is
+maintained independently rather than as a Git submodule.
 
 All archive metadata uses **TOML** (`MANIFEST.toml`, per-family
 `manifest.toml`). Binary payloads use their authoritative formats (SPICE
 `.bsp`, Siderust Chebyshev Kernel `.sck`, raw `.dat`). The archive layout,
 manifest schema, and regeneration recipes are documented in
-[`archive/README.md`](archive/README.md) and
-[`archive/schema/archive-manifest-v1.md`](archive/schema/archive-manifest-v1.md).
+[Archive README](https://github.com/Siderust/archive/blob/main/README.md) and
+[archive manifest schema](https://github.com/Siderust/archive/blob/main/schema/archive-manifest-v1.md).
 
 The default `siderust` build does **not** require a separate archive checkout.
 Large scientific datasets (VSOP87, ELP2000, nutation, gravity, atmosphere, Pluto)
@@ -168,7 +162,7 @@ VSOP87/ELP2000 coefficients, nutation tables, and EOP data are provided by
 datasets, manifests, checksums, provenance) and
 [`tempoch`](https://crates.io/crates/tempoch) (UTC/TAI/TT/UT1/TDB time scales,
 ΔT, and EOP freshness). Optional JPL kernels are downloaded on demand when the
-corresponding feature is enabled; see `doc/datasets.md`.
+corresponding feature is enabled; see [dataset guidance](doc/reference/features-and-data.md).
 
 ### Ephemeris Backends
 
@@ -216,7 +210,7 @@ Prefetch into a persistent cache (optional):
 
 ```bash
 export SIDERUST_DATASETS_DIR="$HOME/.cache/siderust"
-# from an archive checkout:
+# optional: from the Siderust root, with a separate archive clone at ../archive
 ../archive/scripts/prefetch_datasets.sh --de440
 ```
 
@@ -391,7 +385,7 @@ the downstream crate's responsibility.
 Contributions are welcome, including documentation fixes, runnable examples, reference-data comparisons, and bug reports. Start with the [open issues](https://github.com/Siderust/siderust/issues) or the [examples](examples/README.md).
 
 1. Fork and clone the repository; create a feature branch.
-2. Follow the [authoring conventions](doc/conventions.md) for public APIs and scientific documentation.
+2. Follow the [authoring conventions](doc/contributing/documentation.md) for public APIs and scientific documentation.
 3. Run `cargo test && cargo clippy -- -D warnings` and add tests for behavioral changes.
 4. Open a pull request describing the problem, approach, and validation performed.
 
