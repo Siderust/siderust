@@ -34,7 +34,6 @@
 //! stay small and focused.
 
 use crate::astro::earth_rotation::jd_ut1_from_tt_eop;
-use crate::astro::earth_rotation_provider::nutation_with_celestial_pole_offsets;
 use crate::astro::eop::EopProvider;
 use crate::astro::nutation::NutationModel;
 use crate::astro::{cio, era, polar_motion, precession, HasIauRotation, IauRotationParams};
@@ -55,6 +54,7 @@ use crate::coordinates::frames::{
 };
 use crate::coordinates::transform::context::{AstroContext, TransformContext};
 use crate::ephemeris::Ephemeris;
+use crate::qtty::{CipCoordinates, Radians};
 use crate::time::JulianDate;
 use affn::Rotation3;
 
@@ -284,9 +284,12 @@ fn gcrs_to_cirs_rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
     ctx: &AstroContext<Eph, Eop>,
 ) -> Rotation3 {
     let eop = ctx.eop_at_tt(jd);
-    let (dpsi, deps) = nutation_with_celestial_pole_offsets::<Nut>(jd, eop);
-    let cip = cio::cip_cio(jd, dpsi, deps);
-    cio::gcrs_to_cirs_matrix(cip.x, cip.y, cip.s)
+    let nut = Nut::nutation(jd);
+    let (x, y) = cio::cip_xy(jd, nut.dpsi, nut.deps);
+    // IERS offsets are corrections to the GCRS direction cosines of the CIP.
+    let x = x + CipCoordinates::new(Radians::from(eop.dx).value());
+    let y = y + CipCoordinates::new(Radians::from(eop.dy).value());
+    cio::gcrs_to_cirs_matrix(x, y, cio::cio_locator_s(jd, x, y))
 }
 
 /// Direct CIRS → TIRS rotation from the Earth Rotation Angle.

@@ -15,19 +15,15 @@ use esp_println::println;
 use siderust::astro::{eop::NullEop, nutation::Iau2000B};
 use siderust::coordinates::{
     cartesian::Position,
-    centers::{Geocentric, Geodetic},
-    frames::{EclipticMeanJ2000, ECEF},
-    transform::{AstroContext, TransformFrame},
+    centers::{Geocentric, Geodetic, Topocentric},
+    frames::{EclipticMeanJ2000, EquatorialMeanJ2000, EquatorialTrueOfDate, ECEF},
+    transform::{
+        horizontal::project_position_with, AstroContext, PositionAstroExt, TransformCenter,
+    },
 };
 use siderust::ephemeris::{CompactEphemeris, Ephemeris, EphemerisError, MajorPlanet};
-use siderust::event::{
-    horizontal::{
-        equatorial_to_horizontal_true_of_date_with_ctx,
-        geocentric_j2000_to_apparent_topocentric_with_ctx,
-    },
-    lunar::{
-        phase::moon_phase_from_topocentric, position_angle::moon_bright_limb_from_topocentric,
-    },
+use siderust::event::lunar::{
+    phase::moon_phase_from_topocentric, position_angle::moon_bright_limb_from_topocentric,
 };
 use siderust::qtty::{AstronomicalUnit, Degrees, Meters};
 use siderust::JulianDate;
@@ -78,19 +74,23 @@ fn observe(jd: JulianDate) -> Result<(), EphemerisError> {
         )
     };
     let moon = CompactEphemeris::try_moon_geocentric(jd)?;
-    let moon = geocentric_j2000_to_apparent_topocentric_with_ctx(&moon.to_frame(), site, jd, &ctx);
-    let sun = geocentric_j2000_to_apparent_topocentric_with_ctx(
-        &geocentric(sun).to_frame(),
-        site,
-        jd,
-        &ctx,
-    );
-    black_box(equatorial_to_horizontal_true_of_date_with_ctx(
-        &moon, site, jd, &ctx,
-    ));
-    black_box(equatorial_to_horizontal_true_of_date_with_ctx(
-        &sun, site, jd, &ctx,
-    ));
+    let moon: Position<Topocentric, _, _> = moon
+        .to_frame_with::<EquatorialMeanJ2000, _>(&jd, &ctx)
+        .to_center_with(site, jd, &ctx);
+    let moon = moon
+        .to_frame_with::<EquatorialTrueOfDate, _>(&jd, &ctx)
+        .to_spherical();
+    let topocentric = |body: Position<Geocentric, EclipticMeanJ2000, AstronomicalUnit>| {
+        let relative: Position<Topocentric, _, _> = body
+            .to_frame_with::<EquatorialMeanJ2000, _>(&jd, &ctx)
+            .to_center_with(site, jd, &ctx);
+        relative
+            .to_frame_with::<EquatorialTrueOfDate, _>(&jd, &ctx)
+            .to_spherical()
+    };
+    let sun = topocentric(geocentric(sun));
+    black_box(project_position_with(&moon, jd, &ctx));
+    black_box(project_position_with(&sun, jd, &ctx));
     black_box(moon_phase_from_topocentric(&moon, &sun));
     black_box(moon_bright_limb_from_topocentric(&moon, &sun));
     for planet in [
@@ -106,15 +106,8 @@ fn observe(jd: JulianDate) -> Result<(), EphemerisError> {
             Ok(body) => body,
             Err(error) => panic!("{error}"),
         };
-        let topo = geocentric_j2000_to_apparent_topocentric_with_ctx(
-            &geocentric(body).to_frame(),
-            site,
-            jd,
-            &ctx,
-        );
-        black_box(equatorial_to_horizontal_true_of_date_with_ctx(
-            &topo, site, jd, &ctx,
-        ));
+        let topo = topocentric(geocentric(body));
+        black_box(project_position_with(&topo, jd, &ctx));
     }
     Ok(())
 }

@@ -46,8 +46,14 @@ use alloc::vec::Vec;
 
 // Imports for planet azimuth support
 use crate::coordinates::transform::Transform;
-use crate::coordinates::{cartesian, centers::Geocentric, frames};
-use crate::event::horizontal;
+use crate::coordinates::transform::{
+    horizontal::project_position_with, AstroContext, PositionAstroExt, TransformCenter,
+};
+use crate::coordinates::{
+    cartesian,
+    centers::{Geocentric, Topocentric},
+    frames,
+};
 use crate::time::JulianDate;
 
 // ---------------------------------------------------------------------------
@@ -346,8 +352,10 @@ where
     let bary_ecl = vsop87e_fn(jd);
     let geo_equ: cartesian::Position<Geocentric, frames::EquatorialMeanJ2000, AstronomicalUnit> =
         bary_ecl.transform(jd);
-    let topo = horizontal::geocentric_j2000_to_apparent_topocentric(&geo_equ, *site, jd);
-    let horiz = horizontal::equatorial_to_horizontal(&topo, *site, jd);
+    let ctx: AstroContext = AstroContext::default();
+    let relative: cartesian::Position<Topocentric, _, _> = geo_equ.to_center_with(*site, jd, &ctx);
+    let topo = relative.to_frame_with::<frames::EquatorialTrueOfDate, _>(&jd, &ctx);
+    let horiz = project_position_with(&topo.to_spherical(), jd, &ctx);
     horiz.az().to::<Radian>()
 }
 

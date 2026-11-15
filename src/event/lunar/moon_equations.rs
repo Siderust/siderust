@@ -6,7 +6,7 @@
 //! ## Scientific scope
 //!
 //! High‑level methods on [`Moon`] for the most common observational
-//! quantities: apparent topocentric equatorial coordinates, horizontal
+//! quantities: topocentric true-of-date equatorial coordinates, horizontal
 //! coordinates, and phase geometry (illuminated fraction, phase angle,
 //! elongation, waxing flag, principal phase events). The pipelines apply
 //! topocentric parallax (~1° at horizon for the Moon), J2000 → mean‑of‑date
@@ -35,9 +35,11 @@ use alloc::vec::Vec;
 
 use crate::coordinates::transform::context::DefaultEphemeris;
 use crate::coordinates::transform::TransformFrame;
+use crate::coordinates::transform::{
+    horizontal::project_position_with, AstroContext, PositionAstroExt, TransformCenter,
+};
 use crate::coordinates::{cartesian, centers::*, frames, spherical};
 use crate::ephemeris::Ephemeris;
-use crate::event::horizontal;
 use crate::event::lunar::phase::{
     find_phase_events, illumination_above, illumination_below, illumination_range,
     moon_phase_geocentric, moon_phase_topocentric, MoonPhaseGeometry, PhaseEvent, PhaseSearchOpts,
@@ -75,8 +77,8 @@ impl Moon {
     ///
     /// # Returns
     ///
-    /// `spherical::Position<Topocentric, EquatorialTrueOfDate, U>`: apparent
-    /// topocentric right ascension, declination, and distance in unit `U`.
+    /// A geometric position with topocentric right ascension, declination,
+    /// and distance in unit `U`.
     pub fn get_apparent_topocentric_equ<U: LengthUnit>(
         jd: JulianDate,
         site: Geodetic<frames::ECEF>,
@@ -98,13 +100,12 @@ impl Moon {
             Kilometer,
         > = TransformFrame::to_frame(&moon_geo_ecliptic);
 
-        // 3-5) Shared pipeline in Kilometer: topocentric parallax → precession → nutation → spherical
-        let topo_sph_km: spherical::Position<Topocentric, frames::EquatorialTrueOfDate, Kilometer> =
-            horizontal::geocentric_j2000_to_apparent_topocentric::<Kilometer>(
-                &moon_geo_eq_j2000,
-                site,
-                jd,
-            );
+        let ctx: AstroContext = AstroContext::default();
+        let relative: cartesian::Position<Topocentric, _, _> =
+            moon_geo_eq_j2000.to_center_with(site, jd, &ctx);
+        let topo_sph_km = relative
+            .to_frame_with::<frames::EquatorialTrueOfDate, _>(&jd, &ctx)
+            .to_spherical();
 
         // 6) Convert from Kilometer to target unit U
         let dist_u: Quantity<U> = topo_sph_km.distance.into();
@@ -169,7 +170,8 @@ impl Moon {
     {
         let jd = time.into();
         let eq = Self::get_apparent_topocentric_equ::<U>(jd, site);
-        horizontal::equatorial_to_horizontal(&eq, site, jd)
+        let ctx: AstroContext = AstroContext::default();
+        project_position_with(&eq, jd, &ctx)
     }
 }
 

@@ -94,7 +94,7 @@ pub(crate) fn lunar_above_threshold_impl(
 ) -> Vec<Interval<ModifiedJulianDate>> {
     let thr = threshold.to::<Radian>();
 
-    // Build Chebyshev + nutation caches for the period
+    // Build the Chebyshev position cache for the period
     let ctx = MoonAltitudeContext::new(period.start, period.end, site);
 
     let (labeled, start_above) = find_moon_labeled_crossings_with_context(&ctx, period, thr, opts);
@@ -159,7 +159,7 @@ pub(crate) fn lunar_altitude_ranges_impl(
     let h_min = range.0.to::<Radian>();
     let h_max = range.1.to::<Radian>();
 
-    // Build Chebyshev + nutation caches for the period
+    // Build the Chebyshev position cache for the period
     let ctx = MoonAltitudeContext::new(period.start, period.end, site);
 
     let (min_crossings, start_above_min) =

@@ -1,30 +1,21 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! # Solar apparent-position equations
+//! # Solar position and horizon equations
 //!
-//! ## Scientific scope
-//!
-//! The Sun's *apparent* position as seen from Earth differs from its
-//! geometric/mean position by three main effects: (1) precession of the
-//! equinoxes (continuous drift of the equatorial frame), (2) nutation
-//! (periodic perturbation of Earth's spin axis due to the Moon and Sun),
-//! and (3) light aberration (apparent displacement caused by Earth's orbital
-//! velocity, ~20.5 arc-seconds). This module computes a subset of those
-//! corrections that is sufficient for solar position, sunrise/sunset, and
-//! shadow modeling: the geometric VSOP87 position is corrected for precession
-//! and nutation (via the IAU 2006/2000B NPB matrix), but aberration is
-//! intentionally omitted. For topocentric coordinates the full pipeline
-//! includes the diurnal parallax correction (~8.9 arc-seconds at the horizon).
+//! These helpers evaluate geometric solar positions. Equatorial outputs use
+//! true-of-date axes, and the topocentric outputs include the observer
+//! translation. Horizon coordinates use the default terrestrial orientation.
+//! Physical effects such as aberration and refraction are separate operations.
 //!
 //! ## Technical scope
 //!
 //! Methods on the [`Sun`](crate::bodies::solar_system::Sun) zero-size marker:
 //!
-//! - [`Sun::get_apparent_geocentric_equ`] — geocentric equatorial apparent
-//!   position (`EquatorialTrueOfDate`), nutation applied.
-//! - [`Sun::get_apparent_topocentric_equ`] — topocentric apparent position,
-//!   adding diurnal parallax shift for a given [`Geodetic<ECEF>`] site.
+//! - [`Sun::get_apparent_geocentric_equ`] — geometric geocentric position
+//!   in `EquatorialTrueOfDate` using IAU 2000B nutation.
+//! - [`Sun::get_apparent_topocentric_equ`] — geometric true-of-date position
+//!   including parallax for the supplied geodetic site.
 //! - [`Sun::get_horizontal`] — altitude/azimuth as seen from a site; accepts
 //!   any type convertible to `JulianDate` (e.g. `ModifiedJulianDate`).
 //! - [`Sun::ecliptic_longitude_geocentric`] — raw geocentric ecliptic
@@ -50,13 +41,15 @@ use crate::qtty::{Real, Scalar};
 
 use crate::astro::nutation::nutation_iau2000b;
 use crate::astro::precession;
+use crate::coordinates::transform::{
+    horizontal::project_position_with, AstroContext, PositionAstroExt, TransformCenter,
+};
 use crate::coordinates::{
     cartesian,
     centers::*,
     frames, spherical,
     transform::{Transform, TransformFrame},
 };
-use crate::event::horizontal;
 use crate::qtty::{
     AstronomicalUnit, AstronomicalUnits, LengthUnit, Meter, Quantity, Radian, Radians,
 };
@@ -90,7 +83,8 @@ impl Sun {
         // Doing both in one `transform` call would apply the ecliptic shift vector into the
         // already-rotated equatorial frame, yielding a near-zero Dec instead of ~-23°.
         let geo_ecl: cartesian::position::EclipticMeanJ2000<U, Geocentric> = helio.transform(jd);
-        let geo_cart: cartesian::position::EquatorialMeanJ2000<U, Geocentric> = geo_ecl.to_frame();
+        let geo_cart: cartesian::position::EquatorialMeanJ2000<U, Geocentric> =
+            TransformFrame::to_frame(&geo_ecl);
 
         // Apply full IAU 2006/2000B NPB matrix (GCRS → true equator/equinox of date)
         let nut = nutation_iau2000b(jd);
@@ -102,8 +96,8 @@ impl Sun {
         spherical::Position::from_cartesian(&true_cart)
     }
 
-    /// Returns the Sun's apparent topocentric equatorial coordinates as seen
-    /// from a given `Geodetic<ECEF>` at the specified Julian Date.
+    /// Returns the Sun's geometric topocentric position in the true equator
+    /// and equinox of date at the supplied TT epoch.
     pub fn get_apparent_topocentric_equ<U: LengthUnit>(
         jd: JulianDate,
         site: Geodetic<frames::ECEF>,
@@ -117,17 +111,21 @@ impl Sun {
         let geo_ecl_j2000: cartesian::position::EclipticMeanJ2000<U, Geocentric> =
             helio.transform(jd);
         let geo_cart_j2000: cartesian::position::EquatorialMeanJ2000<U, Geocentric> =
-            geo_ecl_j2000.to_frame();
+            TransformFrame::to_frame(&geo_ecl_j2000);
 
-        // 2-5) Shared pipeline: topocentric parallax → precession → nutation → spherical
-        horizontal::geocentric_j2000_to_apparent_topocentric(&geo_cart_j2000, site, jd)
+        let ctx: AstroContext = AstroContext::default();
+        let relative: cartesian::Position<Topocentric, _, _> =
+            geo_cart_j2000.to_center_with(site, jd, &ctx);
+        relative
+            .to_frame_with::<frames::EquatorialTrueOfDate, _>(&jd, &ctx)
+            .to_spherical()
     }
 
     /// Returns the Sun's **horizontal coordinates** (altitude, azimuth) as seen
     /// from a given `Geodetic<ECEF>` at the specified Julian Date or Modified Julian Date.
     ///
-    /// This is a convenience wrapper that computes the apparent topocentric equatorial
-    /// position and transforms it to horizontal coordinates.
+    /// Projects the geometric topocentric equatorial position onto the local
+    /// horizon using the default Earth orientation model.
     ///
     /// ### Parameters
     /// - `time`: Any type that can be converted to `JulianDate` (JD or Mjd)
@@ -167,7 +165,8 @@ impl Sun {
     {
         let jd = time.into();
         let eq = Self::get_apparent_topocentric_equ::<U>(jd, site);
-        horizontal::equatorial_to_horizontal(&eq, site, jd)
+        let ctx: AstroContext = AstroContext::default();
+        project_position_with(&eq, jd, &ctx)
     }
 
     /// Geocentric apparent ecliptic longitude of the Sun in the J2000 mean

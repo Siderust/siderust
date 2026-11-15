@@ -74,21 +74,24 @@ position at the reception epoch. Translate it to the observer with
 `TransformCenter::to_center_with`, rotate it to `EquatorialTrueOfDate` with
 `PositionAstroExt::to_frame_with`, and call
 `coordinates::transform::horizontal::project_position_with`. The position
-carries the observer site, and the context supplies the EOP lookup and
-nutation model. The projection uses UT1 sidereal rotation and TT nutation.
-For a direction at infinity, pass the site explicitly to
-`project_direction_with`. The mean-of-date transform uses mean sidereal
-time. Body-fixed surface projection uses the body's orientation model and
-local tangent basis.
+carries the observer site. The frame provider uses UT1 for Earth rotation,
+TT for the selected bias-precession-nutation model, and EOP for terrestrial
+polar motion and observed celestial pole offsets. The offsets correct the
+CIP in the CIO-based Earth orientation chain. The true equator and equinox
+of date follow the selected nutation model.
 
-To migrate from `geocentric_j2000_to_apparent_topocentric_with_ctx`, compose
-the center shift and the frame rotation before converting to spherical
-coordinates. Replace `equatorial_to_horizontal_true_of_date_with_ctx` with
-`project_position_with` when the observer is the position's stored site.
-The legacy explicit-site overload continues to use its supplied site. Use
-the direction projection explicitly when reorienting a free direction at
-another site. Recompute the center shift if the new site changes a
-finite-distance line of sight.
+For free directions, pass the site explicitly to `project_direction_with`
+and `unproject_direction_with`. The position inverse
+`unproject_position_with` carries the observer and range back to the
+true-of-date equatorial frame. Use a subsequent typed frame rotation to
+express the recovered sightline in other axes. To change a finite-distance
+observer, translate the original target to the new observer first.
+
+The explicit UT1/TT APIs use the equinox-based sidereal convention with
+zero polar motion and celestial pole offsets. The mean-of-date transform
+uses mean sidereal time. Body-fixed surface projection uses the body's
+orientation model and local tangent basis. These paths share the relevant
+local geometry and preserve their time and frame contracts.
 
 ### Physical observation effects
 

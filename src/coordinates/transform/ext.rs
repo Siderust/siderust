@@ -132,15 +132,11 @@ pub trait DirectionAstroExt<F: ReferenceFrame> {
         )
     }
 
-    /// Converts this direction to horizontal coordinates using TT only.
+    /// Converts this direction using the legacy equinox-based sidereal model.
     ///
-    /// UT1 is derived from TT using the context's EOP provider
-    /// (`IersEop` by default), which applies the IERS `dUT1 = UT1 − UTC`
-    /// correction on top of tempoch's leap-second chain. For sub-second
-    /// precision, prefer [`to_horizontal_precise`] with an explicit UT1
-    /// value.
-    ///
-    /// [`to_horizontal_precise`]: Self::to_horizontal_precise
+    /// The default EOP provider supplies DUT1. Use
+    /// [`horizontal::project_direction_with`](super::horizontal::project_direction_with)
+    /// for the full terrestrial orientation.
     fn to_horizontal(&self, jd_tt: &JulianDate, site: &Geodetic<ECEF>) -> Direction<Horizontal>
     where
         Self: crate::coordinates::transform::horizontal::ToHorizontal,
@@ -170,12 +166,11 @@ pub trait DirectionAstroExt<F: ReferenceFrame> {
         )
     }
 
-    /// Converts this horizontal direction to equatorial (true of date) using TT only.
+    /// Reverses the legacy equinox-based sidereal projection.
     ///
-    /// UT1 is derived from TT using the context's EOP provider. For sub-second
-    /// precision, prefer [`to_equatorial_precise`] with an explicit UT1 value.
-    ///
-    /// [`to_equatorial_precise`]: Self::to_equatorial_precise
+    /// The default EOP provider supplies DUT1. Use
+    /// [`horizontal::unproject_direction_with`](super::horizontal::unproject_direction_with)
+    /// to reverse the context-aware projection.
     fn to_equatorial(
         &self,
         jd_tt: &JulianDate,

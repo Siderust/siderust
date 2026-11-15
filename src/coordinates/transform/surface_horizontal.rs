@@ -96,7 +96,7 @@ impl<B: BodySurfaceModel, U: LengthUnit> HorizontalObservation<B, U> {
             });
         }
         let basis = site.enu_basis()?;
-        let horizontal = [dot(v, basis.north), dot(v, basis.east), dot(v, basis.up)];
+        let horizontal = basis.to_horizontal(v);
         if horizontal.iter().any(|v| !v.is_finite()) {
             return Err(SurfaceError::NonFiniteInput {
                 field: "horizontal position",
@@ -294,7 +294,11 @@ fn azimuth_from_enu(east: f64, north: f64, up: f64) -> f64 {
 
 /// Scale-free Alt/Az from affn Horizontal Cartesian `(N, E, Up)`.
 #[inline]
-fn angles_from_horizontal_cartesian(north: f64, east: f64, up: f64) -> (Degrees, Degrees) {
+pub(super) fn angles_from_horizontal_cartesian(
+    north: f64,
+    east: f64,
+    up: f64,
+) -> (Degrees, Degrees) {
     let scale = north.abs().max(east.abs()).max(up.abs());
     if scale == 0.0 || !scale.is_finite() {
         return (Degrees::new(0.0), Degrees::new(0.0));
@@ -309,22 +313,15 @@ fn angles_from_horizontal_cartesian(north: f64, east: f64, up: f64) -> (Degrees,
 /// Project a unit line-of-sight in a body-fixed frame onto local ENU / Horizontal.
 fn los_to_horizontal(
     los_unit: [f64; 3],
-    east: [f64; 3],
-    north: [f64; 3],
-    up: [f64; 3],
+    enu: crate::coordinates::surface::EnuBasis,
 ) -> Result<(Degrees, Degrees), SurfaceError> {
-    let e = dot(los_unit, east);
-    let n = dot(los_unit, north);
-    let u = dot(los_unit, up);
+    let [n, e, u] = enu.to_horizontal(los_unit);
     if ![e, n, u].iter().all(|v| v.is_finite()) {
         return Err(SurfaceError::NonFiniteInput {
             field: "line_of_sight",
         });
     }
-    let horiz = (e * e + n * n).sqrt();
-    let az = azimuth_from_enu(e, n, u);
-    let alt = u.atan2(horiz);
-    Ok((Degrees::new(rad_to_deg(alt)), Degrees::new(rad_to_deg(az))))
+    Ok(angles_from_horizontal_cartesian(n, e, u))
 }
 
 #[inline]
@@ -435,7 +432,7 @@ where
     let los = [los_fixed.x(), los_fixed.y(), los_fixed.z()];
 
     let enu = site.enu_basis()?;
-    let (alt, az) = los_to_horizontal(los, enu.east, enu.north, enu.up)?;
+    let (alt, az) = los_to_horizontal(los, enu)?;
 
     // Horizontal Cartesian: x=North, y=East, z=Zenith (affn spherical convention).
     let az_r = deg_to_rad(az);
@@ -487,7 +484,7 @@ where
     }
     let los = [los[0] / n, los[1] / n, los[2] / n];
     let enu = site.enu_basis()?;
-    let (alt, az) = los_to_horizontal(los, enu.east, enu.north, enu.up)?;
+    let (alt, az) = los_to_horizontal(los, enu)?;
     let sph = spherical::Direction::<Horizontal>::new(alt, az);
     Ok(sph.to_cartesian())
 }
@@ -512,11 +509,7 @@ where
     let e = horizontal.y() / length;
     let u = horizontal.z() / length;
     let enu = site.enu_basis()?;
-    let mut v = [
-        e * enu.east[0] + n * enu.north[0] + u * enu.up[0],
-        e * enu.east[1] + n * enu.north[1] + u * enu.up[1],
-        e * enu.east[2] + n * enu.north[2] + u * enu.up[2],
-    ];
+    let mut v = enu.to_fixed([n, e, u]);
     let nv = norm(v);
     if !nv.is_finite() || nv == 0.0 {
         return Err(SurfaceError::DegenerateGeometry {

@@ -15,7 +15,7 @@ use crate::time::{JulianDate, ModifiedJulianDate};
 /// Computes the topocentric azimuth of a fixed star in **radians**
 /// (North-clockwise, range `[0, 2π)`) at a given Julian Date and observer site.
 ///
-/// Uses IAU 2006 precession + IAU 2000B nutation (via NPB matrix), ERA-based
+/// Uses IAU 2006 precession + IAU 2000B nutation (via NPB matrix), GAST-based
 /// GAST, and the standard equatorial→horizontal formula.
 ///
 /// # Arguments
@@ -32,7 +32,7 @@ pub(crate) fn fixed_star_azimuth_rad(
     fixed_star_azimuth_rad_with_policy(mjd, site, ra_j2000, dec_j2000, CorrectionPolicy::APPARENT)
 }
 
-/// Computes fixed-star azimuth with an explicit apparent-position policy.
+/// Computes fixed-star azimuth with the legacy input-frame policy.
 pub(crate) fn fixed_star_azimuth_rad_with_policy(
     mjd: ModifiedJulianDate,
     site: &Geodetic<ECEF>,

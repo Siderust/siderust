@@ -81,7 +81,7 @@ const PREDICTION_GUARD: Days = Quantity::new(30.0 / 1440.0);
 /// Compute altitude of a fixed RA/Dec object from an observer site.
 ///
 /// Uses IAU 2006 precession + IAU 2000B nutation (via NPB matrix),
-/// ERA-based GMST, and the standard equatorial→horizontal formula.
+/// GAST and the local horizon projection.
 pub(crate) fn fixed_star_altitude_rad(
     mjd: ModifiedJulianDate,
     site: &crate::coordinates::centers::Geodetic<crate::coordinates::frames::ECEF>,
@@ -99,52 +99,10 @@ pub(crate) fn fixed_star_altitude_rad_with_policy(
     dec_j2000: crate::qtty::Degrees,
     policy: CorrectionPolicy,
 ) -> crate::qtty::Radians {
-    use crate::astro::earth_rotation::jd_ut1_from_tt_eop;
-    use crate::astro::nutation::nutation_iau2000b;
-    use crate::astro::precession::precession_nutation_matrix;
-    use crate::astro::sidereal::gast_iau2006;
-    use crate::coordinates::transform::AstroContext;
-    use crate::qtty::Radian;
-
     let jd: JulianDate = mjd.to::<crate::JD>();
-
-    // Convert J2000 RA/Dec → unit Cartesian
-    let ra_rad = ra_j2000.to::<Radian>().value();
-    let dec_rad = dec_j2000.to::<Radian>().value();
-    let (sin_dec, cos_dec) = dec_rad.sin_cos();
-    let (sin_ra, cos_ra) = ra_rad.sin_cos();
-    let x_j2000 = cos_dec * cos_ra;
-    let y_j2000 = cos_dec * sin_ra;
-    let z_j2000 = sin_dec;
-
-    // Apply full NPB matrix (IAU 2006 precession + IAU 2000B nutation)
-    // for the apparent/default pipeline. Geometric-only queries keep the
-    // catalogue direction and only rotate it by Earth orientation below.
-    let nut = nutation_iau2000b(jd);
-    let [x_tod, y_tod, z_tod] = if policy == CorrectionPolicy::GEOMETRIC {
-        [x_j2000, y_j2000, z_j2000]
-    } else {
-        let npb = precession_nutation_matrix(jd, nut.dpsi, nut.deps);
-        npb.apply_array([x_j2000, y_j2000, z_j2000])
-    };
-
-    // Extract true-of-date RA and Dec
-    let ra_tod = y_tod.atan2(x_tod);
-    let r_xy = (x_tod * x_tod + y_tod * y_tod).sqrt();
-    let dec_tod = z_tod.atan2(r_xy);
-
-    // True-of-date RA/Dec requires apparent sidereal time (GAST).
-    let ctx: AstroContext = AstroContext::default();
-    let eop = ctx.eop_at_tt(jd);
-    let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
-    let gast = gast_iau2006(jd_ut1, jd, nut.dpsi, nut.mean_obliquity);
-    let lst_rad = gast.value() + site.lon.to::<Radian>().value();
-    let ha = (lst_rad - ra_tod).rem_euclid(core::f64::consts::TAU);
-
-    // Equatorial → horizontal altitude
-    let lat = site.lat.to::<Radian>().value();
-    let sin_alt = dec_tod.sin() * lat.sin() + dec_tod.cos() * lat.cos() * ha.cos();
-    crate::qtty::Radians::new(sin_alt.asin())
+    crate::event::horizontal::star_horizontal_with_policy(ra_j2000, dec_j2000, site, jd, policy)
+        .alt()
+        .to::<crate::qtty::Radian>()
 }
 
 // =============================================================================

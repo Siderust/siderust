@@ -25,6 +25,30 @@ pub struct EnuBasis {
 }
 
 impl EnuBasis {
+    pub(crate) fn geodetic(lon: Degrees, lat: Degrees) -> Self {
+        let (sin_lon, cos_lon) = lon.to::<Radian>().sin_cos();
+        let (sin_lat, cos_lat) = lat.to::<Radian>().sin_cos();
+        Self {
+            east: [-sin_lon, cos_lon, 0.0],
+            north: [-sin_lat * cos_lon, -sin_lat * sin_lon, cos_lat],
+            up: [cos_lat * cos_lon, cos_lat * sin_lon, sin_lat],
+        }
+    }
+
+    // Affn Horizontal stores (north, east, up). This change of basis
+    // has determinant -1, so it must not be represented by Rotation3.
+    pub(crate) fn to_horizontal(self, fixed: [f64; 3]) -> [f64; 3] {
+        [
+            dot(self.north, fixed),
+            dot(self.east, fixed),
+            dot(self.up, fixed),
+        ]
+    }
+
+    pub(crate) fn to_fixed(self, [north, east, up]: [f64; 3]) -> [f64; 3] {
+        core::array::from_fn(|i| north * self.north[i] + east * self.east[i] + up * self.up[i])
+    }
+
     /// Validate orthonormality and right-handedness within `tol`.
     pub fn assert_orthonormal(&self, tol: f64) -> Result<(), SurfaceError> {
         if !tol.is_finite() || tol < 0.0 {
@@ -200,40 +224,17 @@ pub fn local_enu_basis(
     validate_angles(lon, lat, Quantity::<Meter>::new(0.0))?;
     surface.validate()?;
 
-    let lon_r = lon.to::<Radian>().value();
-    let lat_r = lat.to::<Radian>().value();
-    let (sin_lon, cos_lon) = lon_r.sin_cos();
-    let (sin_lat, cos_lat) = lat_r.sin_cos();
-
-    // East is always tangential to the parallel of latitude.
-    let east = normalize([-sin_lon, cos_lon, 0.0])?;
-
-    let up = match (*surface, convention) {
-        (ReferenceSurface::Sphere { .. }, _) => {
-            normalize([cos_lat * cos_lon, cos_lat * sin_lon, sin_lat])?
-        }
-        (ReferenceSurface::Ellipsoid { .. }, LatitudeConvention::Planetographic) => {
-            // Geodetic latitude directly specifies the ellipsoid normal.
-            normalize([cos_lat * cos_lon, cos_lat * sin_lon, sin_lat])?
-        }
-        (ReferenceSurface::Ellipsoid { f, .. }, LatitudeConvention::Planetocentric) => {
-            // Planetocentric latitude locates a point radially, but the
-            // geometric local vertical remains the ellipsoid normal.
-            let ratio_squared = (1.0 - f) * (1.0 - f);
-            normalize([
-                ratio_squared * cos_lat * cos_lon,
-                ratio_squared * cos_lat * sin_lon,
-                sin_lat,
-            ])?
-        }
-    };
-
-    // Up x East points north and preserves the longitude-defined meridian
-    // at the poles, without assuming that planetocentric latitude equals
-    // the surface-normal latitude.
-    let north = normalize(cross(up, east))?;
-
-    let basis = EnuBasis { east, north, up };
+    let mut basis = EnuBasis::geodetic(lon, lat);
+    if let (ReferenceSurface::Ellipsoid { f, .. }, LatitudeConvention::Planetocentric) =
+        (*surface, convention)
+    {
+        // Planetocentric latitude locates a point radially. The local
+        // vertical is the normal to the ellipsoid at that point.
+        let ratio_squared = (1.0 - f) * (1.0 - f);
+        let [x, y, z] = basis.up;
+        basis.up = normalize([ratio_squared * x, ratio_squared * y, z])?;
+        basis.north = normalize(cross(basis.up, basis.east))?;
+    }
     basis.assert_orthonormal(1e-12)?;
     Ok(basis)
 }
