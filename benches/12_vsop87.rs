@@ -1,0 +1,39 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Vallés Puig, Ramon
+#![allow(missing_docs, clippy::print_stdout)]
+
+use criterion::{criterion_group, criterion_main, Criterion};
+use siderust::qtty::Days;
+use siderust::{bodies::solar_system::*, ephemeris::VSOP87};
+use std::hint::black_box;
+
+fn bench_vsop87(c: &mut Criterion) {
+    let start = siderust::time::J2000 + Days::new(25.0 * 365.25);
+
+    let planet_list: Vec<(&str, Box<dyn VSOP87>)> = vec![
+        ("Mercury", Box::new(Mercury)),
+        ("Venus", Box::new(Venus)),
+        ("Earth", Box::new(Earth)),
+        ("Mars", Box::new(Mars)),
+        ("Jupiter", Box::new(Jupiter)),
+        ("Saturn", Box::new(Saturn)),
+        ("Uranus", Box::new(Uranus)),
+        ("Neptune", Box::new(Neptune)),
+    ];
+
+    for (name, planet) in &planet_list {
+        c.bench_function(&format!("vsop87a {}", name), |b| {
+            b.iter(|| planet.vsop87a(black_box(start)));
+        });
+
+        c.bench_function(&format!("vsop87e {}", name), |b| {
+            b.iter(|| planet.vsop87e(black_box(start)));
+        });
+    }
+}
+criterion_group! {
+    name = vsop87_benches;
+    config = Criterion::default().without_plots();
+    targets = bench_vsop87
+}
+criterion_main!(vsop87_benches);

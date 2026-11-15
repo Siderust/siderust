@@ -17,7 +17,7 @@
 //! heliocentric accessor for a phantom body type. Backends implement the trait
 //! per body they can evaluate; orientation entry points require
 //! `E: PlanetState<Body>` and therefore cannot silently mix VSOP87 with another
-//! planetary source. [`Vsop87Ephemeris`](super::Vsop87Ephemeris) implements
+//! planetary source. `Vsop87Ephemeris` implements
 //! `PlanetState` for Mercury–Neptune. [`RuntimeEphemeris`](super::RuntimeEphemeris)
 //! currently indexes only Sun/Earth/Moon segments and does **not** implement it.
 //!

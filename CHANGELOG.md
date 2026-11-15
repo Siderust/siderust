@@ -6,6 +6,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.19.0]
+
+### Added
+
+- Opt-in compact VSOP87E and ELP2000-82B backend for offline observations in 2020–2050.
+- Lunar phase and bright-limb geometry from precomputed topocentric positions.
+
+### Changed
+
+- Builds that disable defaults must explicitly select `full-ephemeris` or `embedded-compact`. Add `full-nutation` to retain the IAU 2006A default when disabling defaults.
+- Topocentric lunar phase uses the selected ephemeris for both directions and distances.
+
+- Correct the Earth rotation sign for observer parallax and align the CIO rotation with SOFA.
+
 ## [0.18.1] - 2026-10-31
 
 ### Fixed
@@ -50,7 +64,7 @@ Release preparation; no release date has been assigned.
 
 - Analytical ephemeris numbers change while coordinate signatures remain
   backend-independent. FFI layouts remain unchanged; the ABI version reports 1800.
-- Consolidate the physical conventions in [Frames and centers](doc/frames_and_centers.md).
+- Consolidate the physical conventions in [Frames and centers](doc/concepts/coordinates-and-frames.md).
   Permanent Cargo reference tests/fixtures remain; development-only reports,
   comparison utilities and datasets are removed.
 
@@ -82,7 +96,8 @@ Release preparation; no release date has been assigned.
   and kernel provenance. Existing analytical lunar frames retain their meaning.
 - DE440 CSPICE regressions with small kernel excerpts, external-kernel checks,
   a reproducible reference generator, and `24_spice_lunar` example. See
-  [SPICE lunar geometry](doc/spice_lunar.md) for conventions and residuals.
+  [SPICE lunar geometry](doc/guides/spice-kernels.md) for conventions and
+  [the CSPICE regression report](tests/fixtures/lunar_de440/README.md) for residuals.
 
 ### Fixed
 
@@ -115,7 +130,7 @@ Release preparation; no release date has been assigned.
   (Mars/Mercury/Pluto planetographic longitudes are west-positive).
 - Composite lunar Alt/Az validation: CSPICE `IAU_MOON` orientation plus
   independent ENU geometry, with regeneration script
-  `tools/cspice_refs/cspice_surface_references.py`.
+  the [CSPICE reference generator](scripts/cspice/README.md).
 - Scale-free zenith/nadir azimuth singularity (`32 ε`) so exact vertical
   lines of sight report the documented `0°` azimuth convention without
   inventing noise-driven bearings.

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
-//! Geometric DE440 Sun/Earth observations; see doc/spice_lunar.md for kernels.
+//! Geometric DE440 Sun/Earth observations; see doc/guides/spice-kernels.md for kernels.
 #![allow(clippy::print_stdout)]
 use siderust::qtty::{DEG, M};
 use siderust::spice::{LunarObserver, LunarTarget, SpiceContext};

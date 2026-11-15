@@ -24,7 +24,7 @@
 //! The model is selected at compile time by parameterising
 //! [`AstroContext`](crate::coordinates::transform::context::AstroContext)
 //! via [`AstroContext::with_model`](crate::coordinates::transform::context::AstroContext::with_model).
-//! Each concrete marker — [`Iau2000A`], [`Iau2000B`], [`Iau2006A`],
+//! Each concrete marker — `Iau2000A`, [`Iau2000B`], `Iau2006A`,
 //! [`Iau2006`] — is a zero-sized type implementing an internal sealed
 //! marker trait, so dispatch is monomorphised and free of any runtime cost.
 //! The numerical evaluation is shared in the `nut00a` submodule.
@@ -54,17 +54,22 @@ use crate::time::JulianDate;
 use affn::Rotation3;
 use core::marker::PhantomData;
 
+#[cfg(feature = "full-nutation")]
 mod iau2000a;
 mod iau2000b;
 mod iau2006;
+#[cfg(feature = "full-nutation")]
 mod iau2006a;
+#[cfg(feature = "full-nutation")]
 pub(crate) mod nut00a;
 
 use crate::archive::nutation::tables::NUT00B_LS;
 
+#[cfg(feature = "full-nutation")]
 pub use iau2000a::Iau2000A;
 pub use iau2000b::Iau2000B;
 pub use iau2006::Iau2006;
+#[cfg(feature = "full-nutation")]
 pub use iau2006a::Iau2006A;
 
 /// Sealing module for [`NutationTag`].
@@ -103,17 +108,19 @@ impl NutationAngles {
 /// This is an internal dispatch tag used inside the sealed [`NutationTag`]
 /// implementation. It is not part of the public API surface. Callers select
 /// the nutation model at compile time by choosing a marker type
-/// ([`Iau2000A`], [`Iau2000B`], [`Iau2006A`], [`Iau2006`]); they never
+/// (`Iau2000A`, [`Iau2000B`], `Iau2006A`, [`Iau2006`]); they never
 /// need to match on this enum directly.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum NutationModelId {
     /// Full IAU 2000A nutation.
+    #[cfg(feature = "full-nutation")]
     Iau2000A,
     /// Abridged IAU 2000B nutation.
     Iau2000B,
     /// IAU 2006 precession-only profile.
     Iau2006,
     /// IAU 2006-compatible full nutation.
+    #[cfg(feature = "full-nutation")]
     Iau2006A,
 }
 
@@ -126,7 +133,7 @@ pub struct Model<Tag>(PhantomData<Tag>);
 /// This is an internal plumbing trait. External crates cannot implement
 /// it (sealed via [`private::Sealed`]). Callers never need to name this
 /// trait; they interact only with the concrete marker types
-/// ([`Iau2000A`], [`Iau2000B`], [`Iau2006A`], [`Iau2006`]) and the
+/// (`Iau2000A`, [`Iau2000B`], `Iau2006A`, [`Iau2006`]) and the
 /// public [`NutationModel`] dispatch trait.
 pub(crate) trait NutationTag: private::Sealed {
     /// Static identifier used by the shared dispatch implementation.
@@ -141,8 +148,8 @@ pub(crate) trait NutationTag: private::Sealed {
 /// # Sealed trait
 ///
 /// `NutationModel` is sealed: it can only be implemented by the four IAU
-/// nutation marker types shipped with `siderust` ([`Iau2000A`],
-/// [`Iau2000B`], [`Iau2006A`], [`Iau2006`]). External implementations are
+/// nutation marker types shipped with `siderust` (`Iau2000A`,
+/// [`Iau2000B`], `Iau2006A`, [`Iau2006`]). External implementations are
 /// rejected at compile time because they would silently corrupt every
 /// transform that depends on the IAU coefficient series and dispatch
 /// conventions enforced here.
@@ -157,6 +164,7 @@ impl<Tag: NutationTag> NutationModel for Model<Tag> {
     #[inline]
     fn nutation(jd: JulianDate) -> NutationAngles {
         match Tag::ID {
+            #[cfg(feature = "full-nutation")]
             NutationModelId::Iau2000A => nut00a::nutation_iau2000a(jd),
             NutationModelId::Iau2000B => {
                 let n = nutation_iau2000b(jd);
@@ -171,6 +179,7 @@ impl<Tag: NutationTag> NutationModel for Model<Tag> {
                 deps: Radians::new(0.0),
                 mean_obliquity: mean_obliquity_iau2006(jd),
             },
+            #[cfg(feature = "full-nutation")]
             NutationModelId::Iau2006A => nut00a::nutation_iau2006a(jd),
         }
     }

@@ -1,130 +1,63 @@
-# Profiling Benchmarks (Criterion + `perf` + Flamegraphs)
+# Profile a benchmark on Linux
 
-> Note: This report lives under `benches/reports/` because it documents
-> benchmark-driven performance work.
+First reproduce the timing difference with Criterion on a controlled host.
+Select one case and keep its input, features and dataset fixed. Criterion's
+`--profile-time` runs the selected workload repeatedly without collecting
+the normal statistical estimates.
 
-This document is a practical workflow for turning a benchmark regression into
-actionable profiling data. The intended loop is:
+## CPU stacks and counters
 
-1) measure with Criterion,  
-2) explain with a flamegraph (or `perf report`),  
-3) optimize,  
-4) re-measure.
+Build with line tables and use the executable path printed by Cargo.
 
-## What flamegraphs do (and do not) tell you
-
-A flamegraph is a visualization of sampled CPU stacks. The only dimension that
-correlates with “time spent” is **width**: a wider frame means the profiler saw
-that function (inclusive of callees) more often.
-
-Flamegraphs are great for answering “which code dominates CPU time?” They are
-not a wall-clock timing tool, and they do not automatically explain allocation
-or IO behavior. Treat them as a map that tells you where to look next.
-
-## Prerequisites (Linux)
-
-Install the Rust wrapper:
-
-```bash
-cargo install flamegraph
+```sh
+CARGO_PROFILE_BENCH_DEBUG=line-tables-only \
+  cargo bench --locked -p siderust --bench solar_altitude --features bench-internals --no-run
 ```
 
-You also need `perf` available on the system. On Debian/Ubuntu:
+Set `bench_bin` to the executable path printed above. These commands scope
+profiling to the process and use userspace events.
 
-```bash
-sudo apt install linux-tools-common linux-tools-$(uname -r)
+```sh
+case_id='public_api/solar/30d/below_threshold/astro_night'
+perf stat -e task-clock,cycles:u,instructions:u -- \
+  "$bench_bin" --bench --profile-time 10 --exact "$case_id"
+perf record -e cycles:u --call-graph dwarf -- \
+  "$bench_bin" --bench --profile-time 10 --exact "$case_id"
+perf report
 ```
 
-On Arch:
+Use counters to explore instruction cost and CPU activity. Use sampled stacks
+to find where the workload spends CPU time. Counters cover the entire profiled
+process, including startup and harness work. DWARF unwinding can increase
+sampling overhead. If counters are restricted or unavailable, try a permitted
+software event such as `cpu-clock:u` for stacks or use an approved profiling
+host. See the [perf record manual](https://man7.org/linux/man-pages/man1/perf-record.1.html).
 
-```bash
-sudo pacman -S perf
+With [cargo-flamegraph](https://github.com/flamegraph-rs/flamegraph) installed,
+the equivalent filtered workflow is:
+
+```sh
+CARGO_PROFILE_BENCH_DEBUG=line-tables-only \
+  cargo flamegraph -p siderust --bench solar_altitude --features bench-internals -- \
+  --bench --profile-time 10 --exact 'public_api/solar/30d/below_threshold/astro_night'
 ```
 
-## Kernel permissions for `perf`
+Frame width represents sample weight including callees. Inspect both the
+top stacks and the callers leading to them. Re-run Criterion without
+instrumentation to measure the impact of a change.
 
-Many distros restrict performance counters by default. If `perf` fails with
-errors mentioning `perf_event_paranoid`, relax the settings for development.
+## Heap use
 
-Temporary (until reboot):
+Launch [Heaptrack](https://github.com/KDE/heaptrack) on the same symbolized
+executable. Use the trace path it reports to inspect allocation sites, volume
+and peak live heap.
 
-```bash
-sudo sysctl -w kernel.perf_event_paranoid=1
-sudo sysctl -w kernel.kptr_restrict=0
+```sh
+heaptrack "$bench_bin" --bench --profile-time 10 --exact "$case_id"
 ```
 
-Permanent (optional): create `/etc/sysctl.d/99-perf.conf` with:
-
-```conf
-kernel.perf_event_paranoid = 1
-kernel.kptr_restrict = 0
-```
-
-and apply:
-
-```bash
-sudo sysctl --system
-```
-
-If you cannot change sysctl globally, another option is to grant capabilities:
-
-```bash
-sudo setcap cap_perfmon,cap_sys_ptrace=eip $(which perf)
-```
-
-## Build configuration: keep symbols in release
-
-Profiling optimized code without symbols is usually a waste of time. Keep DWARF
-symbols in release builds so stacks resolve to function names.
-
-Add to `Cargo.toml`:
-
-```toml
-[profile.release]
-debug = true
-```
-
-This keeps optimizations enabled; it just includes enough metadata to make
-profilers useful.
-
-## Profiling a Criterion benchmark
-
-To profile a whole benchmark binary:
-
-```bash
-cargo flamegraph --bench solar_altitude
-```
-
-Criterion supports filtering. Arguments after `--` are passed through to the
-benchmark harness:
-
-```bash
-cargo flamegraph --bench moon_altitude -- --bench above_threshold_365day
-```
-
-If you only care about one case (e.g. the 365‑day horizon), filtering is the
-single best way to reduce noise and iteration time.
-
-## Reducing noise from Criterion itself
-
-Criterion’s default configuration aims for stable statistics, which means it
-may run more iterations than you want while profiling.
-
-For deep profiling sessions, it can be worth temporarily lowering `sample_size`
-and warm-up duration in the benchmark file, or creating a dedicated micro-bench
-that calls exactly the code path you want to study.
-
-When you do that, make sure you still prevent dead-code elimination:
-
-```rust
-use criterion::black_box;
-black_box(your_function(black_box(input)));
-```
-
-## Common pitfalls
-
-- Profiling `debug` builds (results rarely generalize to release performance).
-- Reading flamegraph “height” as “time” (width is what matters).
-- Optimizing thin frames before removing the dominant hotspot.
-- Making a change without re-running Criterion to confirm impact.
-
+Compare identical configurations and account for Criterion buffers and
+process initialization. Heap profiles do not quantify flash or stack use.
+For resident memory use an OS process metric with its accounting definition.
+For device memory use a section map and measure stack and heap high-water
+on the board.

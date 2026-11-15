@@ -8,7 +8,7 @@
 //!
 //! Positions use **mean-of-date + GMST** via [`.transform(jd)`]. Directions use
 //! **true-of-date + GAST** via [`.to_horizontal`] / [`.to_equatorial`] (observer
-//! site passed explicitly). See `doc/frames_and_centers.md` for frame details.
+//! site passed explicitly). See `doc/concepts/time-and-earth-orientation.md` for frame details.
 //!
 //! Run with: `cargo run --example 19_horizontal_coordinates`
 #![allow(clippy::print_stdout)]

@@ -43,12 +43,10 @@
 //! `Interval<ModifiedJulianDate>` intervals where the geocentric *k* satisfies a
 //! threshold or band condition.  Parameters typed as `IlluminationFractions`.
 //!
-//! All free functions are generic over `E: Ephemeris`, supporting
-//! `Vsop87Ephemeris` via [`DefaultEphemeris`](crate::coordinates::transform::context::DefaultEphemeris)
-//! (always available) or a custom `Ephemeris` implementor such as
-//! [`RuntimeEphemeris`](crate::ephemeris::RuntimeEphemeris). All `JulianDate` /
-//! `ModifiedJulianDate` values are on
-//! the TT axis.
+//! Convenience functions use [`DefaultEphemeris`](crate::coordinates::transform::context::DefaultEphemeris).
+//! Generic variants accept static `Ephemeris` implementations. The
+//! precomputed-coordinate helpers accept positions from any source.
+//! `JulianDate` and `ModifiedJulianDate` inputs use TT.
 //!
 //! ## References
 //!
@@ -512,17 +510,55 @@ pub fn moon_phase_topocentric<E: Ephemeris>(
     jd: JulianDate,
     site: Geodetic<frames::ECEF>,
 ) -> MoonPhaseGeometry {
-    use crate::bodies::solar_system::{Moon, Sun};
+    let ctx = crate::coordinates::transform::AstroContext::<E>::default();
+    let moon = E::moon_geocentric(jd);
+    let earth = E::earth_heliocentric(jd);
+    let sun = cartesian::Position::<Geocentric, frames::EclipticMeanJ2000, AstronomicalUnit>::new(
+        -earth.x(),
+        -earth.y(),
+        -earth.z(),
+    );
+    let moon_topo = crate::event::horizontal::geocentric_j2000_to_apparent_topocentric_with_ctx(
+        &crate::coordinates::transform::TransformFrame::to_frame(&moon),
+        site,
+        jd,
+        &ctx,
+    );
+    let sun_topo = crate::event::horizontal::geocentric_j2000_to_apparent_topocentric_with_ctx(
+        &crate::coordinates::transform::TransformFrame::to_frame(&sun),
+        site,
+        jd,
+        &ctx,
+    );
+    phase_from_directions(
+        &moon_topo,
+        &sun_topo,
+        moon.to_spherical().distance.value(),
+        sun.to_spherical().distance.value(),
+    )
+}
 
-    // Topocentric equatorial positions (true-of-date)
-    let moon_topo: affn::spherical::Position<Topocentric, frames::EquatorialTrueOfDate, Kilometer> =
-        Moon::get_apparent_topocentric_equ(jd, site);
-    let sun_topo: affn::spherical::Position<
+/// Estimate lunar phase from already computed topocentric Sun and Moon positions.
+///
+/// Both directions must use the same observer, epoch, and true-of-date equator.
+/// Distances are taken from the supplied positions for the phase-angle triangle.
+pub fn moon_phase_from_topocentric(
+    moon: &affn::spherical::Position<Topocentric, frames::EquatorialTrueOfDate, Kilometer>,
+    sun: &affn::spherical::Position<Topocentric, frames::EquatorialTrueOfDate, AstronomicalUnit>,
+) -> MoonPhaseGeometry {
+    phase_from_directions(moon, sun, moon.distance.value(), sun.distance.value())
+}
+
+fn phase_from_directions(
+    moon_topo: &affn::spherical::Position<Topocentric, frames::EquatorialTrueOfDate, Kilometer>,
+    sun_topo: &affn::spherical::Position<
         Topocentric,
         frames::EquatorialTrueOfDate,
         AstronomicalUnit,
-    > = Sun::get_apparent_topocentric_equ(jd, site);
-
+    >,
+    moon_dist_km: f64,
+    sun_dist_au: f64,
+) -> MoonPhaseGeometry {
     // RA/Dec as typed Radians
     let moon_ra = moon_topo.ra().to::<Radian>();
     let moon_dec = moon_topo.dec().to::<Radian>();
@@ -537,10 +573,6 @@ pub fn moon_phase_topocentric<E: Ephemeris>(
     let dra = (moon_ra - sun_ra).value().rem_euclid(TWO_PI);
     let signed_elong = if dra < PI { psi } else { TWO_PI - psi };
 
-    // Phase angle from geocentric distance triangle
-    // (topocentric parallax is < 1° → distance ratios essentially unchanged)
-    let (_, _, moon_dist_km) = moon_ecliptic_geocentric::<E>(jd);
-    let (_, sun_dist_au) = sun_ecliptic_geocentric::<E>(jd);
     let i = phase_angle_from_triangle(moon_dist_km, sun_dist_au, psi);
 
     let k = (1.0 + i.cos()) / 2.0;

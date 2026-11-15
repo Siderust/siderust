@@ -163,6 +163,22 @@ pub fn solar_twilight_profile(
     )
 }
 
+/// Labeled crossings for one twilight threshold using the daily predictor.
+pub fn solar_twilight_crossings(
+    site: Geodetic<ECEF>,
+    window: Interval<ModifiedJulianDate>,
+    threshold: Degrees,
+    opts: SearchOpts,
+) -> Vec<LabeledCrossing> {
+    crate::event::solar::daily_events::solar_daily_crossings_impl(
+        site,
+        window,
+        threshold,
+        InternalSearchConfig::from_public_opts(opts),
+    )
+    .0
+}
+
 /// Solar crossing search using the internal scan+Brent baseline.
 pub fn solar_crossings_scan_baseline(
     site: Geodetic<ECEF>,

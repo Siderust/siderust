@@ -422,7 +422,7 @@ macro_rules! impl_altitude_provider_vsop87 {
                     mjd: ModifiedJulianDate,
                 ) -> Radians {
                     vsop87_planet_altitude_rad(
-                        solar_system::$Planet::vsop87e, mjd, observer,
+                        |jd| solar_system::planet_barycentric(crate::ephemeris::MajorPlanet::$Planet, jd), mjd, observer,
                     )
                 }
 

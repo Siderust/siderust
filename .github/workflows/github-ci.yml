@@ -20,7 +20,7 @@ env:
   # Deterministic CI: do not download multi-GB JPL BSP files during --all-features.
   SIDERUST_JPL_STUB: all
   # Regular CI should cover library, binaries, examples, and tests without compiling
-  # Criterion benchmark targets. Benchmarks remain available through `cargo bench`.
+  # Criterion benchmark targets. The benchmark job checks those separately.
   CARGO_CI_TARGETS: "--lib --bins --tests --examples"
 
 jobs:
@@ -34,12 +34,21 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo check --workspace $CARGO_CI_TARGETS --all-features
 
-  docs:
-    name: Rustdoc (all features)
+  benchmarks:
+    name: Benchmark integrity
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - run: cargo check --locked -p siderust --benches --features bench-internals,embedded-compact
+
+  docs:
+    name: Markdown and Rustdoc (all features)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo run --locked -p siderust-release --bin check-doc-links
       - name: Build API docs with docs.rs features and strict links
         env:
           RUSTDOCFLAGS: "-D rustdoc::broken_intra_doc_links -D rustdoc::invalid_html_tags"
@@ -53,15 +62,25 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: thumbv7em-none-eabihf
-      - run: cargo check -p siderust --lib --no-default-features
-      - run: cargo check -p siderust --lib --no-default-features --features serde
-      - run: cargo check -p siderust --lib --target thumbv7em-none-eabihf --no-default-features
-      - run: cargo check -p siderust --lib --target thumbv7em-none-eabihf --no-default-features --features serde
-      - run: cargo check -p siderust --lib --no-default-features --features atmosphere
-      - run: cargo check -p siderust --lib --no-default-features --features atmosphere,serde
-      - run: cargo check -p siderust --lib --target thumbv7em-none-eabihf --no-default-features --features atmosphere
-      - run: cargo check -p siderust --lib --target thumbv7em-none-eabihf --no-default-features --features atmosphere,serde
-      - run: cargo test -p siderust --test observatory_catalog_no_default --no-default-features --features std
+      - run: cargo check --locked -p siderust --lib --target thumbv7em-none-eabihf --no-default-features --features embedded-compact
+      - name: Verify compact Archive feature isolation
+        run: |
+          cargo tree --locked -p siderust --no-default-features --features embedded-compact -e features -i siderust-archive > archive-features.txt
+          cat archive-features.txt
+          # Archive 0.2.0 provides the required IAU 2000B tables via `nutation`.
+          if grep -E 'siderust-archive feature "(vsop|elp|fetch|std)"' archive-features.txt; then
+            exit 1
+          fi
+      - run: cargo test --locked -p siderust --test compact_ephemeris --no-default-features --features embedded-compact
+      - run: cargo check -p siderust --lib --no-default-features --features full-ephemeris,full-nutation
+      - run: cargo check -p siderust --lib --no-default-features --features full-ephemeris,full-nutation,serde
+      - run: cargo check -p siderust --lib --target thumbv7em-none-eabihf --no-default-features --features full-ephemeris,full-nutation
+      - run: cargo check -p siderust --lib --target thumbv7em-none-eabihf --no-default-features --features full-ephemeris,full-nutation,serde
+      - run: cargo check -p siderust --lib --no-default-features --features full-ephemeris,full-nutation,atmosphere
+      - run: cargo check -p siderust --lib --no-default-features --features full-ephemeris,full-nutation,atmosphere,serde
+      - run: cargo check -p siderust --lib --target thumbv7em-none-eabihf --no-default-features --features full-ephemeris,full-nutation,atmosphere
+      - run: cargo check -p siderust --lib --target thumbv7em-none-eabihf --no-default-features --features full-ephemeris,full-nutation,atmosphere,serde
+      - run: cargo test -p siderust --test observatory_catalog_no_default --no-default-features --features full-ephemeris,full-nutation,std
 
   release-preflight:
     name: Release preflight
@@ -69,9 +88,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo test -p siderust-release
-      - run: cargo build -p siderust-release
-      - run: target/debug/siderust-release validate
+      - run: cargo test --locked -p siderust-release
+      - run: cargo run --locked -p siderust-release -- validate
 
   fmt:
     name: Format
@@ -84,6 +102,7 @@ jobs:
         with:
           components: rustfmt
       - run: cargo fmt --all -- --check
+      - run: cargo fmt --manifest-path scripts/compact-esp32/Cargo.toml -- --check
 
   clippy:
     name: Clippy (all features)
@@ -209,15 +228,14 @@ jobs:
       - name: Strict phase table coverage (≥95% lines)
         run: |
           cargo +nightly llvm-cov report --json --output-path phase-coverage.json
-          python3 - <<'PYCODE'
-          import json
-          with open("phase-coverage.json") as report:
-              files = json.load(report)["data"][0]["files"]
-          phase = next(f for f in files if f["filename"].endswith("/src/atmosphere/normalized_phase.rs"))
-          lines = phase["summary"]["lines"]
-          print(f"Strict phase table line coverage: {lines['percent']:.2f}%")
-          assert lines["percent"] >= 95, lines
-          PYCODE
+          jq -er '
+            [.data[0].files[] | select(.filename | endswith("/src/atmosphere/normalized_phase.rs"))]
+            | if length == 1 then .[0].summary.lines.percent
+              else error("Expected one normalized_phase.rs entry")
+              end
+            | "Strict phase table line coverage: \(.)%",
+              (if . >= 95 then true else error("Strict phase table coverage is below 95%") end)
+          ' phase-coverage.json
 
       - name: Upload coverage HTML
         if: always()
@@ -229,23 +247,17 @@ jobs:
 
       - name: Starlight production coverage (≥90% lines)
         run: |
-          python3 - <<'PYCODE'
-          import json
-
-          with open("phase-coverage.json") as report:
-              files = json.load(report)["data"][0]["files"]
-
-          production = [
-              entry for entry in files
-              if "/src/starlight/" in entry["filename"].replace("\\", "/")
-              and "/src/starlight/tests/" not in entry["filename"].replace("\\", "/")
-              and not entry["filename"].replace("\\", "/").endswith("/src/starlight/tests.rs")
-          ]
-          assert production, "No starlight production files found in coverage report"
-          covered = sum(entry["summary"]["lines"]["covered"] for entry in production)
-          total = sum(entry["summary"]["lines"]["count"] for entry in production)
-          assert total, "No instrumented starlight production lines found"
-          percent = 100 * covered / total
-          print(f"Starlight production line coverage: {covered}/{total} ({percent:.2f}%)")
-          assert percent >= 90, f"starlight line coverage {percent:.2f}% is below 90%"
-          PYCODE
+          jq -er '
+            [.data[0].files[]
+              | (.filename | gsub("\\\\"; "/")) as $path
+              | select(($path | contains("/src/starlight/"))
+                and ($path | contains("/src/starlight/tests/") | not)
+                and ($path | endswith("/src/starlight/tests.rs") | not))
+              | .summary.lines]
+            | {covered: (map(.covered) | add // 0), total: (map(.count) | add // 0)}
+            | if .total == 0 then error("No instrumented starlight production lines found")
+              else . + {percent: (100 * .covered / .total)}
+              end
+            | "Starlight production line coverage: \(.covered)/\(.total) (\(.percent)%)",
+              (if .percent >= 90 then true else error("Starlight coverage is below 90%") end)
+          ' phase-coverage.json

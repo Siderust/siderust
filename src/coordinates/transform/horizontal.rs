@@ -107,7 +107,8 @@ impl ToHorizontal for Direction<EquatorialTrueOfDate> {
         let obs_lat = Radians::from(site.lat);
 
         // Compute GAST and hour angle
-        let nut = <nutation::Iau2006A as nutation::NutationModel>::nutation(*jd_tt);
+        let nut =
+            <super::context::DefaultNutationModel as nutation::NutationModel>::nutation(*jd_tt);
         let gast = sidereal::gast_iau2006(*jd_ut1, *jd_tt, nut.dpsi, nut.mean_obliquity);
         let ha = (gast + obs_lon - ra).value();
 
@@ -184,7 +185,8 @@ impl FromHorizontal for Direction<Horizontal> {
         let obs_lat = Radians::from(site.lat);
 
         // Compute LAST (Local Apparent Sidereal Time)
-        let nut = <nutation::Iau2006A as nutation::NutationModel>::nutation(*jd_tt);
+        let nut =
+            <super::context::DefaultNutationModel as nutation::NutationModel>::nutation(*jd_tt);
         let gast = sidereal::gast_iau2006(*jd_ut1, *jd_tt, nut.dpsi, nut.mean_obliquity);
         let last = (gast + obs_lon).value();
 

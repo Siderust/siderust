@@ -110,10 +110,9 @@ pub(crate) fn itrs_to_equatorial_mean_j2000_rotation<Eph, Eop: EopProvider, Nut:
     let w = polar_motion_matrix_from_eop(eop.xp, eop.yp, jd);
     let era = earth_rotation_angle(jd_ut1);
 
-    // NOTE: `cio::gcrs_to_cirs_matrix` and `Rotation3::rz` conventions are
-    // aligned such that this composition matches the SOFA chain for
-    // ITRS -> GCRS in this codebase.
-    let itrs_to_gcrs = q * affn::Rotation3::rz(-era) * w.inverse();
+    // Reverse the terrestrial rotation: undo polar motion, then
+    // undo the celestial-to-terrestrial Rz(-ERA) rotation.
+    let itrs_to_gcrs = q.inverse() * affn::Rotation3::rz(era) * w.inverse();
     let icrs_to_j2000 =
         <() as FrameRotationProvider<ICRS, EquatorialMeanJ2000>>::rotation::<Eph, Eop, Nut>(
             jd, ctx,

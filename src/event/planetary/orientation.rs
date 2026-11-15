@@ -980,7 +980,8 @@ mod tests {
         assert!((g - tg).abs() > Radians::new(1e-8));
         assert!((g - tp).abs() > Radians::new(1e-8));
         assert!((tg - tp).abs() > Radians::new(1e-8));
-        // Saturn openings: observer opening must react to site; solar opening must not.
+        // The observer opening responds to parallax. The solar opening can
+        // differ slightly because each site has a distinct emission epoch.
         let sat_g =
             Saturn::ring_orientation_at::<Topocentric, EquatorialTrueOfDate>((jd, greenwich));
         let sat_p = Saturn::ring_orientation_at::<Topocentric, EquatorialTrueOfDate>((jd, paranal));
@@ -990,7 +991,7 @@ mod tests {
         );
         assert!(
             (sat_g.ring_opening_sun.unwrap() - sat_p.ring_opening_sun.unwrap()).abs()
-                < Radians::new(1e-12)
+                < Radians::new(1e-9)
         );
     }
 
