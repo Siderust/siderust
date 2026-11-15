@@ -50,35 +50,18 @@ use crate::qtty::{
 use crate::time::{Interval, JulianDate, ModifiedJulianDate};
 
 impl Moon {
-    /// Returns the **apparent topocentric equatorial coordinates** of the Moon
-    /// as seen from a given `Geodetic<ECEF>` at the specified Julian Date.
+    /// Returns the Moon's geometric topocentric position in the true
+    /// equator and equinox of date at the supplied TT Julian Date.
     ///
-    /// This method accounts for:
-    /// - **Topocentric parallax**: Critical for the Moon due to its proximity (~1° at horizon)
-    /// - **Precession**: J2000 → mean-of-date transformation
-    /// - **Nutation**: Mean-of-date → true-of-date correction
+    /// The default ephemeris supplies the geocentric position at reception.
+    /// The observer's WGS84 position is rotated using DUT1, polar motion
+    /// and celestial pole offsets, then subtracted to account for parallax.
+    /// The default frame model determines frame bias, precession and
+    /// nutation for the returned axes.
     ///
-    /// ### Parameters
-    /// - `jd`: Julian Day for which to compute the Moon's apparent position
-    /// - `site`: Observer location on Earth
-    ///
-    /// ### Returns
-    /// A `spherical::Position<Topocentric, EquatorialTrueOfDate, U>` representing the Moon's
-    /// apparent right ascension and declination from the observer's location.
-    ///
-    /// ### Notes
-    /// Unlike the Sun, topocentric parallax correction is **essential** for the Moon
-    /// due to its proximity to Earth (average distance ~384,400 km).
-    ///
-    /// # Arguments
-    ///
-    /// * `jd`, instant on the TT axis as a Julian Date.
-    /// * `site`, geodetic observer location.
-    ///
-    /// # Returns
-    ///
-    /// A geometric position with topocentric right ascension, declination,
-    /// and distance in unit `U`.
+    /// The historical method name uses “apparent” for the true-of-date
+    /// axes. The calculation omits light-time, aberration, gravitational
+    /// deflection, and atmospheric refraction.
     pub fn get_apparent_topocentric_equ<U: LengthUnit>(
         jd: JulianDate,
         site: Geodetic<frames::ECEF>,
@@ -118,49 +101,24 @@ impl Moon {
         )
     }
 
-    /// Returns the Moon's **horizontal coordinates** (altitude, azimuth) as seen
-    /// from a given `Geodetic<ECEF>` at the specified Julian Date or Modified Julian Date.
+    /// Projects the geometric topocentric position onto the observer's
+    /// horizon using the default Earth orientation.
     ///
-    /// This is a convenience wrapper that computes the apparent topocentric equatorial
-    /// position and transforms it to horizontal coordinates.
+    /// The result carries the observer, range, altitude and azimuth.
+    /// Azimuth increases from north through east. Refraction is omitted.
+    /// Convert an MJD (TT) to JD explicitly.
     ///
-    /// ### Parameters
-    /// - `time`: Any type that can be converted to `JulianDate` (JD or Mjd)
-    /// - `site`: Observer location on Earth
-    ///
-    /// ### Returns
-    /// A `spherical::Position<Topocentric, Horizontal, U>` with:
-    /// - Altitude (polar): elevation above horizon in degrees, [-90°, +90°]
-    /// - Azimuth: bearing from North through East in degrees, [0°, 360°)
-    /// - Distance: in the specified length unit
-    ///
-    /// ### Example
     /// ```rust
-    /// use siderust::bodies::solar_system::Moon;
-    /// use siderust::coordinates::centers::Geodetic;
-    /// use siderust::coordinates::frames::ECEF;
-    /// use siderust::time::{JulianDate, ModifiedJulianDate};
-    /// use siderust::qtty::*;
+    /// use siderust::bodies::Moon;
+    /// use siderust::coordinates::{centers::Geodetic, frames::ECEF};
+    /// use siderust::qtty::{Kilometer, DEG, M};
+    /// use siderust::time::{ModifiedJulianDate, JD};
     ///
     /// let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
-    ///
-    /// // Using JulianDate
-    /// let moon_pos = Moon::get_horizontal::<Kilometer>(siderust::J2000, site);
-    /// println!("Moon altitude: {}", moon_pos.alt().to::<Deg>());
-    ///
-    /// // Using ModifiedJulianDate
-    /// let mjd = siderust::ModifiedJulianDate::new(60000.0);
+    /// let tt = ModifiedJulianDate::new(60_310.0);
+    /// let moon = Moon::get_horizontal::<Kilometer>(tt.to::<JD>(), site);
+    /// assert_eq!(moon.center_params(), &site);
     /// ```
-    ///
-    /// # Arguments
-    ///
-    /// * `time`, any value convertible to `JulianDate` (JD or MJD).
-    /// * `site`, geodetic observer location.
-    ///
-    /// # Returns
-    ///
-    /// `spherical::Position<Topocentric, Horizontal, U>` with altitude,
-    /// azimuth (North through East), and distance in unit `U`.
     pub fn get_horizontal<U: LengthUnit>(
         time: impl Into<JulianDate>,
         site: Geodetic<frames::ECEF>,

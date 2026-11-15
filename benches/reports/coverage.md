@@ -44,7 +44,7 @@ with external tables that apply different refraction or horizon conventions.
 | --- | --- | --- |
 | [altitude_comparison](../01_altitude_comparison.rs) | Single Sun/Moon/Sirius evaluations; 7- and 365-day above 0°; 30-day below −18° for Sun and 0° for Moon/Sirius. | These are body-specific workloads with different evaluation chains and crossing counts. [Altitude API tests](../../tests/test_altitude_api.rs) cover dispatch and semantics. The 30-day cases also differ in threshold. |
 | [solar_altitude](../09_solar_altitude.rs) | 30/184/365 days, daily predictor and internal alternatives. | [Solar report](solar_altitude_perf_report.md) links search and external checks. Polar, grazing and narrow-window timing remain open. |
-| [moon_altitude](../06_moon_altitude.rs) | 30/184/365 days, cached lunar search and forced scan. | [Lunar report](moon_altitude_perf_report.md) identifies the shared model and cache. Direct uncached reference timing, reusable-query timing and a validated compact-only event corpus remain open. |
+| [moon_altitude](../06_moon_altitude.rs) | Cached position and altitude, orientation components, 1/7/30-day event windows, and long cached searches with a forced-scan baseline. | [Lunar workloads](moon_altitude_perf_report.md) describe the cases and model selection. |
 | [star_altitude](../11_star_altitude.rs) | Fixed ICRS Sirius (RA 101.287°, Dec −16.716°), 30/184/365-day above/below 0°, 10°–50° range and horizon crossings, plus 30/365-day above-horizon scan comparison. | [Stellar engine tests](../../src/event/stellar/altitude_periods.rs) compare analytical and scan paths for sampled sites/windows and cover high latitude and grazing. Moving targets, azimuth events and combined constraints remain open. |
 
 ## SPK and satellite propagation

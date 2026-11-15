@@ -93,6 +93,12 @@ uses mean sidereal time. Body-fixed surface projection uses the body's
 orientation model and local tangent basis. These paths share the relevant
 local geometry and preserve their time and frame contracts.
 
+Lunar altitude searches interpolate only geocentric Cartesian position.
+They reuse the site's WGS84 position and local basis, and evaluate the
+default terrestrial rotation at each TT query. A crossing solve refines
+the interpolated altitude signal. Ephemeris and interpolation error must
+be assessed separately from the root solver's time tolerance.
+
 ### Physical observation effects
 
 Build the line of sight using the target state and the observer state.

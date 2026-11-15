@@ -20,6 +20,6 @@ case selection.
 - [Lunar altitude](moon_altitude_perf_report.md) explains what the public and
   internal cases measure, including cache construction in both paths.
 - [Lunar interpolation](moon_altitude_chebyshev_cache.md) describes the position
-  and nutation caches and the tests that bound sampled interpolation error.
+  cache and the tests that compare sampled interpolation against the ephemeris.
 - [Root refinement](fast_root_finding_brent.md) explains bracket, endpoint and
   crossing-direction reuse, and where function counts can be measured.

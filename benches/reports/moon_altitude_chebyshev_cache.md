@@ -1,6 +1,5 @@
 # Lunar position interpolation
 
-A long lunar search evaluates a topocentric altitude signal many times.
 [MoonAltitudeContext](../../src/event/lunar/moon_cache.rs) precomputes geocentric
 lunar Cartesian position from the configured default ephemeris (full ELP2000-82B
 in the standard benchmark build). Each four-day segment uses a degree-eight
@@ -10,8 +9,9 @@ axis and Clenshaw recurrence evaluates the series in time linear in its degree.
 
 Each query rotates the cached position into the Earth-fixed frame using the
 configured Earth orientation, subtracts the WGS84 site, and projects onto
-the local horizon. Queries outside the cache use the direct ephemeris. The context is built per
-search. The two thresholds of an altitude-band search share one context.
+the local horizon. The default context supplies the Earth-orientation and
+nutation models at each TT query. Queries outside the cache use the direct
+ephemeris. The two thresholds of an altitude-band search share one context.
 
 The position cache and crossing search approximate different functions.
 The former approximates the three Cartesian components. The latter fits the
@@ -20,12 +20,10 @@ evaluator and can revert to scan and Brent for difficult segments. See
 [lunar event entry points](../../src/event/lunar/altitude_periods.rs) and the
 [shared crossing search](../../src/event/search/crossings.rs).
 
-The [cache tests](../../src/event/lunar/moon_cache.rs) assert maximum-axis
-position error below 1 km at sampled times over 30 days near J2000. A seven-day comparison at Roque
-asserts altitude differences below 0.02° against the direct evaluator.
-These are sampled limits against the underlying library models. Near a
-crossing, the timing effect of an altitude error depends on the local slope.
-A shallow or grazing crossing requires separate validation.
+The [cache tests](../../src/event/lunar/moon_cache.rs) compare sampled
+positions and altitudes with direct evaluations of the same ephemeris.
+Interpolation error and the local altitude slope affect crossing times.
+The root solver's time tolerance applies to the interpolated signal.
 
-The [lunar benchmark report](moon_altitude_perf_report.md) describes the current
-search-engine experiment.
+The [lunar benchmark workloads](moon_altitude_perf_report.md) exercise cache
+construction, repeated altitude evaluations, and event searches.

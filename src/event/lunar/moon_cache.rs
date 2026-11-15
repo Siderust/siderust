@@ -41,7 +41,7 @@ const SEGMENT_DAYS: Days = Days::new(4.0);
 /// Chebyshev interpolation cache for the Moon's geocentric ecliptic
 /// Cartesian coordinates (X, Y, Z) in kilometers.
 ///
-/// The time domain is divided into segments of [`SEGMENT_DAYS`] days.
+/// The time domain is divided into four-day segments.
 /// Within each segment the three coordinates are approximated by degree-8
 /// Chebyshev polynomials fitted at the canonical nodes.
 pub struct MoonPositionCache {
@@ -122,7 +122,7 @@ impl MoonPositionCache {
 
     /// Evaluate the cached geocentric ecliptic (X, Y, Z) in km at `jd`.
     ///
-    /// Falls back to full ELP2000 if `jd` is outside the cached range.
+    /// Queries outside the cached range use the configured default ephemeris.
     ///
     /// # Arguments
     ///
@@ -186,6 +186,10 @@ impl MoonAltitudeContext {
     }
 
     /// Geometric topocentric altitude at the TT observation epoch.
+    ///
+    /// The default context evaluates Earth orientation at this epoch.
+    /// The observer is a WGS84 geodetic site represented by its Earth-fixed
+    /// position and local tangent basis.
     #[inline]
     pub fn altitude_rad(&self, mjd: ModifiedJulianDate) -> Radians {
         let jd: JulianDate = mjd.to::<crate::JD>();

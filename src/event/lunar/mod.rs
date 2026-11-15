@@ -3,33 +3,16 @@
 
 //! # Lunar Calculus Module
 //!
-//! ## Scientific scope
+//! Lunar geometry, phase, brightness, and event searches. The standard
+//! altitude and azimuth APIs use geometric sightlines from an Earth
+//! observer. The default ephemeris determines position accuracy, and the
+//! Earth-orientation context supplies the rotation to terrestrial axes.
 //!
-//! Apparent geometry and event calculus of the Moon as seen from a
-//! topocentric Earth observer. Covers position, altitude, azimuth,
-//! illuminated fraction and phase events, and standard photometric
-//! attenuation models. Position accuracy is bounded by the chosen engine:
-//! ELP2000‑82B / Meeus chapter 47 truncations for the analytical path,
-//! JPL DE440/441 Chebyshev coefficients for the high‑precision path.
-//! Atmospheric refraction is not applied.
-//!
-//! ## Technical scope
-//!
-//! - `lunar_*_impl`: Moon altitude band/threshold period search.
-//! - `azimuth`: scalar azimuth function used by the unified azimuth API.
-//! - `meeus_ch47`: closed‑form Moon position from *Astronomical Algorithms*.
-//! - `moon_cache`: Chebyshev caches for fast batch evaluation of
-//!   geocentric Moon position, nutation rotation, and altitude.
-//! - `moon_equations`: high‑level `Moon::*` API on top of the engines.
-//! - `phase`: phase angle, illuminated fraction, phase events
-//!   (new/first‑quarter/full/last‑quarter), illumination period finders.
-//! - `position_angle`: bright-limb orientation selected through center types.
-//! - `photometry`: empirical lunar reflectance / phase attenuation models.
-//!
-//! All period‑finding delegates to `crate::event::search::intervals`
-//! which provides scan + Brent refinement + interval assembly. This module
-//! supplies the Moon‑altitude closure and JD↔MJD conversions.
-//!
+//! Altitude searches cache geocentric Cartesian positions and precompute
+//! the site's Earth-fixed position and local basis. They evaluate Earth
+//! orientation at each query. The crossing search uses Chebyshev candidate
+//! discovery, refinement, and a local scan fallback.
+
 //! ## References
 //! - Chapront‑Touzé, M. & Chapront, J. (1983). "The lunar ephemeris ELP 2000".
 //!   *A&A*, 124, 50–62.
