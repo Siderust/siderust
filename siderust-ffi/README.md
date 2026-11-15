@@ -109,11 +109,11 @@ This crate is not published by default; publish only when C API/ABI changes.
 1. Flip `publish = false` to `publish = true` in `Cargo.toml`.
 2. Ensure every `unsafe` block in `src/` carries a `// SAFETY:` rationale comment.
 3. Run `cargo test -p siderust-ffi --all-features` and `cargo clippy -p siderust-ffi -- -D warnings`.
-4. Run `cargo publish --manifest-path siderust/siderust-ffi/Cargo.toml`.
+4. From the repository root, run `cargo run --locked -p siderust-release -- publish --confirm-ffi`.
 5. Revert `publish` back to `false`.
 
-Alternatively, use `scripts/publish-changed.sh --confirm-ffi` from the repo root, which
-enforces the soundness check and skips `publish = false` crates automatically.
+The release CLI checks crates.io and skips published versions. Complete the
+soundness review and the FFI tests before invoking it.
 
 UTC Julian dates accepted/returned by the TLE API are civil UTC JD coordinates
 (86,400 nominal seconds per day). The propagator retains a time-data snapshot

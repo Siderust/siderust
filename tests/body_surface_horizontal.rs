@@ -1066,7 +1066,7 @@ fn requested_length_unit_must_represent_finite_geometry() {
 // =============================================================================
 //
 // Regenerate literals with:
-//   tools/cspice_refs/cspice_surface_references.py
+//   the siderust-py surface reference generator linked from scripts/cspice/README.md
 //
 // Provenance of stored constants (CSPICE N0067 / SpiceyPy 8.3.0):
 //   Kernels: pck00011.tpc, naif0012.tls (NAIF generic kernels)

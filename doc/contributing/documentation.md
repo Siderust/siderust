@@ -27,7 +27,7 @@ the documented command. The [CI workflow](../../.github/workflows/github-ci.yml)
 contains the supported build matrix.
 
 ```sh
-python3 scripts/check-doc-links.py
+cargo run --locked -p siderust-release --bin check-doc-links
 RUSTDOCFLAGS="-D rustdoc::broken_intra_doc_links -D rustdoc::invalid_html_tags" cargo doc -p siderust --all-features --no-deps
 cargo test -p siderust --doc --all-features
 cargo check -p siderust --examples --all-features
