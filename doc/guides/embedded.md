@@ -44,9 +44,9 @@ uses `NullEop`, so it approximates UT1 by UTC and sets pole corrections
 to zero. Use an appropriate [EOP provider](../concepts/time-and-earth-orientation.md)
 if that approximation is too coarse.
 
-[DE440s and ERFA comparisons](../../scripts/validation/README.md) quantify
-sampled differences in position, pointing, and Earth velocity. The Archive
-reports document the coefficient selection and its error metrics for
+[DE440s and ERFA comparisons](../../scripts/validation/README.md) check
+sampled position, pointing, and Earth velocity against independent references.
+The Archive reports document the coefficient selection and its error metrics for
 [VSOP87](https://github.com/Siderust/archive/blob/main/reports/compact-vsop87.md)
 and [ELP2000](https://github.com/Siderust/archive/blob/main/reports/compact-lunar-ephemeris.md).
 

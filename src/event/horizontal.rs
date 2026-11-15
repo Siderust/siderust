@@ -55,6 +55,7 @@ use crate::astro::sidereal::gast_iau2006;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::coordinates::transform::centers::position::to_topocentric::to_topocentric_with;
+use crate::coordinates::transform::providers::frame_rotation_with;
 use crate::coordinates::transform::{AstroContext, TransformContext};
 use crate::coordinates::{cartesian, centers::*, frames, spherical};
 use crate::qtty::{AstronomicalUnits, Degree, LengthUnit, Meter, Quantity, Radian, Radians};
@@ -103,45 +104,16 @@ where
     Ctx::Eph: crate::ephemeris::Ephemeris,
     Quantity<U>: From<Quantity<Meter>> + From<AstronomicalUnits>,
 {
-    // 1) Translate geocentric → topocentric in J2000 frame (applies parallax)
-    let topo_cart_j2000 = to_topocentric_with(geo_cart_j2000, site, jd, ctx);
-
-    // 2) Rotate J2000 → mean-of-date using IAU 2006 precession
-    let rot_prec = precession::precession_matrix_iau2006(jd);
-    let [x_m, y_m, z_m] = rot_prec
-        * [
-            topo_cart_j2000.x(),
-            topo_cart_j2000.y(),
-            topo_cart_j2000.z(),
-        ];
-
-    let topo_cart_mod =
-        cartesian::Position::<Topocentric, frames::EquatorialMeanOfDate, U>::new_with_params(
-            *topo_cart_j2000.center_params(),
-            x_m,
-            y_m,
-            z_m,
+    let topocentric = to_topocentric_with(geo_cart_j2000, site, jd, ctx);
+    let rotation =
+        frame_rotation_with::<frames::EquatorialMeanJ2000, frames::EquatorialTrueOfDate, _>(
+            jd, ctx,
         );
-
-    // 3) Apply the selected nutation rotation (mean-of-date → true-of-date)
-    let nut = Ctx::Nut::nutation(jd);
-    let rot_nut = affn::Rotation3::fused_rx_rz_rx(
-        nut.mean_obliquity + nut.deps,
-        nut.dpsi,
-        -nut.mean_obliquity,
+    let true_of_date = cartesian::Position::from_array(
+        *topocentric.center_params(),
+        rotation * *topocentric.as_array(),
     );
-    let [x_t, y_t, z_t] = rot_nut * [topo_cart_mod.x(), topo_cart_mod.y(), topo_cart_mod.z()];
-
-    let topo_cart_true =
-        cartesian::Position::<Topocentric, frames::EquatorialTrueOfDate, U>::new_with_params(
-            *topo_cart_mod.center_params(),
-            x_t,
-            y_t,
-            z_t,
-        );
-
-    // 4) Convert to spherical topocentric equatorial (true of date)
-    spherical::Position::from_cartesian(&topo_cart_true)
+    spherical::Position::from_cartesian(&true_of_date)
 }
 
 // =============================================================================
