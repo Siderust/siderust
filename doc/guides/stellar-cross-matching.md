@@ -17,8 +17,8 @@ historical candidates. A second has one candidate, and a third emits no rows.
 
 ## Choose an epoch, radius and policy
 
-Call [`LargeStarCatalog::cross_match`][cross-match] with the other catalog and
-[`CrossMatchOptions`][options]. Supply a common reference epoch as
+Call [`LargeStarCatalog::cross_match`][api] with the other catalog and
+`CrossMatchOptions`. Supply a common reference epoch as
 `qtty::JulianYears` and an inclusive radius as `qtty::Radians`. A quantity such
 as `Arcseconds::new(0.5).to()` converts directly to the expected radius type.
 The epochs must use a consistent time scale. Gaia DR3 publishes its reference
@@ -27,12 +27,12 @@ declination in radians, even if the input CSV used degrees.
 
 At the comparison epoch, a row can be used directly, including a Gaia
 position-only solution. Away from that epoch, a row with either proper-motion
-component missing follows the selected [`MissingProperMotion`][missing] policy.
+component missing follows the selected `MissingProperMotion` policy.
 
 - `Skip` leaves the row out of the candidate search.
 - `AssumeStationary` uses the recorded position and ignores any available
   partial component. The candidate endpoint carries `assumed_stationary = true`.
-- `Error` returns a [`CrossMatchError`][error] identifying the catalog side and
+- `Error` returns a `CrossMatchError` identifying the catalog side and
   row index.
 
 The matcher rejects invalid coordinates, non-finite epochs or proper motion,
@@ -41,7 +41,7 @@ range is zero through π radians.
 
 ## Interpret the candidates
 
-Each [`CrossMatchCandidate`][candidate] contains both input row indices, their
+Each `CrossMatchCandidate` contains both input row indices, their
 catalog-supplied IDs, and the great-circle separation in radians. The row
 indices identify the records within their respective input catalogs, including
 when IDs repeat.
@@ -80,10 +80,6 @@ left row's candidate list in all-candidates mode. Storage is O(R) plus the
 output. Broad windows or sources concentrated in the same declination strip
 can lead to O(LR) pair tests.
 
-[cross-match]: https://docs.rs/siderust/latest/siderust/catalogs/struct.LargeStarCatalog.html#method.cross_match
-[options]: https://docs.rs/siderust/latest/siderust/catalogs/struct.CrossMatchOptions.html
-[candidate]: https://docs.rs/siderust/latest/siderust/catalogs/struct.CrossMatchCandidate.html
-[missing]: https://docs.rs/siderust/latest/siderust/catalogs/enum.MissingProperMotion.html
-[error]: https://docs.rs/siderust/latest/siderust/catalogs/enum.CrossMatchError.html
-[propagate]: https://docs.rs/siderust/latest/siderust/catalogs/struct.CatalogRecord.html#method.propagate_to
+[api]: ../../src/catalogs/cross_match.rs
+[propagate]: ../../src/catalogs/record.rs
 [gaia-model]: https://gea.esac.esa.int/archive/documentation/GDR3/Data_processing/chap_cu3ast/sec_cu3ast_intro/ssec_cu3ast_intro_tansforms.html
