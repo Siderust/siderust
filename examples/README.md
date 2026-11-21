@@ -104,6 +104,12 @@ cargo run --example 07_moon_properties
 cargo run --example 09_star_observability
 ```
 
+## Stellar Catalogs
+
+`cargo run --example 26_stellar_cross_match` compares synthetic Gaia-style
+astrometry with a historical catalog and reports ambiguous candidates. See the
+[stellar cross-matching guide](../doc/guides/stellar-cross-matching.md).
+
 ## Solar System And Time
 
 - `08_solar_system`: solar-system body positions and comparisons.

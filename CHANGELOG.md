@@ -4,8 +4,6 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
 ## [0.19.0]
 
 ### Added
@@ -14,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Lunar phase and bright-limb geometry from precomputed topocentric positions.
 - Context-aware frame rotations preserve parameterized centers, including the observer site of a topocentric position.
 - `project_position_with` and `project_direction_with` provide geometric true-of-date horizon projection. `unproject_position_with` and `unproject_direction_with` reverse it using the same epoch, observer and context.
+
+- Epoch-aware stellar catalog cross-matching with typed angular distances,
+  candidate counts, and explicit missing-proper-motion policies.
 
 ### Changed
 
@@ -29,6 +30,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Removed `event::horizontal` helpers `geocentric_j2000_to_apparent_topocentric` and `geocentric_j2000_to_apparent_topocentric_with_ctx`. Compose `TransformCenter::to_center_with(site, tt, &ctx)` and `PositionAstroExt::to_frame_with::<EquatorialTrueOfDate, _>(&tt, &ctx)`, then convert to spherical coordinates if needed.
 - Removed `equatorial_to_horizontal`, `equatorial_to_horizontal_true_of_date`, and `equatorial_to_horizontal_true_of_date_with_ctx` from the same module. Use `project_position_with(&equatorial, tt, &ctx)` and the observer stored in the position. Recompute the center translation to change observers. Use `project_direction_with` for a free sightline with an explicitly supplied site.
+
+### Fixed
+
+- Catalog proper-motion propagation uses the local ICRS tangent basis to
+  preserve eastward motion at and near the poles.
 
 ## [0.18.1] - 2026-10-31
 
