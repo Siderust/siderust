@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Epoch-aware stellar catalog cross-matching with typed angular distances,
+  candidate counts, and explicit missing-proper-motion policies.
+
+### Fixed
+
+- Catalog proper-motion propagation uses the local ICRS tangent basis to
+  preserve eastward motion at and near the poles.
+
 ## [0.19.0]
 
 ### Added

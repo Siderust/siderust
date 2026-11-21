@@ -8,7 +8,8 @@ interpret the result.
 - **Start here.** [Compute the Earth–Mars separation](getting-started/quickstart.md)
   with the default build and a fixed epoch.
 - **Do a calculation.** [Transform coordinates](guides/coordinate-transformations.md),
-  [choose an ephemeris](guides/ephemeris-backends.md), or
+  [choose an ephemeris](guides/ephemeris-backends.md),
+  [cross-match stellar catalogs](guides/stellar-cross-matching.md), or
   [observe from a lunar site](guides/lunar-observations.md).
   For specialized deployments, see [compact offline builds](guides/embedded.md)
   and [lunar geometry with SPICE kernels](guides/spice-kernels.md).

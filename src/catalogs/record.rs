@@ -4,14 +4,14 @@
 //! # Catalog record type and filter
 //!
 //! [`CatalogRecord`] is the column-aligned row type for large stellar catalogs
-//! (Gaia-style). Position is stored as typed [`crate::qtty::Radians`] scalars; parallax and
-//! radial velocity use typed quantities. Proper-motion components (mas/yr)
-//! remain plain `f64` until a `MilliArcSecondPerYear` unit is added to `qtty`.
+//! (Gaia-style). Position is stored in [`crate::qtty::Radians`], and parallax
+//! and radial velocity use typed quantities. Proper-motion components are
+//! stored as scalars in milliarcseconds per Julian year.
 
-use crate::qtty::{KmPerSeconds, MilliArcseconds, Radians};
+use crate::qtty::{KmPerSeconds, MilliArcseconds, Radian, Radians};
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar, Transcendental};
-use core::f64::consts::TAU;
+use core::f64::consts::{FRAC_PI_2, TAU};
 
 /// One row of a large stellar catalog.
 #[derive(Debug, Clone, PartialEq)]
@@ -43,31 +43,43 @@ pub struct CatalogRecord {
 }
 
 impl CatalogRecord {
-    /// Propagate the record's ICRS direction by linear proper motion to the
-    /// requested Julian-year epoch. Returns `(ra, dec)` in radians. If proper
-    /// motion is unavailable the original `(ra, dec)` is returned unchanged.
+    /// Propagate the ICRS direction to a Julian-year epoch.
+    ///
+    /// Applies the local east (μᵅ⋆) and north (μᵟ) displacements linearly in
+    /// the tangent plane and projects the result back onto the unit sphere.
+    /// At a pole the stored RA defines the orientation of the tangent basis.
+    /// This approximation omits parallax, radial velocity and perspective
+    /// acceleration. The returned pair is right ascension and declination in
+    /// radians. If either proper-motion component is missing, the input pair
+    /// is returned unchanged. A non-finite displacement returns NaN angles.
     pub fn propagate_to(&self, target_epoch_jyr: f64) -> (Radians, Radians) {
-        let dt_yr = target_epoch_jyr - self.epoch_jyr;
         let (Some(mu_a), Some(mu_d)) = (self.pm_ra_cosdec, self.pm_dec) else {
             return (self.ra, self.dec);
         };
-        let mas_to_rad = (core::f64::consts::PI / 180.0) / 3_600_000.0;
-        let cos_d = self.dec.value().cos();
-        let d_ra = if cos_d.abs() > 1e-12 {
-            (mu_a * mas_to_rad * dt_yr) / cos_d
-        } else {
-            0.0
-        };
-        let d_dec = mu_d * mas_to_rad * dt_yr;
-        let mut ra = (self.ra.value() + d_ra).rem_euclid(TAU);
-        let mut dec = self.dec.value() + d_dec;
-        if dec > core::f64::consts::FRAC_PI_2 {
-            dec = core::f64::consts::PI - dec;
-            ra = (ra + core::f64::consts::PI).rem_euclid(TAU);
-        } else if dec < -core::f64::consts::FRAC_PI_2 {
-            dec = -core::f64::consts::PI - dec;
-            ra = (ra + core::f64::consts::PI).rem_euclid(TAU);
+        let dt_yr = target_epoch_jyr - self.epoch_jyr;
+        let east = MilliArcseconds::new(mu_a).to::<Radian>().value() * dt_yr;
+        let north = MilliArcseconds::new(mu_d).to::<Radian>().value() * dt_yr;
+        if !east.is_finite() || !north.is_finite() {
+            return (Radians::new(f64::NAN), Radians::new(f64::NAN));
         }
+        if east == 0.0 && north == 0.0 {
+            return (self.ra, self.dec);
+        }
+
+        // Work in a Cartesian basis rotated by the reference RA about z.
+        // r = (cos δ, 0, sin δ), east = (0, 1, 0), north = (-sin δ, 0, cos δ).
+        let (sin_d, mut cos_d) = self.dec.sin_cos();
+        if self.dec.value().abs() == FRAC_PI_2 {
+            cos_d = 0.0;
+        }
+        let x = cos_d - north * sin_d;
+        let z = sin_d + north * cos_d;
+        let horizontal = x.hypot(east);
+        if !horizontal.is_finite() {
+            return (Radians::new(f64::NAN), Radians::new(f64::NAN));
+        }
+        let ra = (self.ra.value() + east.atan2(x)).rem_euclid(TAU);
+        let dec = z.atan2(horizontal);
         (Radians::new(ra), Radians::new(dec))
     }
 }
@@ -113,4 +125,36 @@ pub(super) fn inside_cone(
     let a = (s / 2.0).powi(2) + dec.value().cos() * c_dec.value().cos() * s2 * s2;
     let c = 2.0 * a.sqrt().min(1.0).asin();
     c <= radius.value()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use core::f64::consts::PI;
+
+    #[test]
+    fn meridional_propagation_crosses_the_pole() {
+        let offset = MilliArcseconds::new(2000.0).to::<Radian>().value().atan();
+        let row = CatalogRecord {
+            source_id: 1,
+            ra: Radians::new(0.0),
+            dec: Radians::new(FRAC_PI_2 - offset / 2.0),
+            epoch_jyr: 2016.0,
+            pm_ra_cosdec: Some(0.0),
+            pm_dec: Some(2000.0),
+            parallax: None,
+            radial_velocity: None,
+            g_mag: None,
+            bp_mag: None,
+            rp_mag: None,
+            quality_ok: true,
+        };
+        let (ra, dec) = row.propagate_to(2017.0);
+        assert_eq!(ra.value(), PI);
+        assert!((dec.value() - row.dec.value()).abs() < 5e-16);
+
+        let (ra, dec) = row.propagate_to(2015.0);
+        assert_eq!(ra.value(), 0.0);
+        assert!((dec.value() - (row.dec.value() - offset)).abs() < 5e-16);
+    }
 }

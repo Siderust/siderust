@@ -25,7 +25,8 @@
 //!   fields ([`crate::qtty::Radians`], [`crate::qtty::MilliArcseconds`], [`crate::qtty::KmPerSeconds`]).
 //! - [`LargeStarCatalog`] is the in-memory container with cone search
 //!   (`cone_search`), magnitude/quality filters, and an epoch-aware
-//!   query that propagates positions via proper motion.
+//!   query that propagates positions via proper motion. Use
+//!   [`LargeStarCatalog::cross_match`] to compare two catalogs at a common epoch.
 //! - [`parse_csv_chunk`] consumes a CSV-style ASCII chunk into a
 //!   `Vec<CatalogRecord>`.
 //! - [`Observatory`] is the single site domain model, and
@@ -41,6 +42,7 @@
 #![forbid(unsafe_code)]
 
 pub mod catalog;
+mod cross_match;
 pub mod gaia;
 pub mod ingest;
 pub mod observatories;
@@ -49,6 +51,10 @@ pub mod record;
 #[cfg(not(feature = "std"))]
 use crate::qtty::{Real, Scalar};
 pub use catalog::LargeStarCatalog;
+pub use cross_match::{
+    CrossMatchCandidate, CrossMatchError, CrossMatchMode, CrossMatchOptions, CrossMatchSide,
+    CrossMatchSource, MissingProperMotion,
+};
 pub use ingest::{parse_csv_chunk, CatalogIngestError};
 pub use observatories::{Observatory, ObservatoryCatalog, ObservatoryCatalogError};
 pub use record::{CatalogFilter, CatalogRecord};
