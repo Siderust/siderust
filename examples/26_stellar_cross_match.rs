@@ -5,9 +5,7 @@
 
 #![allow(clippy::print_stdout)]
 
-use siderust::catalogs::{
-    parse_csv_chunk, CrossMatchMode, CrossMatchOptions, LargeStarCatalog, MissingProperMotion,
-};
+use siderust::catalogs::{parse_csv_chunk, CrossMatchOptions, LargeStarCatalog};
 use siderust::qtty::{Arcsecond, Arcseconds, JulianYears};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -27,13 +25,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 2048,32,10.00005,2000",
     )?);
 
-    let options = CrossMatchOptions {
-        epoch: JulianYears::new(2000.0),
-        radius: Arcseconds::new(0.5).to(),
-        mode: CrossMatchMode::AllCandidates,
-        // Positions already at J2000.0 can be used without proper motion.
-        missing_proper_motion: MissingProperMotion::Error,
-    };
+    // By default, return all candidates and require complete motion for
+    // off-epoch rows. Historical positions are already at J2000.0.
+    let options = CrossMatchOptions::new(JulianYears::new(2000.0), Arcseconds::new(0.5).to());
     for candidate in gaia.cross_match(&historical, options)? {
         println!(
             "Gaia-style row {} (ID {}) → historical row {} (ID {}): {:.3} arcsec, {} candidates for Gaia row",

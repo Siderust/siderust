@@ -17,13 +17,21 @@ historical candidates. A second has one candidate, and a third emits no rows.
 
 ## Choose an epoch, radius and policy
 
-Call [`LargeStarCatalog::cross_match`][api] with the other catalog and
-`CrossMatchOptions`. Supply a common reference epoch as
-`qtty::JulianYears` and an inclusive radius as `qtty::Radians`. A quantity such
-as `Arcseconds::new(0.5).to()` converts directly to the expected radius type.
-The epochs must use a consistent time scale. Gaia DR3 publishes its reference
-epoch in TCB. Prepare the input directions in ICRS and express RA and
-declination in radians, even if the input CSV used degrees.
+Create options with [`CrossMatchOptions::new(epoch, radius)`][api] and pass
+them to `LargeStarCatalog::cross_match`. The constructor requires a numeric
+Julian epoch such as `JulianYears::new(2016.0)` for J2016.0 and an inclusive
+radius in `Radians`. A quantity such as `Arcseconds::new(0.5).to()` converts
+to the expected radius type. The defaults are `AllCandidates` and
+`MissingProperMotion::Error`. Use `with_mode` and
+`with_missing_proper_motion` to choose other policies.
+
+The epoch uses the same Julian-year coordinate as the catalog rows. A value
+of 2000.0 corresponds to JD 2451545.0 on the chosen time scale, and an
+increment of one corresponds to 365.25 days. `JulianYears` carries the unit.
+Supply both catalogs and the comparison epoch on a common time scale before
+matching. Gaia DR3 publishes its reference epoch in TCB. Prepare the input
+directions in ICRS and express RA and declination in radians, even if the
+input CSV used degrees.
 
 At the comparison epoch, a row can be used directly, including a Gaia
 position-only solution. Away from that epoch, a row with either proper-motion

@@ -3,10 +3,9 @@
 
 use alloc::vec;
 use alloc::vec::Vec;
-use core::f64::consts::{FRAC_PI_2, PI, TAU};
 
 use crate::coordinates::spherical::direction::ICRS;
-use crate::qtty::{Degree, JulianYears, Radian, Radians};
+use crate::qtty::{Degree, Degrees, JulianYears, Radian, Radians};
 
 use super::{CatalogRecord, LargeStarCatalog};
 
@@ -33,22 +32,75 @@ pub enum MissingProperMotion {
 }
 
 /// Configuration for [`LargeStarCatalog::cross_match`].
+///
+/// The comparison epoch and search radius are required. By default the matcher
+/// returns [all candidates](CrossMatchMode::AllCandidates) and
+/// [returns an error](MissingProperMotion::Error) if an off-epoch row has
+/// incomplete proper motion.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct CrossMatchOptions {
-    /// Common reference epoch in Julian years (e.g. J2016.0).
+    epoch: JulianYears,
+    radius: Radians,
+    mode: CrossMatchMode,
+    missing_proper_motion: MissingProperMotion,
+}
+
+impl CrossMatchOptions {
+    /// Create options for a common epoch and an inclusive search radius in [0, π].
     ///
-    /// Supply all epochs on a consistent time scale. Gaia DR3 uses TCB.
-    pub epoch: JulianYears,
-    /// Inclusive angular search radius in [0, π] radians.
-    pub radius: Radians,
-    /// Candidate selection per left row.
-    pub mode: CrossMatchMode,
-    /// Treatment of incomplete proper motion away from the reference epoch.
-    pub missing_proper_motion: MissingProperMotion,
+    /// Supply the numeric Julian epoch (e.g. `JulianYears::new(2016.0)` for
+    /// J2016.0), using the same convention as [`CatalogRecord::epoch_jyr`].
+    /// The quantity carries the unit, and the caller supplies epochs for both
+    /// catalogs and the comparison on a common time scale. Gaia DR3 uses TCB.
+    ///
+    /// [`LargeStarCatalog::cross_match`] validates the epoch and radius.
+    pub const fn new(epoch: JulianYears, radius: Radians) -> Self {
+        Self {
+            epoch,
+            radius,
+            mode: CrossMatchMode::AllCandidates,
+            missing_proper_motion: MissingProperMotion::Error,
+        }
+    }
+
+    /// Set the candidate selection mode for each left row.
+    #[must_use]
+    pub const fn with_mode(mut self, mode: CrossMatchMode) -> Self {
+        self.mode = mode;
+        self
+    }
+
+    /// Set the policy for incomplete motion on off-epoch rows.
+    #[must_use]
+    pub const fn with_missing_proper_motion(mut self, policy: MissingProperMotion) -> Self {
+        self.missing_proper_motion = policy;
+        self
+    }
+
+    /// Return the comparison epoch as a numeric Julian epoch.
+    pub const fn epoch(&self) -> JulianYears {
+        self.epoch
+    }
+
+    /// Return the inclusive angular search radius.
+    pub const fn radius(&self) -> Radians {
+        self.radius
+    }
+
+    /// Return the candidate selection mode.
+    pub const fn mode(&self) -> CrossMatchMode {
+        self.mode
+    }
+
+    /// Return the policy for incomplete motion on off-epoch rows.
+    pub const fn missing_proper_motion(&self) -> MissingProperMotion {
+        self.missing_proper_motion
+    }
 }
 
 /// Identity and motion information for one endpoint of a candidate pair.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub struct CrossMatchSource {
     /// Zero-based row index in the corresponding input catalog.
     pub index: usize,
@@ -64,6 +116,7 @@ pub struct CrossMatchSource {
 /// candidates omitted by [`CrossMatchMode::Nearest`]. A count greater than one
 /// indicates geometric ambiguity on that side.
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[non_exhaustive]
 pub struct CrossMatchCandidate {
     /// Row from the catalog on which the search was called.
     pub left: CrossMatchSource,
@@ -88,6 +141,7 @@ pub enum CrossMatchSide {
 
 /// Invalid input or unavailable astrometry during cross-matching.
 #[derive(Debug, Clone, PartialEq, thiserror::Error)]
+#[non_exhaustive]
 pub enum CrossMatchError {
     /// The comparison epoch must be finite.
     #[error("comparison epoch must be finite")]
@@ -102,7 +156,7 @@ pub enum CrossMatchError {
         side: CrossMatchSide,
         /// Zero-based row index in that catalog.
         index: usize,
-        /// Catalog field or propagation step that failed validation.
+        /// Diagnostic label for the catalog field or propagation step.
         field: &'static str,
     },
     /// An off-epoch row has incomplete motion and the policy requires an error.
@@ -147,10 +201,10 @@ impl LargeStarCatalog {
         other: &Self,
         options: CrossMatchOptions,
     ) -> Result<Vec<CrossMatchCandidate>, CrossMatchError> {
-        if !options.epoch.value().is_finite() {
+        if !options.epoch.is_finite() {
             return Err(CrossMatchError::InvalidEpoch);
         }
-        if !(0.0..=PI).contains(&options.radius.value()) {
+        if !(Radians::zero()..=Radians::HALF_TURN).contains(&options.radius) {
             return Err(CrossMatchError::InvalidRadius);
         }
 
@@ -160,12 +214,17 @@ impl LargeStarCatalog {
                 right_rows.push(row);
             }
         }
-        right_rows.sort_unstable_by(|a, b| a.dec_deg().total_cmp(&b.dec_deg()));
+        right_rows.sort_unstable_by(|a, b| {
+            a.direction
+                .dec()
+                .value()
+                .total_cmp(&b.direction.dec().value())
+        });
 
         // A great-circle distance is at least the absolute declination
         // difference. Pad only the window for rounding in the unit conversions
         // and separation calculation, then apply the exact radius test.
-        let window = options.radius.to::<Degree>().value() + 16.0 * f64::EPSILON * 180.0;
+        let window = options.radius.to::<Degree>() + Degrees::new(16.0 * f64::EPSILON * 180.0);
         let mut right_counts = vec![0; other.len()];
         let mut result = Vec::new();
         for (index, record) in self.records().iter().enumerate() {
@@ -173,14 +232,14 @@ impl LargeStarCatalog {
                 continue;
             };
             let start = result.len();
-            let lower = left.dec_deg() - window;
-            let upper = left.dec_deg() + window;
-            let first = right_rows.partition_point(|row| row.dec_deg() < lower);
+            let lower = left.direction.dec() - window;
+            let upper = left.direction.dec() + window;
+            let first = right_rows.partition_point(|row| row.direction.dec() < lower);
             let mut left_count = 0;
             let mut nearest = None;
             for right in right_rows[first..]
                 .iter()
-                .take_while(|row| row.dec_deg() <= upper)
+                .take_while(|row| row.direction.dec() <= upper)
             {
                 let separation = left
                     .direction
@@ -238,12 +297,6 @@ struct EvaluatedRow {
     direction: ICRS,
 }
 
-impl EvaluatedRow {
-    fn dec_deg(&self) -> f64 {
-        self.direction.dec().value()
-    }
-}
-
 fn evaluate(
     record: &CatalogRecord,
     index: usize,
@@ -254,10 +307,10 @@ fn evaluate(
     if !record.epoch_jyr.is_finite() {
         return Err(invalid("epoch_jyr"));
     }
-    if !(0.0..=TAU).contains(&record.ra.value()) {
+    if !(Radians::zero()..=Radians::FULL_TURN).contains(&record.ra) {
         return Err(invalid("ra"));
     }
-    if !(-FRAC_PI_2..=FRAC_PI_2).contains(&record.dec.value()) {
+    if !(-Radians::QUARTER_TURN..=Radians::QUARTER_TURN).contains(&record.dec) {
         return Err(invalid("dec"));
     }
     for (field, value) in [
@@ -269,7 +322,8 @@ fn evaluate(
         }
     }
 
-    let off_epoch = record.epoch_jyr != options.epoch.value();
+    let epoch_jyr = options.epoch.value();
+    let off_epoch = record.epoch_jyr != epoch_jyr;
     let assumed_stationary =
         off_epoch && (record.pm_ra_cosdec.is_none() || record.pm_dec.is_none());
     if assumed_stationary {
@@ -282,17 +336,17 @@ fn evaluate(
         }
     }
     let (ra, dec) = if off_epoch && !assumed_stationary {
-        record.propagate_to(options.epoch.value())
+        record.propagate_to(epoch_jyr)
     } else {
         (record.ra, record.dec)
     };
-    if !ra.value().is_finite() || !dec.value().is_finite() {
+    if !ra.is_finite() || !dec.is_finite() {
         return Err(invalid("epoch propagation"));
     }
     // All RAs represent the same direction at an exact pole. Keep the
     // recorded RA in propagation above, where it defines the tangent basis.
-    let ra = if dec.value().abs() == FRAC_PI_2 || ra.value() == TAU {
-        Radians::new(0.0)
+    let ra = if dec.abs() == Radians::QUARTER_TURN || ra == Radians::FULL_TURN {
+        Radians::zero()
     } else {
         ra
     };

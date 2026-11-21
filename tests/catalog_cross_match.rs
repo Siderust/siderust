@@ -35,12 +35,7 @@ fn catalog(rows: impl IntoIterator<Item = CatalogRecord>) -> LargeStarCatalog {
 }
 
 fn options(radius: Radians) -> CrossMatchOptions {
-    CrossMatchOptions {
-        epoch: JulianYears::new(2016.0),
-        radius,
-        mode: CrossMatchMode::AllCandidates,
-        missing_proper_motion: MissingProperMotion::Error,
-    }
+    CrossMatchOptions::new(JulianYears::new(2016.0), radius)
 }
 
 #[test]
@@ -138,7 +133,12 @@ fn deterministic_ties_and_ambiguity_counts_include_hidden_pairs() {
         record(5, 0.0, -0.1, 2016.0),
         record(5, 0.0, 0.2, 2016.0),
     ]);
-    let mut opts = options(Radians::new(0.11));
+    let radius = Radians::new(0.11);
+    let opts = options(radius);
+    assert_eq!(opts.epoch(), JulianYears::new(2016.0));
+    assert_eq!(opts.radius(), radius);
+    assert_eq!(opts.mode(), CrossMatchMode::AllCandidates);
+    assert_eq!(opts.missing_proper_motion(), MissingProperMotion::Error);
     let all = left.cross_match(&right, opts).unwrap();
     let indices: Vec<_> = all.iter().map(|c| (c.left.index, c.right.index)).collect();
     assert_eq!(indices, [(0, 0), (0, 1), (1, 0), (1, 1), (2, 2), (2, 0)]);
@@ -148,7 +148,8 @@ fn deterministic_ties_and_ambiguity_counts_include_hidden_pairs() {
         (2, 3)
     );
     assert_eq!(left.cross_match(&right, opts).unwrap(), all);
-    opts.mode = CrossMatchMode::Nearest;
+    let opts = opts.with_mode(CrossMatchMode::Nearest);
+    assert_eq!(opts.mode(), CrossMatchMode::Nearest);
     let nearest = left.cross_match(&right, opts).unwrap();
     assert_eq!(nearest, [all[0], all[2], all[4]]);
     assert_eq!(nearest[0].right_candidate_count, 3);
@@ -162,7 +163,7 @@ fn missing_motion_policies_distinguish_same_epoch_from_stale_positions() {
     let left = catalog([record(3, 0.0, 0.0, 2016.0)]);
     for compromised in [missing, partial] {
         let right = catalog([compromised, record(2, 0.0, 0.0, 2016.0)]);
-        let mut opts = options(Radians::new(0.0));
+        let opts = options(Radians::zero());
         assert_eq!(
             left.cross_match(&right, opts),
             Err(CrossMatchError::MissingProperMotion {
@@ -170,12 +171,16 @@ fn missing_motion_policies_distinguish_same_epoch_from_stale_positions() {
                 index: 0
             })
         );
-        opts.missing_proper_motion = MissingProperMotion::Skip;
+        let opts = opts.with_missing_proper_motion(MissingProperMotion::Skip);
         let skipped = left.cross_match(&right, opts).unwrap();
         assert_eq!(skipped.len(), 1);
         assert_eq!(skipped[0].right.index, 1);
         assert!(!skipped[0].right.assumed_stationary);
-        opts.missing_proper_motion = MissingProperMotion::AssumeStationary;
+        let opts = opts.with_missing_proper_motion(MissingProperMotion::AssumeStationary);
+        assert_eq!(
+            opts.missing_proper_motion(),
+            MissingProperMotion::AssumeStationary
+        );
         let stationary = left.cross_match(&right, opts).unwrap();
         assert_eq!(stationary.len(), 2);
         assert!(stationary[0].right.assumed_stationary);
@@ -191,9 +196,8 @@ fn missing_motion_policies_distinguish_same_epoch_from_stale_positions() {
 #[test]
 fn invalid_options_and_rows_are_reported_even_without_possible_pairs() {
     let empty = LargeStarCatalog::new();
-    let mut opts = options(Radians::new(0.0));
     for epoch in [f64::NAN, f64::INFINITY] {
-        opts.epoch = JulianYears::new(epoch);
+        let opts = CrossMatchOptions::new(JulianYears::new(epoch), Radians::zero());
         assert_eq!(
             empty.cross_match(&empty, opts),
             Err(CrossMatchError::InvalidEpoch)
@@ -274,8 +278,7 @@ fn invalid_options_and_rows_are_reported_even_without_possible_pairs() {
             "epoch propagation",
         ),
     ];
-    opts = options(Radians::new(0.0));
-    opts.missing_proper_motion = MissingProperMotion::Skip;
+    let opts = options(Radians::zero()).with_missing_proper_motion(MissingProperMotion::Skip);
     for (bad, field) in invalid {
         assert_eq!(
             catalog([bad]).cross_match(&empty, opts),
@@ -307,13 +310,10 @@ fn separation_remains_resolved_from_tiny_angles_to_antipodes() {
     let hits = left
         .cross_match(&right, options(matches[0].separation))
         .unwrap();
-    assert_eq!(
-        hits,
-        [siderust::catalogs::CrossMatchCandidate {
-            left_candidate_count: 1,
-            ..matches[0]
-        }]
-    );
+    assert_eq!(hits.len(), 1);
+    let mut expected = matches[0];
+    expected.left_candidate_count = 1;
+    assert_eq!(hits[0], expected);
     let hits = left
         .cross_match(&right, options(Radians::new(tiny * 0.9)))
         .unwrap();
